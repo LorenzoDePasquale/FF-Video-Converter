@@ -1,0 +1,105 @@
+﻿<Window x:Class="FFVideoConverter.ComparisonWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:FFVideoConverter"
+        xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+        Title="Quality comparison" Height="1005" Width="1600" WindowStartupLocation="CenterScreen" Style="{StaticResource BlurWindowStyle}">
+
+    <Window.Resources>
+        <Storyboard x:Key="ProgressAnimationIn">
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="labelLoading" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0, 0, 0, 0" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="labelTitle" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0, -25, 0, 25" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="progressBarPreview" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="225,12,0,0" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockPreviewTimespan" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00" Value="76,0,0,14" />
+            </ThicknessAnimationUsingKeyFrames>
+        </Storyboard>
+
+        <Storyboard x:Key="ProgressAnimationOut">
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="labelLoading" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0,25,0,-25" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="labelTitle" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0, 0, 0, 0" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="progressBarPreview" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="225,49,0,-29" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockPreviewTimespan" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00" Value="87,0,0,14" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="comboBoxQuality" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="142,12,0,0" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonCreatePreview" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0,0,10,-31" />
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="checkBoxZoom" BeginTime="00:00:00">
+                <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0,12,18,0" />
+            </ThicknessAnimationUsingKeyFrames>
+        </Storyboard>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="0*"/>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="900"/>
+            <RowDefinition Height="45"/>
+        </Grid.RowDefinitions>
+        <Grid x:Name="gridTitlebar" Grid.Row="1" Background="#7F060606" MouseDown="Grid_MouseDown">
+            <Button x:Name="buttonClose" Content="_X" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" FontWeight="Bold" FontSize="15" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222"/>
+            <Label x:Name="labelTitle" Content="Encoding quality comparison" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FFCBCBCB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold" Height="32"/>
+            <Label x:Name="labelLoading" Content="Generating previews   " Margin="0,25,0,-25" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFCBCBCB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold" Height="32">
+                <Label.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Content" Duration="00:00:01.6" RepeatBehavior="Forever">
+                                    <DiscreteObjectKeyFrame KeyTime="00:00:00.0" Value="Generating previews   "/>
+                                    <DiscreteObjectKeyFrame KeyTime="00:00:00.4" Value="Generating previews.  "/>
+                                    <DiscreteObjectKeyFrame KeyTime="00:00:00.8" Value="Generating previews.. "/>
+                                    <DiscreteObjectKeyFrame KeyTime="00:00:01.2" Value="Generating previews..."/>
+                                </ObjectAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                </Label.Triggers>
+            </Label>
+        </Grid>
+        <Grid x:Name="gridComparison" Grid.Row="2" Margin="0,0,0,1">
+            <Grid.Effect>
+                <BlurEffect x:Name="blurEffect" RenderingBias="Performance" Radius="0"/>
+            </Grid.Effect>
+            <ffme:MediaElement x:Name="mediaElementOriginal" StretchDirection="DownOnly" Background="Black" LoadedBehavior="Pause" LoopingBehavior="Manual" ScrubbingEnabled="False" PositionChanged="MediaElementOriginal_PositionChanged" MediaEnded="MediaElementOriginal_MediaEnded"/>
+            <ffme:MediaElement x:Name="mediaElementConverted" StretchDirection="DownOnly" LoadedBehavior="Pause" LoopingBehavior="Manual" ScrubbingEnabled="False">
+                <ffme:MediaElement.OpacityMask>
+                    <LinearGradientBrush EndPoint="1,0">
+                        <GradientStop Color="Transparent" Offset="{Binding Value, ElementName=sliderComparison}"/>
+                        <GradientStop Color="Black" Offset="{Binding Value, ElementName=sliderComparison}"/>
+                    </LinearGradientBrush>
+                </ffme:MediaElement.OpacityMask>
+            </ffme:MediaElement>
+            <TextBlock x:Name="textBlockOriginal" Visibility="Hidden" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Original" VerticalAlignment="Top" Background="#99000000" Height="30" Width="70" Padding="6"/>
+            <TextBlock x:Name="textBlockConverted" Visibility="Hidden" HorizontalAlignment="Right" TextWrapping="Wrap" Text="Converted" VerticalAlignment="Top" Background="#99000000" Height="30" Width="85" Padding="6"/>
+            <Slider x:Name="sliderComparison" Visibility="Hidden" Maximum="1" SmallChange="0.01" TickFrequency="0.01" Style="{StaticResource ComparisonSlider}" Value="0.5" Height="{Binding ActualHeight, ElementName=gridComparison, Mode=OneWay}"/>
+        </Grid>
+        <Grid x:Name="gridControls" Grid.Row="3">
+            <ComboBox MaxDropDownHeight="600" x:Name="comboBoxQuality" HorizontalAlignment="Left" Height="24" Margin="142,49,0,-28" VerticalAlignment="Top" Width="167" SelectionChanged="ComboBoxQuality_SelectionChanged" ToolTipService.ShowDuration="20000" ToolTip="A lower value gives higher quality but with a larger file size.&#x0a;The progress is exponential, so increasing this value by 6 results in roughly half the file size.&#x0a;&#x0a;Choose the highest CRF value that still provides an acceptable quality:&#x0a;if the output looks good try a higher value, if it looks bad, choose a lower value."/>
+            <Slider x:Name="sliderPreview" Margin="54,0,388,7" Minimum="0" Height="25" VerticalAlignment="Bottom" IsMoveToPointEnabled="True" ValueChanged="SliderPreview_ValueChanged" Thumb.DragStarted="SliderPreview_DragStarted" Thumb.DragCompleted="SliderPreview_DragCompleted"/>
+            <CheckBox x:Name="checkBoxZoom" Content="Fit to window" VerticalAlignment="Top" Margin="0,48,18,-29" Checked="CheckBoxZoom_Checked" Unchecked="CheckBoxZoom_Unchecked" IsChecked="True" HorizontalAlignment="Right" Width="110"/>
+            <Button x:Name="buttonCreatePreview" Content="Create preview" Height="30" Margin="0,0,10,8" VerticalAlignment="Bottom" Click="ButtonCreatePreview_Click" HorizontalAlignment="Right" Width="128"/>
+            <TextBlock x:Name="textBlockPreviewTimespan" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Preview timespan: 00:00:00 - 00:00:00" VerticalAlignment="Bottom" Margin="1220,0,0,14" Width="223" IsHitTestVisible="False"/>
+            <ProgressBar x:Name="progressBarPreview" Margin="225,49,0,-29" Height="25" VerticalAlignment="Top" HorizontalAlignment="Left" Width="1218"/>
+            <Button x:Name="buttonPlayPause" Content=" ▶️" FontSize="16" HorizontalAlignment="Left" Style="{StaticResource RoundedButton}" Margin="10,0,0,4" Width="34" Click="ButtonPlayPause_Click" Padding="0,0,2,1" Height="35" VerticalAlignment="Bottom"/>
+            <Button x:Name="buttonNextFrame" Content="Next frame" Height="30" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="128" Margin="0,0,469,-37" Click="ButtonNextFrame_Click"/>
+            <Button x:Name="buttonPreviousFrame" Content="Previous frame" Height="30" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="128" Margin="0,0,946,-37" Click="ButtonPreviousFrame_Click"/>
+        </Grid>
+    </Grid>
+</Window>

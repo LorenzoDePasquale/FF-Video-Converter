@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="FFVideoConverter.IntegerTextBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FFVideoConverter" >
+
+    <Grid Background="Transparent">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBox Name="textBox" ContextMenu="{x:Null}" CommandManager.PreviewExecuted="TextBox_PreviewExecuted" Grid.ColumnSpan="2" Grid.RowSpan="2" Text="{Binding Value, Mode=TwoWay, NotifyOnSourceUpdated=True, NotifyOnValidationError=True, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:IntegerTextBox}}}" PreviewTextInput="TextBox_PreviewTextInput" />
+        <RepeatButton Name="buttonIncrease" Grid.Column="1" Grid.Row="0" Width="20" BorderThickness="0 1 1 0" Click="ButtonIncrease_Click" Loaded="ButtonIncrease_Loaded" >
+            <Path Fill="{StaticResource TextColor}" Data="M 0 3 L 6 3 L 3 0 Z"/>
+        </RepeatButton>
+        <RepeatButton Name="buttonDecrease" Grid.Column="1" Grid.Row="1" Width="20" BorderThickness="0 0 1 1" Click="ButtonDecrease_Click" Loaded="ButtonDecrease_Loaded" >
+            <Path Fill="{StaticResource TextColor}" Data="M 0 0 L 3 3 L 6 0 Z"/>
+        </RepeatButton>
+    </Grid>
+
+</UserControl>

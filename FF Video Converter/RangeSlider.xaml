@@ -1,0 +1,85 @@
+﻿<UserControl x:Class="FFVideoConverter.RangeSlider"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:FFVideoConverter" 
+             SizeChanged="UserControl_SizeChanged">
+
+    <UserControl.Resources>
+        <ControlTemplate x:Key="RangeSliderTemplate" TargetType="{x:Type Slider}">
+            <Border SnapsToDevicePixels="true" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                <Grid>
+                    <Rectangle x:Name="PART_SelectionRange"/>
+                    <Track x:Name="PART_Track">
+                        <Track.Thumb>
+                            <Thumb x:Name="Thumb">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="Thumb">
+                                        <Rectangle Fill="{StaticResource ButtonBackgroundColor}" Stroke="Black" StrokeThickness="0" Width="14" Height="22" RadiusX="4" RadiusY="4" SnapsToDevicePixels="True"/>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </Grid>
+            </Border>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="PositionSliderTemplate" TargetType="{x:Type Slider}">
+            <Border x:Name="border" Background="Transparent" SnapsToDevicePixels="True">
+                <Grid>
+                    <DockPanel LastChildFill="True" >
+                        <Border ClipToBounds="True" Height="3" >
+                            <Rectangle x:Name="PART_SelectionRange" RadiusX="1" RadiusY="1" Margin="10,0,-10,0" Fill="{StaticResource SliderForegroundBrush}" />
+                        </Border>
+                        <Border ClipToBounds="True" Height="3" >
+                            <Rectangle x:Name="PART_Background" RadiusX="1" RadiusY="1" Margin="20,0,10,0" Fill="{StaticResource SliderBackgroundBrush}" />
+                        </Border>
+                    </DockPanel>
+                    <Track x:Name="PART_Track">
+                        <Track.Thumb>
+                            <Thumb x:Name="Thumb" Focusable="False" Width="20" Height="20" OverridesDefaultStyle="True" VerticalAlignment="Center">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="{x:Type Thumb}">
+                                        <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
+                                            <Path x:Name="grip" Data="M 0,0 A 180,180 180 1 1 1,1 Z" Fill="Transparent" Stretch="Fill" Stroke="{StaticResource SliderForegroundBrush}" StrokeThickness="2.5" UseLayoutRounding="True" VerticalAlignment="Center" Margin="-1,-1" />
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="true">
+                                                <Setter Property="Fill" TargetName="grip" Value="{StaticResource SliderForegroundBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsDragging" Value="true">
+                                                <Setter Property="Stroke" TargetName="grip" Value="{StaticResource MouseOverColor}"/>
+                                                <Setter Property="Fill" TargetName="grip" Value="{StaticResource MouseOverColor}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Track.Thumb>
+                    </Track>
+                </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsSelectionRangeEnabled" Value="False">
+                    <Setter TargetName="PART_SelectionRange" Property="Fill" Value="{StaticResource SliderBackgroundBrush}" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        
+    </UserControl.Resources>
+
+    <Grid VerticalAlignment="Center">
+        <Slider x:Name="MiddleSlider" Template="{StaticResource PositionSliderTemplate}" IsMoveToPointEnabled="True" SelectionStart="0" SelectionEnd="{Binding Path=Value, RelativeSource={RelativeSource Self}}" ValueChanged="MiddleSlider_ValueChanged" Thumb.DragStarted="MiddleSlider_DragStarted" Thumb.DragCompleted="MiddleSlider_DragCompleted"/>
+        <Border ClipToBounds="True" Height="3" IsHitTestVisible="False">
+            <Rectangle x:Name="SelectionRangeLeft" RadiusX="1" RadiusY="1" Margin="10,0,-10,0" Fill="{StaticResource SliderForegroundBrush}" />
+        </Border>
+        <Border ClipToBounds="True" Height="3" IsHitTestVisible="False">
+            <Rectangle x:Name="SelectionRangeRight" RadiusX="1" RadiusY="1" Margin="20,0,10,0" Fill="{StaticResource SliderForegroundBrush}" />
+        </Border>
+        <Slider x:Name="LowerSlider" Template="{StaticResource RangeSliderTemplate}" ValueChanged="LowerSlider_ValueChanged" />
+        <Slider x:Name="UpperSlider" Template="{StaticResource RangeSliderTemplate}" ValueChanged="UpperSlider_ValueChanged" />
+    </Grid>
+
+</UserControl>
