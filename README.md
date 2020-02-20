@@ -1,7 +1,7 @@
 # FF Video Converter
 Simple video converter with cutting and cropping functionality, powered by the ffmpeg project
 
-[Youtube demo](https://youtu.be/t5fsI6cLboo)
+[Youtube demo](https://youtu.be/F1RwbC_K_4o)
 
 ## Features
 
@@ -10,9 +10,9 @@ Simple video converter with cutting and cropping functionality, powered by the f
 - Cut video, with or without re-encoding it (with possibility of cutting at keyframes)
 - Crop video
 - Preview encoding quality settings with before-after clips
-- Open network media (direct url to media file) and convert it while it's still downloading <p align="center"><img src="https://j.gifs.com/oV9xAB.gif"></p>
+- Open network media (direct url to media file) and convert it while it's still downloading <p align="center"><img width="700" src="https://i.imgur.com/71B5ixJ.gif"></p>
 - Open videos from Reddit posts at every quality
-- Open Youtube videos at every audio and video quality<p align="center"><img src="https://j.gifs.com/q7XzVp.gif"></p>
+- Open Youtube videos at every audio and video quality<p align="center"><img width="700" src="https://i.imgur.com/VuYrnTr.gif"></p>
 
 
 ## Current Issues/Limitations
