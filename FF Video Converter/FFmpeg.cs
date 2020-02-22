@@ -164,6 +164,7 @@ namespace FFVideoConverter
                 convertProcess.WaitForExit();
                 errorWaitHandle.WaitOne();
             });
+            convertProcess.CancelErrorRead();
 
             int exitCode = convertProcess.ExitCode;
             if (exitCode == 0) //conversion not aborted
@@ -186,6 +187,7 @@ namespace FFVideoConverter
                 convertProcess.WaitForExit();
                 errorWaitHandle.WaitOne();
             });
+            convertProcess.CancelErrorRead();
 
             int exitCode = convertProcess.ExitCode;
             if (exitCode == 0) //conversion not aborted

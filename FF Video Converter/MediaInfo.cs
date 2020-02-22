@@ -57,7 +57,8 @@ namespace FFVideoConverter
                         Codec = streamElement.GetProperty("codec_name").GetString();
                         Width = streamElement.GetProperty("width").GetInt32();
                         Height = streamElement.GetProperty("height").GetInt32();
-                        AspectRatio = streamElement.GetProperty("display_aspect_ratio").GetString();
+                        if (streamElement.TryGetProperty("display_aspect_ratio", out JsonElement _))
+                            AspectRatio = streamElement.GetProperty("display_aspect_ratio").GetString();
                         string fps = streamElement.GetProperty("r_frame_rate").GetString();
                         if (fps != "N/A")
                         {

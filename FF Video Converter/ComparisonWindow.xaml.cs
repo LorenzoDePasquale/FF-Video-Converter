@@ -150,7 +150,7 @@ namespace FFVideoConverter
                 double keyFrameBefore = (await mediaFile.GetNearestBeforeAndAfterKeyFrames(start.TotalSeconds)).before;
                 start = TimeSpan.FromSeconds(keyFrameBefore);
                 end = start.Add(TimeSpan.FromSeconds(4));
-                conversionOptions = new ConversionOptions(encoder, 7, 16)
+                conversionOptions = new ConversionOptions(encoder, 6, 16)
                 {
                     Start = start,
                     End = end

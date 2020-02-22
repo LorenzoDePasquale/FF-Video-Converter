@@ -257,12 +257,12 @@
                 <TextBlock x:Name="textBlockStartBefore" HorizontalAlignment="Left" Margin="124,3,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxFastCut}" MouseLeftButtonDown="TextBlockStartBefore_MouseLeftButtonDown"/>
                 <TextBlock x:Name="textBlockStartAfter" HorizontalAlignment="Left" Margin="124,48,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxFastCut}" MouseLeftButtonDown="TextBlockStartAfter_MouseLeftButtonDown"/>
                 <TextBox x:Name="textBoxStart" HorizontalAlignment="Left" Height="25" Margin="124,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxStart_TextChanged" />
-                <CheckBox x:Name="checkBoxCut" IsEnabled="False" Content="Cut" HorizontalAlignment="Left" Margin="0,19,0,0" VerticalAlignment="Top" Height="30" Width="64" Click="CheckBoxCut_Click"/>
+                <CheckBox x:Name="checkBoxCut" IsEnabled="False" Content="Cut" HorizontalAlignment="Left" Margin="0,19,0,0" VerticalAlignment="Top" Height="30" Width="64" Checked="CheckBoxCut_Click" Unchecked="CheckBoxCut_Click"/>
                 <TextBlock HorizontalAlignment="Left" Margin="90,25,0,0" TextWrapping="Wrap" Text="Start" VerticalAlignment="Top"/>
                 <TextBox x:Name="textBoxEnd" HorizontalAlignment="Left" Height="23" Margin="264,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxEnd_TextChanged"/>
                 <TextBlock HorizontalAlignment="Left" Margin="238,25,0,0" TextWrapping="Wrap" Text="End" VerticalAlignment="Top"/>
                 <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" Margin="380,24,-15,0" TextWrapping="Wrap" Text="Duration: 00:00:00" VerticalAlignment="Top" Width="110" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}"/>
-                <CheckBox x:Name="checkBoxFastCut" Content="Fast cut" HorizontalAlignment="Left" Margin="0,54,0,-13" VerticalAlignment="Top" Height="30" Width="82" Click="CheckBoxFastCut_Click" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}" ToolTipService.ShowDuration="15000" ToolTip="Cuts the video without re-encoding it. Because no encoding is performed, every other option is ignored&#xA;Although the video can be cut anywhere, cutting at the suggested start positions will provide the most accurate result"/>
+                <CheckBox x:Name="checkBoxFastCut" Content="Fast cut" HorizontalAlignment="Left" Margin="0,54,0,-13" VerticalAlignment="Top" Height="30" Width="82" Checked="CheckBoxFastCut_Click" Unchecked="CheckBoxFastCut_Click" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}" ToolTipService.ShowDuration="15000" ToolTip="Cuts the video without re-encoding it. Because no encoding is performed, every other option is ignored&#xA;Although the video can be cut anywhere, cutting at the suggested start positions will provide the most accurate result"/>
             </Grid>
             <Grid x:Name="gridCrop" Margin="332,127,40,0" Height="125" VerticalAlignment="Top" >
                 <local:IntegerTextBox x:Name="integerTextBoxCropTop" HorizontalAlignment="Left" Height="28" Margin="190,20,0,0" VerticalAlignment="Top" Width="70" Minimum="0" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
@@ -274,7 +274,7 @@
                 <TextBlock HorizontalAlignment="Left" Margin="341,54,0,0" TextWrapping="Wrap" Text="Right" VerticalAlignment="Top"/>
                 <TextBlock HorizontalAlignment="Left" Margin="204,108,0,0" TextWrapping="Wrap" Text="Bottom" VerticalAlignment="Top"/>
                 <TextBlock x:Name="textBlockOutputSize" HorizontalAlignment="Left" Margin="403,44,0,0" TextWrapping="Wrap" Text="Output size:" VerticalAlignment="Top" Height="17" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}"/>
-                <CheckBox x:Name="checkBoxCrop" IsEnabled="False" Content="Crop" HorizontalAlignment="Left" Margin="0,47,0,0" VerticalAlignment="Top" Height="30" Width="64" Click="CheckBoxCrop_Click"/>
+                <CheckBox x:Name="checkBoxCrop" IsEnabled="False" Content="Crop" HorizontalAlignment="Left" Margin="0,47,0,0" VerticalAlignment="Top" Height="30" Width="64" Checked="CheckBoxCrop_Click" Unchecked="CheckBoxCrop_Click"/>
                 <TextBlock x:Name="textBlockOutputResolution" HorizontalAlignment="Left" Margin="403,62,0,0" TextWrapping="Wrap" Text="1920x1080" VerticalAlignment="Top" Height="17" Width="71" TextAlignment="Center" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}"/>
             </Grid>
         </Grid>
@@ -319,7 +319,7 @@
             <Border.Effect>
                 <DropShadowEffect x:Name="shadowEffect"  ShadowDepth="1" Opacity="0"/>
             </Border.Effect>
-            <Grid>
+            <Grid x:Name="gridSourceMedia">
                 <TextBlock x:Name="textBlockOpen" Text="Click to open" FontSize="18" Margin="150,102,150,103" TextAlignment="Center" />
                 <Rectangle MouseDown="ButtonOpen_Click" Fill="#02000000" Cursor="Hand" Margin="2" />
                 <ffme:MediaElement x:Name="mediaElementInput" LoadedBehavior="Pause" Stretch="Uniform" LoopingBehavior="Play" Visibility="Visible" IsHitTestVisible="False" ScrubbingEnabled="False"/>

@@ -114,7 +114,7 @@ namespace FFVideoConverter
             textBlockBitrate.Text = mediaInfo.Bitrate + " Kbps";
             textBlockResolution.Text = $"{mediaInfo.Width}x{mediaInfo.Height}";
             textBlockInputSize.Text = GetBytesReadable(mediaInfo.Size);
-            if (mediaInfo.AspectRatio != "N/A") textBlockResolution.Text += $" ({mediaInfo.AspectRatio})";
+            if (!String.IsNullOrEmpty(mediaInfo.AspectRatio) && mediaInfo.AspectRatio != "N/A") textBlockResolution.Text += $" ({mediaInfo.AspectRatio})";
 
             checkBoxCrop.IsEnabled = true;
             checkBoxCrop.IsChecked = false;
@@ -345,10 +345,25 @@ namespace FFVideoConverter
             if (checkBoxFastCut.IsChecked == true)
             {
                 TextBoxStart_TextChanged(null, null);
+
+                checkBoxCrop.IsChecked = false;
+                checkBoxCrop.IsEnabled = false;
+                comboBoxEncoder.IsEnabled = false;
+                comboBoxFramerate.IsEnabled = false;
+                comboBoxPreset.IsEnabled = false;
+                comboBoxQuality.IsEnabled = false;
+                comboBoxResolution.IsEnabled = false;
             }
             else
             {
                 textBoxStart.ClearValue(TextBox.ForegroundProperty);
+
+                checkBoxCrop.IsEnabled = true;
+                comboBoxEncoder.IsEnabled = true;
+                comboBoxFramerate.IsEnabled = true;
+                comboBoxPreset.IsEnabled = true;
+                comboBoxQuality.IsEnabled = true;
+                comboBoxResolution.IsEnabled = true;
             }
         }
 
@@ -408,7 +423,7 @@ namespace FFVideoConverter
 
         #region "Conversion process"
 
-        private void ButtonConvert_Click(object sender, RoutedEventArgs e)
+        private async void ButtonConvert_Click(object sender, RoutedEventArgs e)
         {
             ffmpegEngine = new FFmpegEngine();
             ffmpegEngine.ProgressChanged += UpdateProgress;
@@ -466,10 +481,9 @@ namespace FFVideoConverter
             buttonOpenStream.IsEnabled = false;
             checkBoxCrop.IsEnabled = false;
             checkBoxCut.IsEnabled = false;
-            mediaElementInput.Pause();
+            await mediaElementInput.Pause();
             buttonPlayPause.Content = " ▶️";
-            buttonPlayPause.IsEnabled = false;
-            buttonExpand.IsEnabled = false;
+            gridSourceMedia.IsEnabled = false;
             buttonOpenOutput.Visibility = Visibility.Hidden;
             Storyboard storyboard = FindResource("ProgressAnimationIn") as Storyboard;
             storyboard.Begin();
@@ -514,8 +528,7 @@ namespace FFVideoConverter
             buttonCancel.IsEnabled = false;
             checkBoxCrop.IsEnabled = true;
             checkBoxCut.IsEnabled = true;
-            buttonPlayPause.IsEnabled = true;
-            buttonExpand.IsEnabled = true;
+            gridSourceMedia.IsEnabled = true;
             buttonOpenOutput.Visibility = Visibility.Visible;
             Title = "AVC to HEVC Converter";
 
@@ -526,7 +539,7 @@ namespace FFVideoConverter
             textBlockBitrate.Text += $"    ⟶    {outputFile.Bitrate} Kbps";
             textBlockResolution.Text += $"    ⟶    {outputFile.Width + "x" + outputFile.Height}";
             textBlockInputSize.Text += $"    ⟶    {outputSize}";
-            if (outputFile.AspectRatio != "N/A") textBlockResolution.Text += $" ({outputFile.AspectRatio})";
+            if (String.IsNullOrEmpty(outputFile.AspectRatio) && outputFile.AspectRatio != "N/A") textBlockResolution.Text += $" ({outputFile.AspectRatio})";
         }
 
         private void ButtonPauseResume_Click(object sender, RoutedEventArgs e)
@@ -570,8 +583,7 @@ namespace FFVideoConverter
             buttonPreview.IsEnabled = true;
             checkBoxCrop.IsEnabled = true;
             checkBoxCut.IsEnabled = true;
-            buttonPlayPause.IsEnabled = true;
-            buttonExpand.IsEnabled = true;
+            gridSourceMedia.IsEnabled = true;
             Title = "AVC to HEVC Converter";
         }
 
