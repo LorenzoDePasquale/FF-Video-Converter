@@ -22,7 +22,7 @@ namespace FFVideoConverter
         private MediaInfo mediaInfo;
         private const int RECT_MIN_SIZE = 20;
         private string currentOutputPath = "";
-        private float outputFps;
+        private float inputFps, outputFps;
         private bool isSeeking = false;
         private bool userInput = true;
         private bool wasPlaying = false;
@@ -111,6 +111,7 @@ namespace FFVideoConverter
             textBlockDuration.Text = mediaInfo.Duration.ToString(@"hh\:mm\:ss\.ff");
             textBlockCodec.Text = mediaInfo.Codec;
             textBlockFramerate.Text = Math.Round(mediaInfo.Framerate, 2) + " fps";
+            inputFps = Convert.ToSingle(mediaInfo.Framerate);
             textBlockBitrate.Text = mediaInfo.Bitrate + " Kbps";
             textBlockResolution.Text = $"{mediaInfo.Width}x{mediaInfo.Height}";
             textBlockInputSize.Text = GetBytesReadable(mediaInfo.Size);
@@ -442,7 +443,7 @@ namespace FFVideoConverter
             {
                 conversionOptions.Framerate = Convert.ToByte(comboBoxFramerate.SelectedItem);
             }
-            outputFps = comboBoxFramerate.SelectedIndex == 0 ? Convert.ToSingle(textBlockFramerate.Text.Replace(" fps", "")) : Convert.ToSingle(comboBoxFramerate.SelectedItem);
+            outputFps = comboBoxFramerate.SelectedIndex == 0 ? inputFps : Convert.ToSingle(comboBoxFramerate.SelectedItem);
 
             if (checkBoxCut.IsChecked == true)
             {
@@ -539,7 +540,7 @@ namespace FFVideoConverter
             textBlockBitrate.Text += $"    ⟶    {outputFile.Bitrate} Kbps";
             textBlockResolution.Text += $"    ⟶    {outputFile.Width + "x" + outputFile.Height}";
             textBlockInputSize.Text += $"    ⟶    {outputSize}";
-            if (String.IsNullOrEmpty(outputFile.AspectRatio) && outputFile.AspectRatio != "N/A") textBlockResolution.Text += $" ({outputFile.AspectRatio})";
+            if (!String.IsNullOrEmpty(outputFile.AspectRatio) && outputFile.AspectRatio != "N/A") textBlockResolution.Text += $" ({outputFile.AspectRatio})";
         }
 
         private void ButtonPauseResume_Click(object sender, RoutedEventArgs e)

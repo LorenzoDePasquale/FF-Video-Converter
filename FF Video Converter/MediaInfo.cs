@@ -49,7 +49,7 @@ namespace FFVideoConverter
                 await Task.Run(() =>
                 {
                     string stdout = process.StandardOutput.ReadToEnd();
-                    if (!BracketBalanced(stdout)) stdout += "}"; //Because fucking ffprobe sometimes fucking forgets the last fucking bracket ffs
+                    if (!BracketBalanced(stdout)) stdout += "}"; //Because fucking ffprobe sometimes fucking forgets the last fucking bracket
 
                     using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
                     {

@@ -88,6 +88,7 @@
     <Compile Include="ShadowBorder.xaml.cs">
       <DependentUpon>ShadowBorder.xaml</DependentUpon>
     </Compile>
+    <Compile Include="VideoUrlParser.cs" />
     <Compile Include="WindowBlur.cs" />
     <Page Include="ComparisonWindow.xaml">
       <SubType>Designer</SubType>
