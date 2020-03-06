@@ -11,7 +11,7 @@ Simple video converter with cutting and cropping functionality, powered by the f
 - Crop video
 - Preview encoding quality settings with before-after clips
 - Open network media (direct url to media file) and convert it while it's still downloading <p align="center"><img width="700" src="https://i.imgur.com/71B5ixJ.gif"></p>
-- Open videos from Reddit posts at every quality
+- Open videos from Reddit and Twitter posts at every quality
 - Open Youtube videos at every audio and video quality<p align="center"><img width="700" src="https://i.imgur.com/VuYrnTr.gif"></p>
 
 
