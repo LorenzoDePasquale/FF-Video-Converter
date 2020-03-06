@@ -110,10 +110,11 @@ namespace FFVideoConverter
 
             textBlockDuration.Text = mediaInfo.Duration.ToString(@"hh\:mm\:ss\.ff");
             textBlockCodec.Text = mediaInfo.Codec;
-            textBlockFramerate.Text = Math.Round(mediaInfo.Framerate, 2) + " fps";
+            double fps = Math.Round(mediaInfo.Framerate, 2);
+            textBlockFramerate.Text = !Double.IsNaN(fps) ? fps + " fps" : "-";
             inputFps = Convert.ToSingle(mediaInfo.Framerate);
             textBlockBitrate.Text = mediaInfo.Bitrate + " Kbps";
-            textBlockResolution.Text = $"{mediaInfo.Width}x{mediaInfo.Height}";
+            textBlockResolution.Text = mediaInfo.Width != 0 ? $"{mediaInfo.Width}x{mediaInfo.Height}" : "-";
             textBlockInputSize.Text = GetBytesReadable(mediaInfo.Size);
             if (!String.IsNullOrEmpty(mediaInfo.AspectRatio) && mediaInfo.AspectRatio != "N/A") textBlockResolution.Text += $" ({mediaInfo.AspectRatio})";
 

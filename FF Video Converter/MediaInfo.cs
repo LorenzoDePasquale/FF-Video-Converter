@@ -53,13 +53,25 @@ namespace FFVideoConverter
 
                     using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
                     {
-                        JsonElement streamElement = jsonOutput.RootElement.GetProperty("streams")[0];
-                        Codec = streamElement.GetProperty("codec_name").GetString();
-                        Width = streamElement.GetProperty("width").GetInt32();
-                        Height = streamElement.GetProperty("height").GetInt32();
-                        if (streamElement.TryGetProperty("display_aspect_ratio", out JsonElement _))
-                            AspectRatio = streamElement.GetProperty("display_aspect_ratio").GetString();
-                        string fps = streamElement.GetProperty("r_frame_rate").GetString();
+                        JsonElement streamsElement = jsonOutput.RootElement.GetProperty("streams");
+                        JsonElement videoStreamElement = streamsElement[0];
+                        for (int i = 0; i < streamsElement.GetArrayLength(); i++)
+                        {
+                            if (streamsElement[i].GetProperty("codec_type").GetString() == "video")
+                            {
+                                videoStreamElement = streamsElement[i];
+                                break;
+                            }
+                        }
+                        if (videoStreamElement.TryGetProperty("codec_name", out JsonElement e))
+                            Codec = e.GetString();
+                        if (videoStreamElement.TryGetProperty("width", out e))
+                            Width = e.GetInt32();
+                        if (videoStreamElement.TryGetProperty("height", out e))
+                            Height = e.GetInt32();
+                        if (videoStreamElement.TryGetProperty("display_aspect_ratio", out JsonElement _))
+                            AspectRatio = videoStreamElement.GetProperty("display_aspect_ratio").GetString();
+                        string fps = videoStreamElement.GetProperty("r_frame_rate").GetString();
                         if (fps != "N/A")
                         {
                             int a = Convert.ToInt32(fps.Remove(fps.IndexOf('/')));
