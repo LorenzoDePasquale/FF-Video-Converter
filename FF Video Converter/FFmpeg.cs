@@ -213,7 +213,11 @@ namespace FFVideoConverter
                     progressData.CurrentByteSize = System.Convert.ToInt32(line.Remove(line.IndexOf(" time") - 2).Remove(0, line.IndexOf("size") + 5)) * 1000;
                     progressData.CurrentTime = TimeSpan.Parse(line.Remove(line.IndexOf(" bit")).Remove(0, line.IndexOf("time") + 5));
                     float currentBitrate = line.Contains("bitrate=N/A") ? 0 : System.Convert.ToSingle(line.Remove(line.IndexOf("kbits")).Remove(0, line.IndexOf("bitrate") + 8), CultureInfo.InvariantCulture);
-                    progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
+                    if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
+                    {
+                        progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
+                    }
+
                     if (line.EndsWith("N/A    ") || line.EndsWith("x")) progressData.EncodingSpeed = 0;
                     else progressData.EncodingSpeed = System.Convert.ToSingle(line.Remove(line.IndexOf('x')).Remove(0, line.IndexOf("speed") + 6), CultureInfo.InvariantCulture);
 

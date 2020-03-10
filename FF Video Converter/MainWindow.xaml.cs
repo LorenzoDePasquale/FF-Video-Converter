@@ -17,6 +17,7 @@ namespace FFVideoConverter
     {
         public static readonly string[] QUALITY = { "Best", "Very good", "Good", "Medium", "Low", "Very low" };
 
+        private static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".avi", "m4v", ".webm", ".m3u8" };
         private FFmpegEngine ffmpegEngine = new FFmpegEngine();
         private readonly MethodRunner<TimeSpan> textBoxStartTextChangedMethodRunner;
         private MediaInfo mediaInfo;
@@ -69,7 +70,7 @@ namespace FFVideoConverter
             comboBoxResolution.SelectedIndex = 0;            
         }
 
-        #region "Load"
+        #region Load
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -77,7 +78,7 @@ namespace FFVideoConverter
             {
                 string sourcePath = Environment.GetCommandLineArgs()[1];
                 string extension = Path.GetExtension(sourcePath);
-                if (extension == ".mkv" || extension == ".mp4" || extension == ".avi" || extension == ".m4v" || extension == ".webm")
+                if (Array.IndexOf(SUPPORTED_EXTENSIONS, extension) > -1)
                 {
                     mediaInfo = await MediaInfo.Open(sourcePath);
                     OpenSource();
@@ -197,7 +198,11 @@ namespace FFVideoConverter
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Title = "Select the source file";
             ofd.Multiselect = false;
-            ofd.Filter = "Video files|*.mkv;*.mp4;*.m4v;*.webm;*.avi";
+            ofd.Filter = "Video files|";
+            foreach (var item in SUPPORTED_EXTENSIONS)
+            {
+                ofd.Filter += $"*{item};";
+            }
             bool? result = ofd.ShowDialog();
             if (result == true)
             {
@@ -206,9 +211,41 @@ namespace FFVideoConverter
             }
         }
 
+        private void Rectangle_DragEnter(object sender, DragEventArgs e)
+        {
+            Storyboard storyboard = FindResource("DragOverAnimation") as Storyboard;
+            storyboard.Begin();
+        }
+
+        private void Rectangle_DragLeave(object sender, DragEventArgs e)
+        {
+            Storyboard storyboard = FindResource("DragOverAnimation") as Storyboard;
+            storyboard.Stop();
+        }
+
+        private async void Rectangle_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+                string extension = Path.GetExtension(paths[0]);
+                if (Array.IndexOf(SUPPORTED_EXTENSIONS, extension) > -1)
+                {
+                    mediaInfo = await MediaInfo.Open(paths[0]);
+                    OpenSource();
+                }
+                else
+                {
+                    MessageBox.Show("File not supported!");
+                }
+            }
+            Storyboard storyboard = FindResource("DragOverAnimation") as Storyboard;
+            storyboard.Stop();
+        }
+
         #endregion
 
-        #region "Title Bar controls"
+        #region Title Bar controls
 
         private void Grid_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -222,12 +259,13 @@ namespace FFVideoConverter
 
         private void ButtonClose_Click(object sender, RoutedEventArgs e)
         {
+            ffmpegEngine.StopConversion();
             Close();
         }
 
         #endregion
 
-        #region "Conversion settings"
+        #region Conversion settings
 
         private void ButtonSave_Click(object sender, RoutedEventArgs e)
         {
@@ -423,7 +461,7 @@ namespace FFVideoConverter
 
         #endregion
 
-        #region "Conversion process"
+        #region Conversion process
 
         private async void ButtonConvert_Click(object sender, RoutedEventArgs e)
         {
@@ -506,7 +544,8 @@ namespace FFVideoConverter
                 TaskbarItemInfo.ProgressValue = percentage / 100;
                 textBlockProgress.Text = $"Processed: {progressData.CurrentTime.ToString(@"hh\:mm\:ss")} / {progressData.TotalTime.ToString(@"hh\:mm\:ss")}";
                 if (!webStream) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
-                textBlockSize.Text = $"Output size: {GetBytesReadable(progressData.CurrentByteSize)} / {GetBytesReadable(approximateOutputByteSize)} (estimated)";
+                textBlockSize.Text = $"Output size: {GetBytesReadable(progressData.CurrentByteSize)}";
+                if (progressData.AverageBitrate > 0) textBlockSize.Text += $" / {GetBytesReadable(approximateOutputByteSize)} (estimated)";
                 Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToString(@"hh\:mm\:ss");
                 labelProgress.Content = $"Progress: {Math.Floor(percentage)}%   Remaining time: {TimeSpan.FromSeconds(remainingTime).ToString(@"hh\:mm\:ss")}";
             }, System.Windows.Threading.DispatcherPriority.Send);
@@ -596,7 +635,7 @@ namespace FFVideoConverter
 
         #endregion
 
-        #region "Media player controls"
+        #region Media player controls
 
         private void MediaElementInput_PositionChanged(object sender, Unosquare.FFME.Common.PositionChangedEventArgs e)
         {
@@ -887,7 +926,7 @@ namespace FFVideoConverter
 
         #endregion
 
-        #region "Helper methods"
+        #region Helper methods
 
         public static string GetBytesReadable(long i)
         {
