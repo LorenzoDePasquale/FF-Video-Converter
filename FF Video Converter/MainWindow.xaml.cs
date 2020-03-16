@@ -470,6 +470,8 @@ namespace FFVideoConverter
                 return;
             }
 
+            textBlockProgress.Text = "Starting conversion process...";
+
             ffmpegEngine = new FFmpegEngine();
             ffmpegEngine.ProgressChanged += UpdateProgress;
             ffmpegEngine.ConversionCompleted += ConversionCompleted;
@@ -580,7 +582,7 @@ namespace FFVideoConverter
 
             MediaInfo outputFile = await MediaInfo.Open(currentOutputPath);
             textBlockDuration.Text += $"   ⟶   {outputFile.Duration.ToString(@"hh\:mm\:ss\.ff")}";
-            textBlockCodec.Text += $"   ⟶   {outputFile.Codec}";
+            textBlockCodec.Text += $"   ⟶   {outputFile.Codec} / {outputFile.AudioCodec}";
             textBlockFramerate.Text += $"   ⟶   {outputFile.Framerate} fps";
             textBlockBitrate.Text += $"   ⟶   {outputFile.Bitrate} Kbps";
             textBlockResolution.Text += $"   ⟶   {outputFile.Width + "x" + outputFile.Height}";

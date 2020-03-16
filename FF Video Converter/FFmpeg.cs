@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -145,17 +146,20 @@ namespace FFVideoConverter
                 filters = $" -vf \"crop=in_w-{conversionOptions.CropData.Left + conversionOptions.CropData.Right}:in_h-{conversionOptions.CropData.Top + conversionOptions.CropData.Bottom}:{conversionOptions.CropData.Left}:{conversionOptions.CropData.Top}\"";
             }
 
-            convertProcess.StartInfo.Arguments = "-y" +
-                                                 $" -i \"{sourceInfo.Source}\"" + (string.IsNullOrEmpty(sourceInfo.AudioSource) ? "" : $" -i \"{sourceInfo.AudioSource}\"") +
-                                                 $" -ss {conversionOptions.Start} " +
-                                                 (conversionOptions.End != TimeSpan.Zero ? $" -to {conversionOptions.End}" : "") +
-                                                 " -c:v " + (conversionOptions.Encoder == Encoder.H264 ? "libx264" : "libx265") +
-                                                 " -movflags faststart -preset " + PRESETS[conversionOptions.Preset] +
-                                                 " -crf " + conversionOptions.Crf +
-                                                 (conversionOptions.Framerate > 0 ? " -r" + conversionOptions.Framerate : "") +
-                                                 filters +
-                                                 (conversionOptions.SkipAudio ? " -an" : " -c:a copy") +
-                                                 $" \"{destination}\" -hide_banner";
+            StringBuilder sb = new StringBuilder("-y");
+            sb.Append($" -ss {conversionOptions.Start} ");
+            sb.Append($" -i \"{sourceInfo.Source}\"");
+            if (!String.IsNullOrEmpty(sourceInfo.AudioSource)) sb.Append($" -i \"{sourceInfo.AudioSource}\"");
+            if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
+            sb.Append(" -c:v " + (conversionOptions.Encoder == Encoder.H264 ? "libx264" : "libx265"));
+            sb.Append(" -movflags faststart -preset " + PRESETS[conversionOptions.Preset]);
+            sb.Append(" -crf " + conversionOptions.Crf);
+            if (conversionOptions.Framerate > 0) sb.Append(" -r" + conversionOptions.Framerate);
+            sb.Append(filters);
+            sb.Append(conversionOptions.SkipAudio ? " -an" : " -c:a copy");
+            sb.Append($" \"{destination}\" -hide_banner");
+
+            convertProcess.StartInfo.Arguments = sb.ToString();
             convertProcess.Start();
             convertProcess.BeginErrorReadLine();
 
