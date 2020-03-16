@@ -47,63 +47,57 @@ namespace FFVideoConverter
                 string url = textBoxURL.Text;
                 if (url.StartsWith("http"))
                 {
-                    if (url.Contains("reddit"))
-                    {
-                        labelTitle.Content = "Fetching Reddit post info...";
-                        host = "Reddit";
-                    }
-                    else if (url.Contains("youtu"))
-                    {
-                        labelTitle.Content = "Fetching Youtube video info...";
-                        host = "Youtube";
-                    }
-                    else if (url.Contains("twitter"))
-                    {
-                        labelTitle.Content = "Fetching Twitter status info...";
-                        host = "Twitter";
-                        comboBoxAudioQuality.Visibility = Visibility.Hidden;
-                        textBlockAudioQuality.Visibility = Visibility.Hidden;
-                    }
-                    else
+                    if (!url.Contains("reddit") && !url.Contains("youtu") && !url.Contains("twitter"))
                     {
                         labelTitle.Content = "Opening network stream...";
                         MediaStream = await MediaInfo.Open(url);
                         Close();
                     }
-
-                    VideoUrlParser videoUrlParser = null;
-                    switch (host)
+                    else
                     {
-                        case "Reddit":
+                        VideoUrlParser videoUrlParser = null;
+
+                        if (url.Contains("reddit"))
+                        {
+                            host = "Reddit";
+                            labelTitle.Content = "Fetching Reddit post info...";
                             videoUrlParser = new RedditParser();
-                            break;
-                        case "Youtube":
+                        }
+                        else if (url.Contains("youtu"))
+                        {
+                            host = "Youtube";
+                            labelTitle.Content = "Fetching Youtube video info...";
                             videoUrlParser = new YouTubeParser();
-                            break;
-                        case "Twitter":
+                        }
+                        else if (url.Contains("twitter"))
+                        {
+                            host = "Twitter";
+                            labelTitle.Content = "Fetching Twitter status info...";
                             videoUrlParser = new TwitterParser();
-                            break;
-                    }
+                            comboBoxAudioQuality.Visibility = Visibility.Hidden;
+                            textBlockAudioQuality.Visibility = Visibility.Hidden;
+                        }
 
-                    foreach (var item in await videoUrlParser.GetVideoList(url))
-                    {
-                        if (!item.IsAudio)
+                        foreach (var item in await videoUrlParser.GetVideoList(url))
                         {
-                            comboBoxQuality.Items.Add(item);
+                            if (!item.IsAudio)
+                            {
+                                comboBoxQuality.Items.Add(item);
+                            }
+                            else
+                            {
+                                comboBoxAudioQuality.Items.Add(item);
+                            }
+                            labelTitle.Content = item.Title;
                         }
-                        else
-                        {
-                            comboBoxAudioQuality.Items.Add(item);
-                        }
-                        labelTitle.Content = item.Title;
+                        comboBoxAudioQuality.Items.Add("[No Audio]");
+                        comboBoxQuality.SelectedIndex = 0;
+                        comboBoxAudioQuality.SelectedIndex = 0;
+                        buttonOpen.Content = "Open selected quality";
+                        buttonOpen.IsEnabled = true;
+                        Storyboard storyboard = FindResource("ChoseQualityAnimation") as Storyboard;
+                        storyboard.Begin();
                     }
-                    comboBoxAudioQuality.Items.Add("[No Audio]");
-                    comboBoxQuality.SelectedIndex = 0;
-                    comboBoxAudioQuality.SelectedIndex = 0;
-                    buttonOpen.Content = "Open selected quality";
-                    buttonOpen.IsEnabled = true;
-                    Storyboard storyboard = FindResource("ChoseQualityAnimation") as Storyboard;
-                    storyboard.Begin();
                 }
             }
             else
@@ -116,6 +110,7 @@ namespace FFVideoConverter
                 {
                     StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
                     MediaStream.AudioSource = selectedAudio.Url;
+                    MediaStream.AudioCodec = selectedAudio.Codec;
                 }
                 MediaStream.Title = selectedVideo.Title;
                 Close();

@@ -18,14 +18,16 @@ namespace FFVideoConverter
         public string Url { get; }
         public string Title { get; }
         public string DisplayValue { get; }
+        public string Codec { get; }
         public long Size { get; }
 
-        public StreamInfo(string url, bool isAudio, string title, string displayValue, long size)
+        public StreamInfo(string url, bool isAudio, string title, string displayValue, string codec, long size)
         {
             Url = url;
             IsAudio = isAudio;
             Title = title;
             DisplayValue = displayValue;
+            Codec = codec;
             Size = size;
         }
 
@@ -55,12 +57,12 @@ namespace FFVideoConverter
             foreach (VideoStreamInfo videoStreamInfo in mediaStreamsInfoSet.Video)
             {
                 displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoStreamInfo.VideoEncoding.ToString()}) - {MainWindow.GetBytesReadable(videoStreamInfo.Size)}";
-                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.Size));
+                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.VideoEncoding.ToString(), videoStreamInfo.Size));
             }
             foreach (AudioStreamInfo audioStreamInfo in mediaStreamsInfoSet.Audio)
             {
                 displayValue = $"{audioStreamInfo.Bitrate / 1000} Kbps ({audioStreamInfo.AudioEncoding.ToString()}) - {MainWindow.GetBytesReadable(audioStreamInfo.Size)}";
-                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.Size));
+                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.AudioEncoding.ToString(), audioStreamInfo.Size));
             }
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
             return videoList;
@@ -85,7 +87,7 @@ namespace FFVideoConverter
                 foreach (var dashInfo in GetDashInfos(dashContent))
                 {
                     displayValue = $"{dashInfo.label} - {MainWindow.GetBytesReadable(dashInfo.size)}";
-                    videoList.Add(new StreamInfo(baseVideoUrl + dashInfo.dash, dashInfo.dash == "audio", title, displayValue, dashInfo.size));
+                    videoList.Add(new StreamInfo(baseVideoUrl + dashInfo.dash, dashInfo.dash == "audio", title, displayValue, dashInfo.dash == "audio" ? "aac" : "", dashInfo.size));
 
                 }
                 videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
@@ -107,8 +109,8 @@ namespace FFVideoConverter
                 {
                     int bitrate = Convert.ToInt32(representation.Attributes["bandwidth"].Value);
                     long size = (long)(bitrate * duration / 8);
-                    string label = representation.Attributes["height"]?.Value + "p" ?? (bitrate / 1000) + " Kbps";
                     string dash = representation.SelectSingleNode("*[local-name()='BaseURL']").InnerText;
+                    string label = dash == "audio" ? "Aac" : representation.Attributes["height"]?.Value + "p" ?? (bitrate / 1000) + " Kbps";
                     dashUrls.Add((dash, label, size));
                 }
             }
@@ -157,7 +159,7 @@ namespace FFVideoConverter
                 //Get m3u8 playlists
                 foreach (var (relativeUrl, label) in GetPlaylists(m3u8Content))
                 {
-                    videoList.Add(new StreamInfo($"https://video.twimg.com{relativeUrl}", false, title, label, 0));
+                    videoList.Add(new StreamInfo($"https://video.twimg.com{relativeUrl}", false, title, label, "", 0));
                 }
 
                 document.Dispose();

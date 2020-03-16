@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ namespace FFVideoConverter
         public TimeSpan Duration { get; set; }
         public long Size { get; set; }
         public string Codec { get; set; }
+        public string AudioCodec { get; set; }
         public double Framerate { get; set; }
         public double Bitrate { get; set; }
         public string Source { get; set; }
@@ -23,7 +25,7 @@ namespace FFVideoConverter
         public bool IsLocal { get { return !Source.StartsWith("http"); } }
 
 
-        public MediaInfo()
+        private MediaInfo()
         {
         }
 
@@ -37,10 +39,11 @@ namespace FFVideoConverter
 
         private async Task FF_Open(string source)
         {
+            StringBuilder stdoutBuilder = new StringBuilder();
             using (Process process = new Process())
             {
                 process.StartInfo.FileName = "ffprobe";
-                process.StartInfo.Arguments = "-i \"" + source + "\" -print_format json -show_format -show_streams -hide_banner";
+                process.StartInfo.Arguments = "-i \"" + source + "\" -v quiet -print_format json -show_format -show_streams -hide_banner";
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.RedirectStandardOutput = true;
@@ -48,18 +51,38 @@ namespace FFVideoConverter
 
                 await Task.Run(() =>
                 {
-                    string stdout = process.StandardOutput.ReadToEnd();
-                    if (!BracketBalanced(stdout)) stdout += "}"; //Because fucking ffprobe sometimes fucking forgets the last fucking bracket
+                    while (process.StandardOutput.Peek() > -1)
+                    {
+                        string line = process.StandardOutput.ReadLine();
+                        stdoutBuilder.Append(line);
+                        if (line.Contains("probe_score")) //For some reason ffprobe sometimes hangs for 30-60 seconds before closing, so it's necessary to manually stop at the end of the output
+                        {
+                            break;
+                        }
+                    }
+
+                    stdoutBuilder.Remove(stdoutBuilder.Length - 1, 1);
+                    string stdout = stdoutBuilder.ToString();
+                    while (!BracketBalanced(stdout)) stdout += "}";
 
                     using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
                     {
                         JsonElement streamsElement = jsonOutput.RootElement.GetProperty("streams");
                         JsonElement videoStreamElement = streamsElement[0];
+                        JsonElement audioStreamElement = new JsonElement();
                         for (int i = 0; i < streamsElement.GetArrayLength(); i++)
                         {
                             if (streamsElement[i].GetProperty("codec_type").GetString() == "video")
                             {
                                 videoStreamElement = streamsElement[i];
+                                break;
+                            }
+                        }
+                        for (int i = 0; i < streamsElement.GetArrayLength(); i++)
+                        {
+                            if (streamsElement[i].GetProperty("codec_type").GetString() == "audio")
+                            {
+                                audioStreamElement = streamsElement[i];
                                 break;
                             }
                         }
@@ -78,6 +101,8 @@ namespace FFVideoConverter
                             int b = Convert.ToInt32(fps.Remove(0, fps.IndexOf('/') + 1));
                             Framerate = Math.Round(a / (double)b, 2);
                         }
+                        if (audioStreamElement.ValueKind != JsonValueKind.Undefined && audioStreamElement.TryGetProperty("codec_name", out e))
+                            AudioCodec = e.GetString();
                         JsonElement formatElement = jsonOutput.RootElement.GetProperty("format");
                         double totalSeconds = Double.Parse(formatElement.GetProperty("duration").GetString(), CultureInfo.InvariantCulture);
                         Duration = TimeSpan.FromSeconds(totalSeconds);

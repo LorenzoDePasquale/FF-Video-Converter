@@ -4,14 +4,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+
 namespace FFVideoConverter
 {
     class TimespanTextbox
     {
 		#region static
-		public static readonly DependencyProperty MaxTimeProperty =
-				DependencyProperty.RegisterAttached("MaxTime", typeof(string),
-						typeof(TimespanTextbox), new UIPropertyMetadata(null, OnMaxTimeChanged));
+
+		public static readonly DependencyProperty MaxTimeProperty =	DependencyProperty.RegisterAttached("MaxTime", typeof(string),	typeof(TimespanTextbox), new UIPropertyMetadata(null, OnMaxTimeChanged));
 
 		public static string GetMaxTime(Control o)
 		{
@@ -23,8 +23,7 @@ namespace FFVideoConverter
 			o.SetValue(MaxTimeProperty, value);
 		}
 
-		private static void OnMaxTimeChanged(DependencyObject dependencyObject,
-				DependencyPropertyChangedEventArgs e)
+		private static void OnMaxTimeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
 		{
 			var timeTextBoxBehaviour = GetTimeTextBoxBehaviour(dependencyObject);
 			var timeString = (string)e.NewValue;
@@ -32,9 +31,7 @@ namespace FFVideoConverter
 			timeTextBoxBehaviour.MaxTimeSpanChanged(timeSpan);
 		}
 
-		public static readonly DependencyProperty ValueProperty =
-				DependencyProperty.RegisterAttached("Value", typeof(TimeSpan),
-						typeof(TimespanTextbox), new UIPropertyMetadata(TimeSpan.Zero, OnValueChanged));
+		public static readonly DependencyProperty ValueProperty = DependencyProperty.RegisterAttached("Value", typeof(TimeSpan), typeof(TimespanTextbox), new UIPropertyMetadata(TimeSpan.Zero, OnValueChanged));
 
 		public static TimeSpan GetValue(Control o)
 		{
@@ -46,9 +43,7 @@ namespace FFVideoConverter
 			o.SetValue(ValueProperty, value);
 		}
 
-		public static readonly DependencyProperty TimeFormatProperty =
-				DependencyProperty.RegisterAttached("TimeFormat", typeof(TimerFormats),
-						typeof(TimerFormats), new UIPropertyMetadata(TimerFormats.Seconds10Ths, OnTimeFormatChanged));
+		public static readonly DependencyProperty TimeFormatProperty = DependencyProperty.RegisterAttached("TimeFormat", typeof(TimerFormats), typeof(TimerFormats), new UIPropertyMetadata(TimerFormats.Seconds10Ths, OnTimeFormatChanged));
 
 		public static TimerFormats GetTimeFormat(Control o)
 		{
@@ -60,8 +55,7 @@ namespace FFVideoConverter
 			o.SetValue(TimeFormatProperty, TimeFormat);
 		}
 
-		private static void OnTimeFormatChanged(DependencyObject dependencyObject,
-				DependencyPropertyChangedEventArgs e)
+		private static void OnTimeFormatChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
 		{
 			var timeTextBoxBehaviour = GetTimeTextBoxBehaviour(dependencyObject);
 			timeTextBoxBehaviour.TimeFormatChanged((TimerFormats)e.NewValue);
@@ -79,8 +73,7 @@ namespace FFVideoConverter
 			return control;
 		}
 
-		private static void OnValueChanged(DependencyObject dependencyObject,
-				DependencyPropertyChangedEventArgs e)
+		private static void OnValueChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
 		{
 			var timeTextBoxBehaviour = GetTimeTextBoxBehaviour(dependencyObject);
 		}
@@ -88,9 +81,7 @@ namespace FFVideoConverter
 		/// <summary>
 		/// This is the private DependencyProperty where the instance to handle the time behaviour is kept
 		/// </summary>
-		private static readonly DependencyProperty TimeTextBoxBehaviourProperty =
-				DependencyProperty.RegisterAttached("TimeTextBoxBehaviour", typeof(TimespanTextbox),
-						typeof(TimespanTextbox), new UIPropertyMetadata(null, OnValueChanged));
+		private static readonly DependencyProperty TimeTextBoxBehaviourProperty = DependencyProperty.RegisterAttached("TimeTextBoxBehaviour", typeof(TimespanTextbox), typeof(TimespanTextbox), new UIPropertyMetadata(null, OnValueChanged));
 
 		private static TimespanTextbox GetTimeTextBoxBehaviour(TextBox o)
 		{
@@ -101,11 +92,12 @@ namespace FFVideoConverter
 		{
 			o.SetValue(TimeTextBoxBehaviourProperty, value);
 		}
+
 		#endregion
 
 		#region instance
-		private const string DefaultMask = "hh:mm:ss.ff";
 
+		private const string DefaultMask = "hh:mm:ss.ff";
 		private readonly TextBox _textBox;
 		private TimeSpan _maxTimeSpan;
 		string _maxCharacterValues = string.Empty;
@@ -270,7 +262,6 @@ namespace FFVideoConverter
 			_textBox.SelectionStart = selectionStart;
 		}
 
-		#region Dependency Property change handlers for instance
 		private void TimeFormatChanged(TimerFormats timerFormat)
 		{
 			_timerFormat = timerFormat;
@@ -316,7 +307,6 @@ namespace FFVideoConverter
 				_maxCharacterValues = timeSpan.Seconds.ToString() + ".999";
 			}
 
-
 			switch (GetTimeFormat(_textBox))
 			{
 				case TimerFormats.Seconds10Ths:
@@ -338,10 +328,11 @@ namespace FFVideoConverter
 			var valueTimeSpan = GetValue(_textBox);
 			_textBox.Text = TimeSpanFormat(valueTimeSpan, _formatString);
 		}
-		#endregion
+
 		#endregion
 
 		#region private methods
+
 		private static string TimeSpanFormat(TimeSpan timeSpan, string formatString)
 		{
 			var hours = Math.Floor(timeSpan.TotalHours).ToString("000");
@@ -375,24 +366,18 @@ namespace FFVideoConverter
 		private static TimeSpan TimeSpanParse(string value, bool minutesFormat)
 		{
 			if (minutesFormat) value += ":00";
-			try
-			{
-				int hours = 0, minutes = 0;
-				var timePieces = value.Split(':');
-				double secondsWithFraction = double.Parse(timePieces.Last());
-				double seconds = Math.Floor(secondsWithFraction);
-				int milliseconds = (int)((secondsWithFraction - seconds) * 1000);
-				if (timePieces.Length > 1)
-					minutes = Int32.Parse(timePieces[timePieces.Length - 2]);
-				if (timePieces.Length > 2)
-					hours = Int32.Parse(timePieces[timePieces.Length - 3]);
-				return new TimeSpan(0, hours, minutes, (int)seconds, milliseconds);
-			}
-			catch
-			{
-				throw new InvalidCastException($"The value '{value}' cannot be converted to a TimeSpan");
-			}
+			int hours = 0, minutes = 0;
+			var timePieces = value.Split(':');
+			double secondsWithFraction = double.Parse(timePieces.Last());
+			double seconds = Math.Floor(secondsWithFraction);
+			int milliseconds = (int)((secondsWithFraction - seconds) * 1000);
+			if (timePieces.Length > 1)
+				minutes = Int32.Parse(timePieces[timePieces.Length - 2]);
+			if (timePieces.Length > 2)
+				hours = Int32.Parse(timePieces[timePieces.Length - 3]);
+			return new TimeSpan(0, hours, minutes, (int)seconds, milliseconds);
 		}
+
 		#endregion
 
 		public enum TimerFormats

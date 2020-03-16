@@ -23,7 +23,7 @@ namespace FFVideoConverter
         private MediaInfo mediaInfo;
         private const int RECT_MIN_SIZE = 20;
         private string currentOutputPath = "";
-        private float inputFps, outputFps;
+        private float outputFps;
         private bool isSeeking = false;
         private bool userInput = true;
         private bool wasPlaying = false;
@@ -110,10 +110,9 @@ namespace FFVideoConverter
             borderSource.BorderThickness = new Thickness(0);
 
             textBlockDuration.Text = mediaInfo.Duration.ToString(@"hh\:mm\:ss\.ff");
-            textBlockCodec.Text = mediaInfo.Codec;
+            textBlockCodec.Text = $"{mediaInfo.Codec} / {mediaInfo.AudioCodec}";
             double fps = Math.Round(mediaInfo.Framerate, 2);
             textBlockFramerate.Text = !Double.IsNaN(fps) ? fps + " fps" : "-";
-            inputFps = Convert.ToSingle(mediaInfo.Framerate);
             textBlockBitrate.Text = mediaInfo.Bitrate + " Kbps";
             textBlockResolution.Text = mediaInfo.Width != 0 ? $"{mediaInfo.Width}x{mediaInfo.Height}" : "-";
             textBlockInputSize.Text = GetBytesReadable(mediaInfo.Size);
@@ -465,6 +464,12 @@ namespace FFVideoConverter
 
         private async void ButtonConvert_Click(object sender, RoutedEventArgs e)
         {
+            if (textBoxDestination.Text.EndsWith("mp4") && mediaInfo.AudioCodec.ToLower() == "opus")
+            {
+                MessageBox.Show("Opus audio in mp4 container is currently unsupported.\nEither use aac audio or mkv container.", "FF Video Converter");
+                return;
+            }
+
             ffmpegEngine = new FFmpegEngine();
             ffmpegEngine.ProgressChanged += UpdateProgress;
             ffmpegEngine.ConversionCompleted += ConversionCompleted;
@@ -482,18 +487,18 @@ namespace FFVideoConverter
             {
                 conversionOptions.Framerate = Convert.ToByte(comboBoxFramerate.SelectedItem);
             }
-            outputFps = comboBoxFramerate.SelectedIndex == 0 ? inputFps : Convert.ToSingle(comboBoxFramerate.SelectedItem);
+            outputFps = comboBoxFramerate.SelectedIndex == 0 ? Convert.ToSingle(mediaInfo.Framerate) : Convert.ToSingle(comboBoxFramerate.SelectedItem);
 
             if (checkBoxCut.IsChecked == true)
             {
                 if (!TimeSpan.TryParse(textBoxStart.Text, out TimeSpan start))
                 {
-                    MessageBox.Show("Enter a valid start time");
+                    MessageBox.Show("Enter a valid start time", "FF Video Converter");
                     return;
                 }
                 if (!TimeSpan.TryParse(textBoxEnd.Text, out TimeSpan end))
                 {
-                    MessageBox.Show("Enter a valid end time");
+                    MessageBox.Show("Enter a valid end time", "FF Video Converter");
                     return;
                 }
                 if (checkBoxFastCut.IsChecked == true)
@@ -574,12 +579,12 @@ namespace FFVideoConverter
             Title = "AVC to HEVC Converter";
 
             MediaInfo outputFile = await MediaInfo.Open(currentOutputPath);
-            textBlockDuration.Text += $"    ⟶    {outputFile.Duration.ToString(@"hh\:mm\:ss\.ff")}";
-            textBlockCodec.Text += $"    ⟶    {outputFile.Codec}";
-            textBlockFramerate.Text += $"    ⟶    {outputFile.Framerate} fps";
-            textBlockBitrate.Text += $"    ⟶    {outputFile.Bitrate} Kbps";
-            textBlockResolution.Text += $"    ⟶    {outputFile.Width + "x" + outputFile.Height}";
-            textBlockInputSize.Text += $"    ⟶    {outputSize}";
+            textBlockDuration.Text += $"   ⟶   {outputFile.Duration.ToString(@"hh\:mm\:ss\.ff")}";
+            textBlockCodec.Text += $"   ⟶   {outputFile.Codec}";
+            textBlockFramerate.Text += $"   ⟶   {outputFile.Framerate} fps";
+            textBlockBitrate.Text += $"   ⟶   {outputFile.Bitrate} Kbps";
+            textBlockResolution.Text += $"   ⟶   {outputFile.Width + "x" + outputFile.Height}";
+            textBlockInputSize.Text += $"   ⟶   {outputSize}";
             if (!String.IsNullOrEmpty(outputFile.AspectRatio) && outputFile.AspectRatio != "N/A") textBlockResolution.Text += $" ({outputFile.AspectRatio})";
         }
 
