@@ -77,7 +77,6 @@
       <DependentUpon>IntegerTextBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="MediaInfo.cs" />
-    <Compile Include="MethodRunner.cs" />
     <Compile Include="OpenStreamWindow.xaml.cs">
       <DependentUpon>OpenStreamWindow.xaml</DependentUpon>
     </Compile>

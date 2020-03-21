@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
@@ -43,7 +44,7 @@ namespace FFVideoConverter
         public abstract Task<List<StreamInfo>> GetVideoList(string url);
     }
 
-   
+
     class YouTubeParser : VideoUrlParser
     {
         public override async Task<List<StreamInfo>> GetVideoList(string url)
@@ -184,6 +185,107 @@ namespace FFVideoConverter
             }
 
             return videoInfos;
+        }
+    }
+
+
+    class FacebookParser : VideoUrlParser
+    {
+        public override async Task<List<StreamInfo>> GetVideoList(string url)
+        {
+            List<StreamInfo> videoList = new List<StreamInfo>();
+
+            using (HttpClient client = new HttpClient())
+            {
+                //Get page source
+                client.DefaultRequestHeaders.Add("User-Agent", "facebook_bad"); //Facebook won't return page without a user agent, but will return with a random one...
+                byte[] response = await client.GetByteArrayAsync(url).ConfigureAwait(false);
+                string pageSource = Encoding.UTF8.GetString(response, 0, response.Length);
+                //Get video title
+                int startIndex = pageSource.IndexOf("og:title\"") + 19;
+                int endIndex = pageSource.IndexOf('"', startIndex);
+                string title = pageSource.Substring(startIndex, endIndex - startIndex);
+                //Get HD source
+                string videoUrl = "";
+                startIndex = pageSource.IndexOf("hd_src") + 8;
+                if (startIndex > -1) // HD could be missing
+                {
+                    endIndex = pageSource.IndexOf('"', startIndex);
+                    videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
+                    videoList.Add(new StreamInfo(videoUrl, false, title, "HD Source", "", 0));
+                }
+                //Get SD source
+                startIndex = pageSource.IndexOf("sd_src", endIndex) + 8;
+                endIndex = pageSource.IndexOf('"', startIndex);
+                videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
+                videoList.Add(new StreamInfo(videoUrl, false, title, "SD Source", "", 0));
+            }
+
+            return videoList;
+        }
+
+    }
+
+    class FacebookParser2 : VideoUrlParser //NOT WORKING (Facebook detects this is not a browser and returns a different page
+    {
+        public override async Task<List<StreamInfo>> GetVideoList(string url)
+        {
+            List<StreamInfo> videoList = new List<StreamInfo>();
+            string videoId = url.Substring(url.IndexOf('=') + 1);
+            string embedUrl = "https://www.facebook.com/video/embed?video_id=" + videoId;
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"); //Facebook won't return page without a user agent
+                byte[] response = await client.GetByteArrayAsync(embedUrl).ConfigureAwait(false);
+                string pageSource = Encoding.UTF8.GetString(response, 0, response.Length);
+                int startIndex = 0;
+                int endIndex = 0;
+                while ((startIndex = pageSource.IndexOf("FBQualityLabel", startIndex)) > -1) // FBQualityLabel=\"640p\">\u003CBaseURL>http:\/\/videourl\u003C\/BaseURL>
+                {
+                    startIndex += 16; 
+                    endIndex = pageSource.IndexOf('\\', startIndex);
+                    string label = pageSource.Substring(startIndex, endIndex - startIndex);
+                    startIndex = pageSource.IndexOf("http", startIndex);
+                    endIndex = pageSource.IndexOf("BaseURL", startIndex) - 8;
+                    string videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
+                    videoList.Add(new StreamInfo(videoUrl, false, "TODO", label, "", 0));
+                } 
+            }
+
+            return videoList;
+        }
+    }
+
+
+    class InstagramParser : VideoUrlParser
+    {
+        public override async Task<List<StreamInfo>> GetVideoList(string url)
+        {
+            List<StreamInfo> videoList = new List<StreamInfo>();
+
+            using (HttpClient client = new HttpClient())
+            {
+                //Get page source
+                string pageSource = await client.GetStringAsync(url);
+                //Get video url
+                int startIndex = pageSource.IndexOf("og:video") + 19;
+                int endIndex = pageSource.IndexOf('"', startIndex);
+                string videoUrl = pageSource.Substring(startIndex, endIndex - startIndex);
+                //Get owner id
+                startIndex = pageSource.IndexOf("instapp:owner_user_id") + 32;
+                endIndex = pageSource.IndexOf('"', startIndex);
+                string ownerId = pageSource.Substring(startIndex, endIndex - startIndex);
+                //Get owner name
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)"); //User agent of Instagram app
+                string response = await client.GetStringAsync($"https://i.instagram.com/api/v1/users/{ownerId}/info/").ConfigureAwait(false);
+                startIndex = response.IndexOf("name") + 8;
+                endIndex = response.IndexOf('"', startIndex);
+                string ownerName = response.Substring(startIndex, endIndex - startIndex);
+                videoList.Add(new StreamInfo(videoUrl, false, $"Instagram post by @{ownerName}", "", "", 0));
+            }
+
+            return videoList;
         }
     }
 }

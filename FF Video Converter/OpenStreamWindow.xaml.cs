@@ -47,7 +47,7 @@ namespace FFVideoConverter
                 string url = textBoxURL.Text;
                 if (url.StartsWith("http"))
                 {
-                    if (!url.Contains("reddit") && !url.Contains("youtu") && !url.Contains("twitter"))
+                    if (!url.Contains("reddit") && !url.Contains("youtu") && !url.Contains("twitter") && !url.Contains("facebook") && !url.Contains("instagram"))
                     {
                         labelTitle.Content = "Opening network stream...";
                         MediaStream = await MediaInfo.Open(url);
@@ -77,6 +77,20 @@ namespace FFVideoConverter
                             comboBoxAudioQuality.Visibility = Visibility.Hidden;
                             textBlockAudioQuality.Visibility = Visibility.Hidden;
                         }
+                        else if (url.Contains("facebook"))
+                        {
+                            host = "Facebook";
+                            labelTitle.Content = "Fetching Facebook post info...";
+                            videoUrlParser = new FacebookParser();
+                            comboBoxAudioQuality.Visibility = Visibility.Hidden;
+                            textBlockAudioQuality.Visibility = Visibility.Hidden;
+                        }
+                        else if (url.Contains("instagram"))
+                        {
+                            host = "Instagram";
+                            labelTitle.Content = "Fetching Instagram post info...";
+                            videoUrlParser = new InstagramParser();
+                        }
 
                         foreach (var item in await videoUrlParser.GetVideoList(url))
                         {
@@ -90,13 +104,21 @@ namespace FFVideoConverter
                             }
                             labelTitle.Content = item.Title;
                         }
+
                         comboBoxAudioQuality.Items.Add("[No Audio]");
                         comboBoxQuality.SelectedIndex = 0;
                         comboBoxAudioQuality.SelectedIndex = 0;
                         buttonOpen.Content = "Open selected quality";
-                        buttonOpen.IsEnabled = true;
-                        Storyboard storyboard = FindResource("ChoseQualityAnimation") as Storyboard;
-                        storyboard.Begin();
+                        if (comboBoxQuality.Items.Count == 1 && comboBoxAudioQuality.Items.Count == 1) //Only one option -> automatically select that option
+                        {
+                            ButtonOpen_Click(null, null);
+                        }
+                        else
+                        {
+                            buttonOpen.IsEnabled = true;
+                            Storyboard storyboard = FindResource("ChoseQualityAnimation") as Storyboard;
+                            storyboard.Begin();
+                        }
                     }
                 }
             }

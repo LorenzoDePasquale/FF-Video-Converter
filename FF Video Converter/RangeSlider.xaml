@@ -78,7 +78,7 @@
         <Border ClipToBounds="True" Height="3" IsHitTestVisible="False">
             <Rectangle x:Name="SelectionRangeRight" RadiusX="1" RadiusY="1" Margin="20,0,10,0" Fill="{StaticResource SliderForegroundBrush}" />
         </Border>
-        <Slider x:Name="LowerSlider" Template="{StaticResource RangeSliderTemplate}" ValueChanged="LowerSlider_ValueChanged" />
+        <Slider x:Name="LowerSlider" Template="{StaticResource RangeSliderTemplate}" ValueChanged="LowerSlider_ValueChanged" Thumb.DragCompleted="LowerSlider_DragCompleted"/>
         <Slider x:Name="UpperSlider" Template="{StaticResource RangeSliderTemplate}" ValueChanged="UpperSlider_ValueChanged" />
     </Grid>
 

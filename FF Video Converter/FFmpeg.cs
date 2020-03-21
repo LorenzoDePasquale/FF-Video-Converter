@@ -147,7 +147,7 @@ namespace FFVideoConverter
             }
 
             StringBuilder sb = new StringBuilder("-y");
-            sb.Append($" -ss {conversionOptions.Start} ");
+            sb.Append($" -ss {conversionOptions.Start}");
             sb.Append($" -i \"{sourceInfo.Source}\"");
             if (!String.IsNullOrEmpty(sourceInfo.AudioSource)) sb.Append($" -i \"{sourceInfo.AudioSource}\"");
             if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
@@ -177,12 +177,13 @@ namespace FFVideoConverter
             }
         }
 
-        public async void FastCut(string source, string destination, string start, string end)
+        public async void FastCut(MediaInfo sourceInfo, string destination, TimeSpan start, TimeSpan end)
         {
             progressData = new ProgressData();
             progressData.IsFastCut = true;
-            progressData.TotalTime = TimeSpan.Parse(end) - TimeSpan.Parse(start);
-            convertProcess.StartInfo.Arguments = $"-y -ss {start} -to {end} -i \"{source}\" -c copy -avoid_negative_ts 1 \"{destination}\"";
+            progressData.TotalTime = end - start;
+            string source = $"\"{sourceInfo.Source}\"" + (!String.IsNullOrEmpty(sourceInfo.AudioSource) ? $" -i \"{sourceInfo.AudioSource}\"" : "");
+            convertProcess.StartInfo.Arguments = $"-y -ss {start} -i {source} -t {end - start} -c copy -avoid_negative_ts 1 \"{destination}\"";
             convertProcess.Start();
             convertProcess.BeginErrorReadLine();
 

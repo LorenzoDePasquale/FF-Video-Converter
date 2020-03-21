@@ -155,7 +155,7 @@ namespace FFVideoConverter
                     Start = start,
                     End = end
                 }; 
-                ffmpegEngine.FastCut(mediaFile.Source, Environment.CurrentDirectory + "\\temp\\source.mkv", start.Add(TimeSpan.FromSeconds(0.1)).ToString(@"hh\:mm\:ss\.ff"), end.ToString(@"hh\:mm\:ss\.ff"));
+                ffmpegEngine.FastCut(mediaFile, Environment.CurrentDirectory + "\\temp\\source.mkv", start.Add(TimeSpan.FromSeconds(0.1)), end);
             }
             else
             {

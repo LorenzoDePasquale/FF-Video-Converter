@@ -66,6 +66,7 @@ namespace FFVideoConverter
         public event RoutedPropertyChangedEventHandler<double> UpperSliderValueChanged;
         public event DragStartedEventHandler MiddleSliderDragStarted;
         public event DragCompletedEventHandler MiddleSliderDragCompleted;
+        public event DragCompletedEventHandler LowerSliderDragCompleted;
 
 
         public RangeSlider()
@@ -134,6 +135,11 @@ namespace FFVideoConverter
                 SelectionRangeLeft.Margin = new Thickness(LowerValue * ActualWidth / Maximum + 7, 0, ActualWidth - partSelectionRange.ActualWidth, 0);
                 SelectionRangeRight.Margin = new Thickness(ActualWidth - partBackground.ActualWidth - 10, 0, (Maximum - UpperValue) * ActualWidth / Maximum + 7, 0);
             }
+        }
+
+        private void LowerSlider_DragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            LowerSliderDragCompleted?.Invoke(sender, e);
         }
     }
 }

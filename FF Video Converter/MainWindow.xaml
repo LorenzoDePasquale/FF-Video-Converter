@@ -324,7 +324,7 @@
                 <Grid x:Name="gridSourceControls" VerticalAlignment="Bottom" >
                     <Border Background="{StaticResource ShadedBackgroundBrush}" />
                     <Button x:Name="buttonPlayPause" Content=" ▶️" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonPlayPause_Click" Margin="6,19,0,0" FontSize="20"/>
-                    <local:RangeSlider x:Name="rangeSliderCut" RangeSelectorVisibility="Hidden" Margin="39,19,37,6" Height="23" Minimum="0" MiddleSliderValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" UpperSliderValueChanged="RangeSliderCut_UpperSliderValueChanged" LowerSliderValueChanged="RangeSliderCut_LowerSliderValueChanged"/>
+                    <local:RangeSlider x:Name="rangeSliderCut" RangeSelectorVisibility="Hidden" Margin="39,19,37,6" Height="23" Minimum="0" MiddleSliderValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" UpperSliderValueChanged="RangeSliderCut_UpperSliderValueChanged" LowerSliderValueChanged="RangeSliderCut_LowerSliderValueChanged" LowerSliderDragCompleted="RangeSliderCut_LowerSliderDragCompleted"/>
                     <Button x:Name="buttonExpand" Content="⛶" HorizontalAlignment="Right" VerticalAlignment="Top" Width="27" Height="32" Style="{StaticResource PlayPauseButton}" Click="ButtonExpand_Click" Margin="0,12,5,0" FontSize="28"/>
                 </Grid>
             </Grid>

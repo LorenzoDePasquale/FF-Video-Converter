@@ -19,13 +19,13 @@ namespace FFVideoConverter
 
         private static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".avi", "m4v", ".webm", ".m3u8" };
         private FFmpegEngine ffmpegEngine = new FFmpegEngine();
-        private readonly MethodRunner<TimeSpan> textBoxStartTextChangedMethodRunner;
         private MediaInfo mediaInfo;
         private const int RECT_MIN_SIZE = 20;
         private string currentOutputPath = "";
         private float outputFps;
         private bool isSeeking = false;
-        private bool userInput = true;
+        private bool sliderUserInput = true;
+        private bool textBoxStartUserInput = true;
         private bool wasPlaying = false;
         private bool isPlayerExpanded = false;
         private bool webStream = false;
@@ -43,8 +43,6 @@ namespace FFVideoConverter
         public MainWindow()
         {
             InitializeComponent();
-
-            textBoxStartTextChangedMethodRunner = new MethodRunner<TimeSpan>(UpdateKeyFrameSuggestions, TimeSpan.FromMilliseconds(1500));
 
             TaskbarItemInfo = new TaskbarItemInfo();
             Height -= 30;
@@ -296,9 +294,9 @@ namespace FFVideoConverter
                 if ((end - start).TotalSeconds > 2)
                 {
                     textBlockOutputDuration.Text = $"Duration: {(end - start).ToString(@"hh\:mm\:ss")}";
-                    userInput = false;
+                    sliderUserInput = false;
                     rangeSliderCut.LowerValue = start.TotalSeconds;
-                    userInput = true;
+                    sliderUserInput = true;
                 }
                 else
                 {
@@ -307,10 +305,8 @@ namespace FFVideoConverter
 
                 if (checkBoxFastCut.IsChecked == true)
                 {
-                    textBlockStartBefore.Text = "...";
-                    textBlockStartAfter.Text = "...";
                     textBoxStart.ClearValue(TextBox.ForegroundProperty);
-                    textBoxStartTextChangedMethodRunner.Run(start);
+                    if (textBoxStartUserInput) UpdateKeyFrameSuggestions(start);
                 }
             }            
         }
@@ -322,9 +318,9 @@ namespace FFVideoConverter
                 if ((end - start).TotalSeconds > 2 && end <= mediaInfo.Duration)
                 {
                     textBlockOutputDuration.Text = $"Duration: {(end - start).ToString(@"hh\:mm\:ss")}";
-                    userInput = false;
+                    sliderUserInput = false;
                     rangeSliderCut.UpperValue = end.TotalSeconds;
-                    userInput = true;
+                    sliderUserInput = true;
                 }
                 else
                 {
@@ -335,31 +331,32 @@ namespace FFVideoConverter
 
         private void TextBlockStartBefore_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            textBoxStart.Text = textBlockStartBefore.Text;
-            textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
+            if (textBlockStartBefore.Text != "...")
+            {
+                textBoxStart.Text = textBlockStartBefore.Text;
+                textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
+            }
         }
 
         private void TextBlockStartAfter_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            textBoxStart.Text = textBlockStartAfter.Text;
-            textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
+            if (textBlockStartAfter.Text != "...")
+            {
+                textBoxStart.Text = textBlockStartAfter.Text;
+                textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
+            }
         }
 
         private async void UpdateKeyFrameSuggestions(TimeSpan t)
         {
+            textBlockStartBefore.Text = "...";
+            textBlockStartAfter.Text = "...";
             var (before, after, isKeyFrame) = await mediaInfo.GetNearestBeforeAndAfterKeyFrames(t.TotalSeconds);
-            t = TimeSpan.FromSeconds(before == 0 ? 0 : before);
+            t = TimeSpan.FromSeconds(before);
             textBlockStartBefore.Text = t.ToString(@"hh\:mm\:ss\.ff");
             t = TimeSpan.FromSeconds(after);
             textBlockStartAfter.Text = t.ToString(@"hh\:mm\:ss\.ff");
-            if (isKeyFrame)
-            {
-                textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
-            }
-            else
-            {
-                textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FFC12222") as SolidColorBrush;
-            }
+            textBoxStart.Foreground = new BrushConverter().ConvertFromString(isKeyFrame ? "#FF109320" : "#FFC12222") as SolidColorBrush;
         }
 
         private void CheckBoxCut_Click(object sender, RoutedEventArgs e)
@@ -464,7 +461,7 @@ namespace FFVideoConverter
 
         private async void ButtonConvert_Click(object sender, RoutedEventArgs e)
         {
-            if (textBoxDestination.Text.EndsWith("mp4") && mediaInfo.AudioCodec.ToLower() == "opus")
+            if (textBoxDestination.Text.EndsWith("mp4") && mediaInfo.AudioCodec?.ToLower() == "opus")
             {
                 MessageBox.Show("Opus audio in mp4 container is currently unsupported.\nEither use aac audio or mkv container.", "FF Video Converter");
                 return;
@@ -506,7 +503,7 @@ namespace FFVideoConverter
                 if (checkBoxFastCut.IsChecked == true)
                 {
                     start = start.Add(TimeSpan.FromSeconds(0.2));
-                    ffmpegEngine.FastCut(mediaInfo.Source, textBoxDestination.Text, start.ToString(@"hh\:mm\:ss\.ff"), textBoxEnd.Text);
+                    ffmpegEngine.FastCut(mediaInfo, textBoxDestination.Text, start, end);
                     currentOutputPath = textBoxDestination.Text;
                     return;
                 }
@@ -648,13 +645,13 @@ namespace FFVideoConverter
         {
             if (!isSeeking)
             {
-                userInput = false;
+                sliderUserInput = false;
                 if (checkBoxCut.IsChecked == true && e.Position.TotalSeconds > rangeSliderCut.UpperValue)
                 {
                     mediaElementInput.Seek(TimeSpan.FromSeconds(rangeSliderCut.LowerValue));
                 }
                 else rangeSliderCut.MiddleValue = e.Position.TotalSeconds;
-                userInput = true;
+                sliderUserInput = true;
             }
         }
 
@@ -700,7 +697,7 @@ namespace FFVideoConverter
 
         private void SliderSourcePosition_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (userInput) mediaElementInput.Seek(TimeSpan.FromSeconds(rangeSliderCut.MiddleValue));
+            if (sliderUserInput) mediaElementInput.Seek(TimeSpan.FromSeconds(rangeSliderCut.MiddleValue));
         }
 
         private void SliderSourcePosition_DragStarted(object sender, DragStartedEventArgs e)
@@ -854,8 +851,7 @@ namespace FFVideoConverter
             }
             else
             {
-                MouseHitLocation = SetHitType(rectangleCropVideo,
-                    Mouse.GetPosition(canvasCropVideo));
+                MouseHitLocation = SetHitType(rectangleCropVideo, Mouse.GetPosition(canvasCropVideo));
                 SetMouseCursor();
             }
         }
@@ -876,40 +872,6 @@ namespace FFVideoConverter
             Canvas_MouseUp(null, null);
         }
 
-        private void SetMouseCursor()
-        {
-            // See what cursor we should display.
-            Cursor desired_cursor = Cursors.Arrow;
-            switch (MouseHitLocation)
-            {
-                case HitLocation.None:
-                    desired_cursor = Cursors.Arrow;
-                    break;
-                case HitLocation.Body:
-                    desired_cursor = Cursors.SizeAll;
-                    break;
-                case HitLocation.UpperLeft:
-                case HitLocation.LowerRight:
-                    desired_cursor = Cursors.SizeNWSE;
-                    break;
-                case HitLocation.LowerLeft:
-                case HitLocation.UpperRight:
-                    desired_cursor = Cursors.SizeNESW;
-                    break;
-                case HitLocation.Top:
-                case HitLocation.Bottom:
-                    desired_cursor = Cursors.SizeNS;
-                    break;
-                case HitLocation.Left:
-                case HitLocation.Right:
-                    desired_cursor = Cursors.SizeWE;
-                    break;
-            }
-
-            // Display the desired cursor.
-            if (Cursor != desired_cursor) Cursor = desired_cursor;
-        }
-
         private void CanvasCropVideo_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (e.PreviousSize.Width != 0)
@@ -923,12 +885,22 @@ namespace FFVideoConverter
 
         private void RangeSliderCut_UpperSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (userInput) textBoxEnd.Text = TimeSpan.FromSeconds(rangeSliderCut.UpperValue).ToString(@"hh\:mm\:ss\.ff");
+            if (sliderUserInput) textBoxEnd.Text = TimeSpan.FromSeconds(rangeSliderCut.UpperValue).ToString(@"hh\:mm\:ss\.ff");
         }
 
         private void RangeSliderCut_LowerSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (userInput) textBoxStart.Text = TimeSpan.FromSeconds(rangeSliderCut.LowerValue).ToString(@"hh\:mm\:ss\.ff");
+            if (sliderUserInput)
+            {
+                textBoxStartUserInput = false;
+                textBoxStart.Text = TimeSpan.FromSeconds(rangeSliderCut.LowerValue).ToString(@"hh\:mm\:ss\.ff");
+                textBoxStartUserInput = true;
+            }
+        }
+
+        private void RangeSliderCut_LowerSliderDragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            UpdateKeyFrameSuggestions(TimeSpan.Parse(textBoxStart.Text));
         }
 
         #endregion
@@ -1008,6 +980,40 @@ namespace FFVideoConverter
             if (point.Y - top < GAP) return HitLocation.Top;
             if (bottom - point.Y < GAP) return HitLocation.Bottom;
             return HitLocation.Body;
+        }
+
+        private void SetMouseCursor()
+        {
+            // See what cursor we should display.
+            Cursor desired_cursor = Cursors.Arrow;
+            switch (MouseHitLocation)
+            {
+                case HitLocation.None:
+                    desired_cursor = Cursors.Arrow;
+                    break;
+                case HitLocation.Body:
+                    desired_cursor = Cursors.SizeAll;
+                    break;
+                case HitLocation.UpperLeft:
+                case HitLocation.LowerRight:
+                    desired_cursor = Cursors.SizeNWSE;
+                    break;
+                case HitLocation.LowerLeft:
+                case HitLocation.UpperRight:
+                    desired_cursor = Cursors.SizeNESW;
+                    break;
+                case HitLocation.Top:
+                case HitLocation.Bottom:
+                    desired_cursor = Cursors.SizeNS;
+                    break;
+                case HitLocation.Left:
+                case HitLocation.Right:
+                    desired_cursor = Cursors.SizeWE;
+                    break;
+            }
+
+            // Display the desired cursor.
+            if (Cursor != desired_cursor) Cursor = desired_cursor;
         }
 
         #endregion
