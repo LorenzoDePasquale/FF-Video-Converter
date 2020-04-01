@@ -149,7 +149,11 @@ namespace FFVideoConverter
             StringBuilder sb = new StringBuilder("-y");
             sb.Append($" -ss {conversionOptions.Start}");
             sb.Append($" -i \"{sourceInfo.Source}\"");
-            if (!String.IsNullOrEmpty(sourceInfo.AudioSource)) sb.Append($" -i \"{sourceInfo.AudioSource}\"");
+            if (!String.IsNullOrEmpty(sourceInfo.AudioSource))
+            {
+                sb.Append($" -ss {conversionOptions.Start}");
+                sb.Append($" -i \"{sourceInfo.AudioSource}\"");
+            }
             if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
             sb.Append(" -c:v " + (conversionOptions.Encoder == Encoder.H264 ? "libx264" : "libx265"));
             sb.Append(" -movflags faststart -preset " + PRESETS[conversionOptions.Preset]);
@@ -182,8 +186,19 @@ namespace FFVideoConverter
             progressData = new ProgressData();
             progressData.IsFastCut = true;
             progressData.TotalTime = end - start;
-            string source = $"\"{sourceInfo.Source}\"" + (!String.IsNullOrEmpty(sourceInfo.AudioSource) ? $" -i \"{sourceInfo.AudioSource}\"" : "");
-            convertProcess.StartInfo.Arguments = $"-y -ss {start} -i {source} -t {end - start} -c copy -avoid_negative_ts 1 \"{destination}\"";
+
+            StringBuilder sb = new StringBuilder("-y");
+            sb.Append($" -ss {start}");
+            sb.Append($" -i \"{sourceInfo.Source}\"");
+            if (!String.IsNullOrEmpty(sourceInfo.AudioSource))
+            {
+                sb.Append($" -ss {start}");
+                sb.Append($" -i \"{sourceInfo.AudioSource}\"");
+            }
+            if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
+            sb.Append($" -c:v copy -c:a copy -avoid_negative_ts 1 \"{destination}\"");
+
+            convertProcess.StartInfo.Arguments = sb.ToString();
             convertProcess.Start();
             convertProcess.BeginErrorReadLine();
 

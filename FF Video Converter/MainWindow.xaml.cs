@@ -17,9 +17,10 @@ namespace FFVideoConverter
     {
         public static readonly string[] QUALITY = { "Best", "Very good", "Good", "Medium", "Low", "Very low" };
 
-        private static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".avi", "m4v", ".webm", ".m3u8" };
+        private static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".avi", "m4v", ".webm" };
         private FFmpegEngine ffmpegEngine = new FFmpegEngine();
         private MediaInfo mediaInfo;
+        private Unosquare.FFME.MediaElement audioElement;
         private const int RECT_MIN_SIZE = 20;
         private string currentOutputPath = "";
         private float outputFps;
@@ -28,7 +29,6 @@ namespace FFVideoConverter
         private bool textBoxStartUserInput = true;
         private bool wasPlaying = false;
         private bool isPlayerExpanded = false;
-        private bool webStream = false;
         private bool isMediaOpen = false;
 
         enum HitLocation
@@ -47,7 +47,7 @@ namespace FFVideoConverter
             TaskbarItemInfo = new TaskbarItemInfo();
             Height -= 30;
             gridSourceControls.Visibility = Visibility.Collapsed;
-            mediaElementInput.PositionChanged += MediaElementInput_PositionChanged;
+            mediaElement.PositionChanged += MediaElementInput_PositionChanged;
 
             comboBoxEncoder.Items.Add("H.264 (x264)");
             comboBoxEncoder.Items.Add("H.265 (x265)");
@@ -65,7 +65,9 @@ namespace FFVideoConverter
             }
             comboBoxQuality.SelectedIndex = 2;
             comboBoxResolution.Items.Add("Same as source");
-            comboBoxResolution.SelectedIndex = 0;            
+            comboBoxResolution.SelectedIndex = 0;
+
+            Unosquare.FFME.Library.FFmpegDirectory = AppDomain.CurrentDomain.BaseDirectory;
         }
 
         #region Load
@@ -94,17 +96,29 @@ namespace FFVideoConverter
                 string extension = Path.GetExtension(sourcePath);
                 textBoxDestination.Text = sourcePath.Remove(sourcePath.LastIndexOf('.')) + " converted" + extension;
                 labelTitle.Content = Path.GetFileName(sourcePath);
-                webStream = false;
             }
             else
             {
-                textBoxDestination.Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\stream.mp4";
+                textBoxDestination.Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + (String.IsNullOrEmpty(mediaInfo.Title) ? "\\stream.mp4" : mediaInfo.Title);
                 labelTitle.Content = !String.IsNullOrEmpty(mediaInfo.Title) ? mediaInfo.Title : "[Network stream]";
-                webStream = true;
+                if (!String.IsNullOrEmpty(mediaInfo.AudioSource))
+                {
+                    //audioElement ??= new Unosquare.FFME.MediaElement(); Requires C# 8
+                    //if (audioElement == null)
+                        //audioElement = new Unosquare.FFME.MediaElement();
+                    //audioElement.Open(new Uri(mediaInfo.AudioSource)); //For some reason when using two mediaelements the play and pause functions become slow as hell
+                }
+                else
+                {
+                    if (audioElement != null)
+                    {
+                        //await audioElement.Close();
+                        audioElement = null;
+                    }
+                }
             }
-
-            mediaElementInput.Open(new Uri(sourcePath));
-            mediaElementInput.Background = Brushes.Black;
+            mediaElement.Open(new Uri(sourcePath));
+            mediaElement.Background = Brushes.Black;
             borderSource.BorderThickness = new Thickness(0);
 
             textBlockDuration.Text = mediaInfo.Duration.ToString(@"hh\:mm\:ss\.ff");
@@ -500,7 +514,7 @@ namespace FFVideoConverter
                     MessageBox.Show("Enter a valid end time", "FF Video Converter");
                     return;
                 }
-                if (checkBoxFastCut.IsChecked == true)
+                if (checkBoxFastCut.IsChecked == true) //TODO: refactor
                 {
                     start = start.Add(TimeSpan.FromSeconds(0.2));
                     ffmpegEngine.FastCut(mediaInfo, textBoxDestination.Text, start, end);
@@ -525,7 +539,8 @@ namespace FFVideoConverter
             buttonOpenStream.IsEnabled = false;
             checkBoxCrop.IsEnabled = false;
             checkBoxCut.IsEnabled = false;
-            await mediaElementInput.Pause();
+            await mediaElement.Pause();
+            if (audioElement != null) await audioElement.Pause();
             buttonPlayPause.Content = " ▶️";
             gridSourceMedia.IsEnabled = false;
             buttonOpenOutput.Visibility = Visibility.Hidden;
@@ -547,7 +562,7 @@ namespace FFVideoConverter
                 progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
                 TaskbarItemInfo.ProgressValue = percentage / 100;
                 textBlockProgress.Text = $"Processed: {progressData.CurrentTime.ToString(@"hh\:mm\:ss")} / {progressData.TotalTime.ToString(@"hh\:mm\:ss")}";
-                if (!webStream) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
+                if (!mediaInfo.IsLocal) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
                 textBlockSize.Text = $"Output size: {GetBytesReadable(progressData.CurrentByteSize)}";
                 if (progressData.AverageBitrate > 0) textBlockSize.Text += $" / {GetBytesReadable(approximateOutputByteSize)} (estimated)";
                 Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToString(@"hh\:mm\:ss");
@@ -641,23 +656,32 @@ namespace FFVideoConverter
 
         #region Media player controls
 
-        private void MediaElementInput_PositionChanged(object sender, Unosquare.FFME.Common.PositionChangedEventArgs e)
+        private async void MediaElementInput_PositionChanged(object sender, Unosquare.FFME.Common.PositionChangedEventArgs e)
         {
             if (!isSeeking)
             {
                 sliderUserInput = false;
                 if (checkBoxCut.IsChecked == true && e.Position.TotalSeconds > rangeSliderCut.UpperValue)
                 {
-                    mediaElementInput.Seek(TimeSpan.FromSeconds(rangeSliderCut.LowerValue));
+                    await mediaElement.Pause();
+                    if (audioElement != null) await audioElement.Pause();
+                    await mediaElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.LowerValue));
+                    if (audioElement != null) await audioElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.LowerValue));
+                    await mediaElement.Play();
+                    if (audioElement != null) await audioElement.Play();
                 }
-                else rangeSliderCut.MiddleValue = e.Position.TotalSeconds;
+                else
+                {
+                    rangeSliderCut.MiddleValue = e.Position.TotalSeconds;
+                    textBlockPlayerPosition.Text = $"{e.Position.ToString(@"hh\:mm\:ss")} / {mediaElement.PlaybackEndTime.Value.ToString(@"hh\:mm\:ss")}";
+                }
                 sliderUserInput = true;
             }
         }
 
         private void MediaElementInput_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (mediaElementInput.Source != null)
+            if (mediaElement.Source != null)
             {
                 Storyboard storyboardIn = FindResource("mediaControlsAnimationIn") as Storyboard;
                 Storyboard.SetTarget(storyboardIn, gridSourceControls);
@@ -667,7 +691,7 @@ namespace FFVideoConverter
 
         private void MediaElementInput_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (mediaElementInput.Source != null)
+            if (mediaElement.Source != null)
             {
                 Storyboard storyboardIn = FindResource("mediaControlsAnimationOut") as Storyboard;
                 Storyboard.SetTarget(storyboardIn, gridSourceControls);
@@ -675,36 +699,58 @@ namespace FFVideoConverter
             }
         }
 
-        private void ButtonPlayPause_Click(object sender, RoutedEventArgs e)
+        private async void ButtonPlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if (buttonPlayPause.Content.ToString() == " ▶️")
+            if (mediaElement.IsPaused)
             {
-                mediaElementInput.Play();
                 buttonPlayPause.Content = " ❚❚";
+                await mediaElement.Play();
+                if (audioElement != null)
+                {
+                    await audioElement.Play();
+                }
             }
             else
             {
-                mediaElementInput.Pause();
                 buttonPlayPause.Content = " ▶️";
+                await mediaElement.Pause();
+                if (audioElement != null)
+                {
+                    await audioElement.Pause();
+                    await audioElement.Seek(mediaElement.Position);
+                }
             }
         }
 
-        private void SliderSourcePosition_DragCompleted(object sender, DragCompletedEventArgs e)
+        private async void SliderSourcePosition_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             isSeeking = false;
-            if (wasPlaying) mediaElementInput.Play();
+            if (wasPlaying)
+            {
+                await mediaElement.Play();
+                if (audioElement != null)
+                {
+                    audioElement.Position = mediaElement.Position;
+                    await audioElement.Play();
+                }
+            }
         }
 
         private void SliderSourcePosition_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (sliderUserInput) mediaElementInput.Seek(TimeSpan.FromSeconds(rangeSliderCut.MiddleValue));
+            if (sliderUserInput)
+            {
+                mediaElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.MiddleValue));
+                if (audioElement != null) audioElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.MiddleValue));
+            }
         }
 
         private void SliderSourcePosition_DragStarted(object sender, DragStartedEventArgs e)
         {
             isSeeking = true;
-            wasPlaying = mediaElementInput.IsPlaying;
-            mediaElementInput.Pause();
+            wasPlaying = mediaElement.IsPlaying;
+            mediaElement.Pause();
+            if (audioElement != null) audioElement.Pause();
         }
 
         private void ButtonExpand_Click(object sender, RoutedEventArgs e)
@@ -900,7 +946,24 @@ namespace FFVideoConverter
 
         private void RangeSliderCut_LowerSliderDragCompleted(object sender, DragCompletedEventArgs e)
         {
-            UpdateKeyFrameSuggestions(TimeSpan.Parse(textBoxStart.Text));
+            if (checkBoxFastCut.IsChecked == true)
+                UpdateKeyFrameSuggestions(TimeSpan.Parse(textBoxStart.Text));
+        }
+
+        private void ButtonMute_Click(object sender, RoutedEventArgs e)
+        {
+            if (mediaElement.IsMuted)
+            {
+                mediaElement.IsMuted = false;
+                if (audioElement != null) audioElement.IsMuted = false; 
+                buttonMute.Content = "🔊";
+            }
+            else
+            {
+                mediaElement.IsMuted = true;
+                if (audioElement != null) audioElement.IsMuted = true;
+                buttonMute.Content = "🔇";
+            }
         }
 
         #endregion

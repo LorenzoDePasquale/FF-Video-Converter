@@ -34,12 +34,12 @@
                             <Rectangle x:Name="PART_SelectionRange" RadiusX="1" RadiusY="1" Margin="10,0,-10,0" Fill="{StaticResource SliderForegroundBrush}" />
                         </Border>
                         <Border ClipToBounds="True" Height="3" >
-                            <Rectangle x:Name="PART_Background" RadiusX="1" RadiusY="1" Margin="20,0,10,0" Fill="{StaticResource SliderBackgroundBrush}" />
+                            <Rectangle x:Name="PART_Background" RadiusX="1" RadiusY="1" Margin="15,0,10,0" Fill="{StaticResource SliderBackgroundBrush}" />
                         </Border>
                     </DockPanel>
                     <Track x:Name="PART_Track">
                         <Track.Thumb>
-                            <Thumb x:Name="Thumb" Focusable="False" Width="20" Height="20" OverridesDefaultStyle="True" VerticalAlignment="Center">
+                            <Thumb x:Name="Thumb" Focusable="False" Width="15" Height="15" OverridesDefaultStyle="True" VerticalAlignment="Center">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="{x:Type Thumb}">
                                         <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">

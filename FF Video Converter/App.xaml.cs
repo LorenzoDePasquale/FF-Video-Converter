@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 
 namespace FFVideoConverter
 {
@@ -8,7 +7,7 @@ namespace FFVideoConverter
     {
         public App()
         {
-            Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory;
+            
         }
     }
 }

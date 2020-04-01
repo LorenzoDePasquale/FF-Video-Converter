@@ -317,15 +317,32 @@
             <Grid x:Name="gridSourceMedia">
                 <TextBlock x:Name="textBlockOpen" Text="Click to open or drop a video here" Foreground="#FF8F8F8F" FontSize="18" Margin="121,91" TextAlignment="Center" TextWrapping="Wrap"/>
                 <Rectangle MouseDown="ButtonOpen_Click" Fill="#02000000" Cursor="Hand" Margin="2" AllowDrop="True" DragEnter="Rectangle_DragEnter" DragLeave="Rectangle_DragLeave" Drop="Rectangle_Drop"/>
-                <ffme:MediaElement x:Name="mediaElementInput" LoadedBehavior="Pause" Stretch="Uniform" LoopingBehavior="Play" Visibility="Visible" IsHitTestVisible="False" ScrubbingEnabled="False"/>
+                <ffme:MediaElement x:Name="mediaElement" LoadedBehavior="Pause" Stretch="Uniform" LoopingBehavior="Play" Visibility="Visible" IsHitTestVisible="False" ScrubbingEnabled="False"/>
                 <Canvas x:Name="canvasCropVideo" Visibility="Hidden" Background="Transparent" SizeChanged="CanvasCropVideo_SizeChanged" MouseLeave="CanvasCropVideo_MouseLeave" MouseDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove" MouseUp="Canvas_MouseUp">
                     <Rectangle x:Name="rectangleCropVideo" StrokeThickness="3" Stroke="Black" Height="45" Width="80" Canvas.Left="10" Canvas.Top="10" />
                 </Canvas>
-                <Grid x:Name="gridSourceControls" VerticalAlignment="Bottom" >
-                    <Border Background="{StaticResource ShadedBackgroundBrush}" />
-                    <Button x:Name="buttonPlayPause" Content=" ▶️" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonPlayPause_Click" Margin="6,19,0,0" FontSize="20"/>
-                    <local:RangeSlider x:Name="rangeSliderCut" RangeSelectorVisibility="Hidden" Margin="39,19,37,6" Height="23" Minimum="0" MiddleSliderValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" UpperSliderValueChanged="RangeSliderCut_UpperSliderValueChanged" LowerSliderValueChanged="RangeSliderCut_LowerSliderValueChanged" LowerSliderDragCompleted="RangeSliderCut_LowerSliderDragCompleted"/>
-                    <Button x:Name="buttonExpand" Content="⛶" HorizontalAlignment="Right" VerticalAlignment="Top" Width="27" Height="32" Style="{StaticResource PlayPauseButton}" Click="ButtonExpand_Click" Margin="0,12,5,0" FontSize="28"/>
+                <Grid x:Name="gridSourceControls" VerticalAlignment="Bottom" Height="72" >
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.RowSpan="2" >
+                        <Border.Background>
+                            <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                                <LinearGradientBrush.GradientStops>
+                                    <GradientStopCollection>
+                                        <GradientStop Color="#00000000" Offset="0.0"/>
+                                        <GradientStop Color="#CC000000" Offset="1"/>
+                                    </GradientStopCollection>
+                                </LinearGradientBrush.GradientStops>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                    <local:RangeSlider x:Name="rangeSliderCut" RangeSelectorVisibility="Hidden" Margin="10,8,9,28" Minimum="0" MiddleSliderValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" UpperSliderValueChanged="RangeSliderCut_UpperSliderValueChanged" LowerSliderValueChanged="RangeSliderCut_LowerSliderValueChanged" LowerSliderDragCompleted="RangeSliderCut_LowerSliderDragCompleted" Grid.Row="0" Grid.RowSpan="2"/>
+                    <Button x:Name="buttonPlayPause" Content=" ▶️" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonPlayPause_Click" Margin="10,6,0,0" FontSize="20" Grid.Row="1"/>
+                    <Button x:Name="buttonMute" Content="🔊" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonMute_Click" Margin="46,6,0,0" FontSize="20" Grid.Row="1"/>
+                    <TextBlock x:Name="textBlockPlayerPosition" Text="00:00:00 / 00:00:00"  HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Margin="85,8,0,0"/>
+                    <Button x:Name="buttonExpand" Content="⛶" HorizontalAlignment="Right" VerticalAlignment="Top" Width="27" Height="32" Style="{StaticResource PlayPauseButton}" Click="ButtonExpand_Click" Margin="0,35,9,0" FontSize="28" Grid.RowSpan="2"/>
                 </Grid>
             </Grid>
         </Border>
