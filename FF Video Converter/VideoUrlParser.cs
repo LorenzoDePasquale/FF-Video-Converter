@@ -57,12 +57,12 @@ namespace FFVideoConverter
             string displayValue;
             foreach (VideoStreamInfo videoStreamInfo in mediaStreamsInfoSet.Video)
             {
-                displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoStreamInfo.VideoEncoding.ToString()}) - {MainWindow.GetBytesReadable(videoStreamInfo.Size)}";
+                displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoStreamInfo.VideoEncoding}) - {MainWindow.GetBytesReadable(videoStreamInfo.Size)}";
                 videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.VideoEncoding.ToString(), videoStreamInfo.Size));
             }
             foreach (AudioStreamInfo audioStreamInfo in mediaStreamsInfoSet.Audio)
             {
-                displayValue = $"{audioStreamInfo.Bitrate / 1000} Kbps ({audioStreamInfo.AudioEncoding.ToString()}) - {MainWindow.GetBytesReadable(audioStreamInfo.Size)}";
+                displayValue = $"{audioStreamInfo.Bitrate / 1000} Kbps ({audioStreamInfo.AudioEncoding}) - {MainWindow.GetBytesReadable(audioStreamInfo.Size)}";
                 videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.AudioEncoding.ToString(), audioStreamInfo.Size));
             }
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
@@ -85,10 +85,10 @@ namespace FFVideoConverter
                 string baseVideoUrl = dashDocumentUrl.Substring(0, dashDocumentUrl.LastIndexOf('/') + 1);
                 List<StreamInfo> videoList = new List<StreamInfo>();
                 string displayValue;
-                foreach (var dashInfo in GetDashInfos(dashContent))
+                foreach (var (dash, label, size) in GetDashInfos(dashContent))
                 {
-                    displayValue = $"{dashInfo.label} - {MainWindow.GetBytesReadable(dashInfo.size)}";
-                    videoList.Add(new StreamInfo(baseVideoUrl + dashInfo.dash, dashInfo.dash == "audio", title, displayValue, dashInfo.dash == "audio" ? "aac" : "", dashInfo.size));
+                    displayValue = $"{label} - {MainWindow.GetBytesReadable(size)}";
+                    videoList.Add(new StreamInfo(baseVideoUrl + dash, dash == "audio", title, displayValue, dash == "audio" ? "aac" : "", size));
 
                 }
                 videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });

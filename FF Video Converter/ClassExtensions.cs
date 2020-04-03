@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace FFVideoConverter
 {
     public static class ClassExtensions
     {
+        #region Native
+
         [Flags]
         public enum ThreadAccess : int
         {
@@ -29,7 +34,11 @@ namespace FFVideoConverter
         [DllImport("kernel32", CharSet = CharSet.Auto, SetLastError = true)]
         static extern bool CloseHandle(IntPtr handle);
 
+        #endregion
 
+        #region Process
+
+        //Suspends all threads of the current process
         public static void Suspend(this Process process)
         {
             IntPtr pOpenThread;
@@ -45,6 +54,7 @@ namespace FFVideoConverter
             }
         }
 
+        //Resumes all threads of the current process
         public static void Resume(this Process process)
         {
             IntPtr pOpenThread;
@@ -64,5 +74,53 @@ namespace FFVideoConverter
                 }
             }
         }
+
+        #endregion
+
+        #region HttpClient
+
+        //Asynchroniously downloads a remote file into a stream, with progress reporting
+        public static async Task DownloadAsync(this HttpClient client, string requestUri, Stream destination, IProgress<(float, long, long)> progress)
+        {
+            using (HttpResponseMessage response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+            {
+                if (response.Content.Headers.ContentLength == null)
+                {
+                    throw new Exception("Couldn't determine file size");
+                }
+                var totalBytes = response.Content.Headers.ContentLength.Value;
+
+                using (Stream downloadStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                {
+                    var relativeProgress = new Progress<long>(currentBytes => progress.Report(((float)currentBytes / totalBytes, currentBytes, totalBytes)));
+                    await downloadStream.CopyToAsync(destination, relativeProgress).ConfigureAwait(false);
+                    progress.Report((1f, totalBytes, totalBytes));
+                }
+            }
+        }
+
+        //Asynchroniously copies a stream into another, with progress reporting
+        public static async Task CopyToAsync(this Stream source, Stream destination, IProgress<long> progress)
+        {
+            var buffer = new byte[40960];
+            long totalBytesRead = 0;
+            int bytesRead;
+            Stopwatch sw = new Stopwatch(); //Used to report progress every 200 milliseconds
+
+            sw.Start();
+            while ((bytesRead = await source.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false)) != 0)
+            {
+                await destination.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+                totalBytesRead += bytesRead;
+                if (sw.ElapsedMilliseconds > 500)
+                {
+                    sw.Restart();
+                    progress.Report(totalBytesRead);
+                }
+            }
+            sw.Stop();
+        }
+
+        #endregion
     }
 }

@@ -29,10 +29,10 @@
         </Storyboard>
 
         <Storyboard x:Key="mediaControlsAnimationIn" >
-            <DoubleAnimation From="0" To="1" Duration="00:00:00.2" Storyboard.TargetProperty="Opacity" />
+            <DoubleAnimation From="0" To="1" Duration="00:00:00.2" Storyboard.TargetProperty="Opacity" Storyboard.TargetName="gridSourceControls"/>
         </Storyboard>
         <Storyboard x:Key="mediaControlsAnimationOut" >
-            <DoubleAnimation From="1" To="0" Duration="00:00:00.2" Storyboard.TargetProperty="Opacity" />
+            <DoubleAnimation From="1" To="0" Duration="00:00:00.2" Storyboard.TargetProperty="Opacity" Storyboard.TargetName="gridSourceControls"/>
         </Storyboard>
 
         <Storyboard x:Key="ExpandMediaPlayer">
@@ -189,6 +189,39 @@
         <Storyboard x:Key="DragOverAnimation" >
             <DoubleAnimation From="0" To="-150" Duration="00:00:15" Storyboard.TargetProperty="StrokeDashOffset" Storyboard.TargetName="rectangleDashBorder"/>
         </Storyboard>
+
+        <Storyboard x:Key="DownloadButtonAnimationIn" >
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonConvert">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.6" Value="284,533,424,0">
+                    <EasingThicknessKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseInOut"/>
+                    </EasingThicknessKeyFrame.EasingFunction>
+                </EasingThicknessKeyFrame>
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonDownload">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.6" Value="436,533,272,0">
+                    <EasingThicknessKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseInOut"/>
+                    </EasingThicknessKeyFrame.EasingFunction>
+                </EasingThicknessKeyFrame>
+            </ThicknessAnimationUsingKeyFrames>
+        </Storyboard>
+        <Storyboard x:Key="DownloadButtonAnimationOut" >
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonConvert">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.6" Value="354,533,354,0">
+                    <EasingThicknessKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseInOut"/>
+                    </EasingThicknessKeyFrame.EasingFunction>
+                </EasingThicknessKeyFrame>
+            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonDownload">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.6" Value="857,533,-149,0">
+                    <EasingThicknessKeyFrame.EasingFunction>
+                        <CubicEase EasingMode="EaseInOut"/>
+                    </EasingThicknessKeyFrame.EasingFunction>
+                </EasingThicknessKeyFrame>
+            </ThicknessAnimationUsingKeyFrames>
+        </Storyboard>
     </Window.Resources>
 
     <Grid>
@@ -197,9 +230,11 @@
             <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <Grid x:Name="gridTitleBar" Grid.Row="1" Background="#7F060606" MouseDown="Grid_MouseDown" ClipToBounds="True">
             <Button x:Name="buttonClose" Content="_X" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222" FontWeight="Bold" FontSize="14" />
-            <Button x:Name="buttonMinimize" Content="_____" Height="30" Margin="0,0,29,0" VerticalAlignment="Top" Click="ButtonMinimize_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFDEDEDE" FontWeight="Bold" FontSize="8" FontFamily="Calibri"/>
+            <Button x:Name="buttonMinimize" Content="_____" Height="30" Margin="0,0,29,0" VerticalAlignment="Top" Click="ButtonMinimize_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFEEEEEE" FontWeight="Bold" FontSize="8" FontFamily="Calibri"/>
+            <Button x:Name="buttonUpdate" Content="_↓" Visibility="Hidden" Height="30" Margin="0,0,59,0" VerticalAlignment="Top" Click="ButtonUpdate_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FF299910" FontWeight="Bold" FontSize="15" FontFamily="Calibri" ToolTip="Update avaiable!"/>
             <Label x:Name="labelTitle" Content="FF Video Converter" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FFCACACB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold"/>
             <Label x:Name="labelProgress" Content="Progress: 0%   Remaining time: 00:00:00" Height="30" Margin="0,25,0,-25" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FFCBCBCB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold"/>
             <Border Margin="0,30,0,-4" >
@@ -212,6 +247,7 @@
                 </Border.Background>
             </Border>
         </Grid>
+
         <Grid x:Name="gridMediaDetails" Grid.Row="2" Margin="0,37,13,0" Height="164" VerticalAlignment="Top" HorizontalAlignment="Right" Width="394">
             <Grid x:Name="TopLabel" Margin="0,-26,0,0" Height="26" VerticalAlignment="Top">
                 <Border VerticalAlignment="Top" CornerRadius="4 4 0 0" Margin="140,0" Height="21" BorderThickness="1" Background="{StaticResource BackgroundColor}" BorderBrush="{StaticResource BorderColor}" />
@@ -238,8 +274,10 @@
             <TextBlock HorizontalAlignment="Left" Text="Resolution:" VerticalAlignment="Top" Margin="10,110,0,0" Foreground="#FF2669DE" />
             <TextBlock HorizontalAlignment="Left" Text="File size:" VerticalAlignment="Top" Margin="10,135,0,0" Foreground="#FF2669DE" />
         </Grid>
-        <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,215,222,0" HorizontalAlignment="Right" Width="185" Click="ButtonOpen_Click"/>
-        <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,215,13,0" HorizontalAlignment="Right" Width="185" Click="ButtonOpenStream_Click"/>
+
+        <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,215,216,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpen_Click"/>
+        <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,215,14,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpenStream_Click"/>
+
         <Grid x:Name="gridConversionSettings" Margin="0,260,0,0" Grid.Row="2" Height="262" VerticalAlignment="Top">
             <Button x:Name="buttonPreview" Content="Encoding preview" VerticalAlignment="Top" Margin="90,227,0,0" Click="ButtonPreview_Click" Height="30" HorizontalAlignment="Left" Width="169" ToolTipService.ShowDuration="15000" ToolTip="Compare a 4s clip of the video at every quality settings"/>
             <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Profile" VerticalAlignment="Top" Margin="10,119,0,0" Width="68" TextAlignment="Right"/>
@@ -282,6 +320,7 @@
                 <TextBlock x:Name="textBlockOutputResolution" HorizontalAlignment="Left" Margin="403,62,0,0" TextWrapping="Wrap" Text="1920x1080" VerticalAlignment="Top" Height="17" Width="71" TextAlignment="Center" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}"/>
             </Grid>
         </Grid>
+
         <Button x:Name="buttonConvert" Content="Convert" VerticalAlignment="Top" IsEnabled="False" Margin="354,533,354,0" Click="ButtonConvert_Click" Height="30" Grid.Row="2" FontSize="14" FontWeight="Bold">
             <Button.OpacityMask>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -296,6 +335,21 @@
                 </LinearGradientBrush>
             </Button.Background>
         </Button>
+        <Button x:Name="buttonDownload" Content="Download" VerticalAlignment="Top" IsEnabled="False" Margin="857,533,-149,0" Click="ButtonDownload_Click" Height="30" Grid.Row="2" FontSize="14" FontWeight="Bold">
+            <Button.OpacityMask>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FF089E0F" Offset="1"/>
+                    <GradientStop Color="#FF35E42D"/>
+                </LinearGradientBrush>
+            </Button.OpacityMask>
+            <Button.Background>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FF097016" Offset="1"/>
+                    <GradientStop Color="#FF17B610"/>
+                </LinearGradientBrush>
+            </Button.Background>
+        </Button>
+
         <Border x:Name="borderSource" Grid.Row="2" Background="Transparent" CornerRadius="16" Margin="10,12,0,0" MouseEnter="MediaElementInput_MouseEnter" MouseLeave="MediaElementInput_MouseLeave" BorderThickness="3" Height="236" VerticalAlignment="Top" HorizontalAlignment="Left" Width="413">
             <Border.BorderBrush>
                 <VisualBrush>
@@ -346,6 +400,7 @@
                 </Grid>
             </Grid>
         </Border>
+
         <Grid x:Name="gridProgress" Grid.Row="2" Height="57" VerticalAlignment="Top" Margin="0,569,0,0">
             <Grid x:Name="gridProgressBar" Margin="10,5,10,0" Height="25" VerticalAlignment="Top">
                 <ProgressBar x:Name="progressBarConvertProgress" />

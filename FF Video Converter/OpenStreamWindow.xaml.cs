@@ -34,7 +34,6 @@ namespace FFVideoConverter
             Close();
         }
 
-
         #endregion
 
         private async void ButtonOpen_Click(object sender, RoutedEventArgs e)
@@ -50,7 +49,15 @@ namespace FFVideoConverter
                     if (!url.Contains("reddit") && !url.Contains("youtu") && !url.Contains("twitter") && !url.Contains("facebook") && !url.Contains("instagram"))
                     {
                         labelTitle.Content = "Opening network stream...";
-                        MediaStream = await MediaInfo.Open(url);
+                        try
+                        {
+                            MediaStream = await MediaInfo.Open(url);
+                        }
+                        catch (Exception)
+                        {
+                            new MessageBoxWindow("Failed to open media from the url\n" + url, "Error opening url").ShowDialog();
+                            MediaStream = null;
+                        }
                         Close();
                     }
                     else
@@ -92,17 +99,26 @@ namespace FFVideoConverter
                             videoUrlParser = new InstagramParser();
                         }
 
-                        foreach (var item in await videoUrlParser.GetVideoList(url))
+                        try
                         {
-                            if (!item.IsAudio)
+                            foreach (var item in await videoUrlParser.GetVideoList(url))
                             {
-                                comboBoxQuality.Items.Add(item);
+                                if (!item.IsAudio)
+                                {
+                                    comboBoxQuality.Items.Add(item);
+                                }
+                                else
+                                {
+                                    comboBoxAudioQuality.Items.Add(item);
+                                }
+                                labelTitle.Content = item.Title;
                             }
-                            else
-                            {
-                                comboBoxAudioQuality.Items.Add(item);
-                            }
-                            labelTitle.Content = item.Title;
+                        }
+                        catch (Exception)
+                        {
+                            new MessageBoxWindow("Failed to retreive media info from the url\n" +url, "Error parsing url").ShowDialog();
+                            buttonOpen.IsEnabled = true;
+                            return;
                         }
 
                         comboBoxAudioQuality.Items.Add("[No Audio]");

@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -17,7 +18,12 @@ namespace FFVideoConverter
     {
         public static readonly string[] QUALITY = { "Best", "Very good", "Good", "Medium", "Low", "Very low" };
 
-        private static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".avi", "m4v", ".webm" };
+        enum HitLocation
+        {
+            None, Body, UpperLeft, UpperRight, LowerRight, LowerLeft, Left, Right, Top, Bottom
+        };
+
+        private static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".m4v", ".avi", ".webm" };
         private FFmpegEngine ffmpegEngine = new FFmpegEngine();
         private MediaInfo mediaInfo;
         private Unosquare.FFME.MediaElement audioElement;
@@ -30,14 +36,9 @@ namespace FFVideoConverter
         private bool wasPlaying = false;
         private bool isPlayerExpanded = false;
         private bool isMediaOpen = false;
-
-        enum HitLocation
-        {
-            None, Body, UpperLeft, UpperRight, LowerRight, LowerLeft, Left, Right, Top, Bottom
-        };
-        HitLocation MouseHitLocation = HitLocation.None;
-        bool isDragging = false;
-        Point LastPoint;
+        private bool isDragging = false;
+        private Point LastPoint;
+        private HitLocation MouseHitLocation = HitLocation.None;
 
 
         public MainWindow()
@@ -68,6 +69,16 @@ namespace FFVideoConverter
             comboBoxResolution.SelectedIndex = 0;
 
             Unosquare.FFME.Library.FFmpegDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            //Removes old version, if it exists
+            if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "update"))
+            {
+                Directory.Delete(AppDomain.CurrentDomain.BaseDirectory + "update", true);
+            }
+            if (File.Exists("FFVideoConverterOld.exe"))
+            {
+                File.Delete("FFVideoConverterOld.exe");
+            }
         }
 
         #region Load
@@ -84,6 +95,11 @@ namespace FFVideoConverter
                     OpenSource();
                 }
             }
+
+            if (await UpdaterWindow.UpdateAvaiable())
+            {
+                buttonUpdate.Visibility = Visibility.Visible;
+            }
         }
 
         private void OpenSource()
@@ -99,7 +115,7 @@ namespace FFVideoConverter
             }
             else
             {
-                textBoxDestination.Text = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + (String.IsNullOrEmpty(mediaInfo.Title) ? "\\stream.mp4" : mediaInfo.Title);
+                textBoxDestination.Text = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\{(String.IsNullOrEmpty(mediaInfo.Title) ? "stream" : mediaInfo.Title)}.mp4";
                 labelTitle.Content = !String.IsNullOrEmpty(mediaInfo.Title) ? mediaInfo.Title : "[Network stream]";
                 if (!String.IsNullOrEmpty(mediaInfo.AudioSource))
                 {
@@ -117,6 +133,7 @@ namespace FFVideoConverter
                     }
                 }
             }
+
             mediaElement.Open(new Uri(sourcePath));
             mediaElement.Background = Brushes.Black;
             borderSource.BorderThickness = new Thickness(0);
@@ -150,6 +167,16 @@ namespace FFVideoConverter
 
             buttonConvert.IsEnabled = true;
             buttonPreview.IsEnabled = true;
+            if (!mediaInfo.IsLocal)
+            {
+                buttonDownload.IsEnabled = true;
+                PlayStoryboard("DownloadButtonAnimationIn");
+            }
+            else
+            {
+                buttonDownload.IsEnabled = false;
+                PlayStoryboard("DownloadButtonAnimationOut");
+            }
             isMediaOpen = true;
         }
 
@@ -217,21 +244,26 @@ namespace FFVideoConverter
             bool? result = ofd.ShowDialog();
             if (result == true)
             {
-                mediaInfo = await MediaInfo.Open(ofd.FileName);
+                try
+                {
+                    mediaInfo = await MediaInfo.Open(ofd.FileName);
+                }
+                catch (Exception)
+                {
+                    new MessageBoxWindow("Failed to parse media file:\n" + ofd.FileName, "Error opening file").ShowDialog();
+                }
                 OpenSource();
             }
         }
 
         private void Rectangle_DragEnter(object sender, DragEventArgs e)
         {
-            Storyboard storyboard = FindResource("DragOverAnimation") as Storyboard;
-            storyboard.Begin();
+            PlayStoryboard("DragOverAnimation");
         }
 
         private void Rectangle_DragLeave(object sender, DragEventArgs e)
         {
-            Storyboard storyboard = FindResource("DragOverAnimation") as Storyboard;
-            storyboard.Stop();
+            StopStoryboard("DragOverAnimation");
         }
 
         private async void Rectangle_Drop(object sender, DragEventArgs e)
@@ -247,11 +279,10 @@ namespace FFVideoConverter
                 }
                 else
                 {
-                    MessageBox.Show("File not supported!");
+                    new MessageBoxWindow($"This file type ({extension}) is not supported", "Error while opening file").ShowDialog();
                 }
             }
-            Storyboard storyboard = FindResource("DragOverAnimation") as Storyboard;
-            storyboard.Stop();
+            StopStoryboard("DragOverAnimation");
         }
 
         #endregion
@@ -274,6 +305,11 @@ namespace FFVideoConverter
             Close();
         }
 
+        private void ButtonUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            new UpdaterWindow().ShowDialog();
+        }
+
         #endregion
 
         #region Conversion settings
@@ -283,7 +319,7 @@ namespace FFVideoConverter
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Select the destination file";
             sfd.Filter = "MKV|*.mkv|MP4|*.mp4";
-            sfd.FileName = Path.GetFileNameWithoutExtension(mediaInfo.Source) + "_x264";
+            sfd.FileName = Path.GetFileNameWithoutExtension(mediaInfo.Source) + "_converted";
             string extension = mediaInfo.Source.Substring(mediaInfo.Source.LastIndexOf('.'));
             if (extension == ".mp4") sfd.FilterIndex = 2;
             bool? result = sfd.ShowDialog();
@@ -403,6 +439,7 @@ namespace FFVideoConverter
                 comboBoxPreset.IsEnabled = false;
                 comboBoxQuality.IsEnabled = false;
                 comboBoxResolution.IsEnabled = false;
+                buttonConvert.Content = "Fast cut";
             }
             else
             {
@@ -414,6 +451,7 @@ namespace FFVideoConverter
                 comboBoxPreset.IsEnabled = true;
                 comboBoxQuality.IsEnabled = true;
                 comboBoxResolution.IsEnabled = true;
+                buttonConvert.Content = "Convert";
             }
         }
 
@@ -477,7 +515,7 @@ namespace FFVideoConverter
         {
             if (textBoxDestination.Text.EndsWith("mp4") && mediaInfo.AudioCodec?.ToLower() == "opus")
             {
-                MessageBox.Show("Opus audio in mp4 container is currently unsupported.\nEither use aac audio or mkv container.", "FF Video Converter");
+                new MessageBoxWindow("Opus audio in mp4 container is currently unsupported.\nEither use aac audio or mkv container.", "FF Video Converter").ShowDialog();
                 return;
             }
 
@@ -494,7 +532,8 @@ namespace FFVideoConverter
             }
             else if (comboBoxResolution.SelectedIndex != 0)
             {
-                conversionOptions.Resolution = GetResolutionFromString(comboBoxResolution.Text);
+                string resolution = comboBoxResolution.Text.Split(' ')[0];
+                conversionOptions.Resolution = new Resolution(resolution);
             }
             if (comboBoxFramerate.SelectedIndex != 0)
             {
@@ -506,29 +545,27 @@ namespace FFVideoConverter
             {
                 if (!TimeSpan.TryParse(textBoxStart.Text, out TimeSpan start))
                 {
-                    MessageBox.Show("Enter a valid start time", "FF Video Converter");
+                    new MessageBoxWindow("Enter a valid start time", "FF Video Converter").ShowDialog();
                     return;
                 }
                 if (!TimeSpan.TryParse(textBoxEnd.Text, out TimeSpan end))
                 {
-                    MessageBox.Show("Enter a valid end time", "FF Video Converter");
+                    new MessageBoxWindow("Enter a valid end time", "FF Video Converter").ShowDialog();
                     return;
                 }
-                if (checkBoxFastCut.IsChecked == true) //TODO: refactor
-                {
-                    start = start.Add(TimeSpan.FromSeconds(0.2));
-                    ffmpegEngine.FastCut(mediaInfo, textBoxDestination.Text, start, end);
-                    currentOutputPath = textBoxDestination.Text;
-                    return;
-                }
-                else
-                {
-                    conversionOptions.Start = start;
-                    conversionOptions.End = end;
-                }
+
+                conversionOptions.Start = start;
+                conversionOptions.End = end;
             }
 
-            ffmpegEngine.Convert(mediaInfo, textBoxDestination.Text, conversionOptions);
+            if (checkBoxFastCut.IsChecked == true) //checkBoxFastCut can be checked only if checkBoxCut is checked, so no need to put this if inside the previous one
+            {
+                ffmpegEngine.FastCut(mediaInfo, textBoxDestination.Text, conversionOptions.Start.Add(TimeSpan.FromSeconds(0.2)), conversionOptions.End);
+            }
+            else
+            {
+                ffmpegEngine.Convert(mediaInfo, textBoxDestination.Text, conversionOptions);
+            }
 
             currentOutputPath = textBoxDestination.Text;
             buttonPauseResume.IsEnabled = true;
@@ -544,9 +581,9 @@ namespace FFVideoConverter
             buttonPlayPause.Content = " ▶️";
             gridSourceMedia.IsEnabled = false;
             buttonOpenOutput.Visibility = Visibility.Hidden;
-            Storyboard storyboard = FindResource("ProgressAnimationIn") as Storyboard;
-            storyboard.Begin();
+            PlayStoryboard("ProgressAnimationIn");
             TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
+            BlockSleepMode();
         }
 
         private void UpdateProgress(ProgressData progressData)
@@ -578,8 +615,7 @@ namespace FFVideoConverter
             string outputSize = GetBytesReadable(new FileInfo(currentOutputPath).Length);
             textBlockSize.Text = "Output size: " + outputSize;
             TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
-            Storyboard storyboard = FindResource("ProgressAnimationOut") as Storyboard;
-            storyboard.Begin();
+            PlayStoryboard("ProgressAnimationOut");
             buttonConvert.IsEnabled = true;
             buttonPreview.IsEnabled = true;
             buttonOpenFile.IsEnabled = true;
@@ -590,6 +626,7 @@ namespace FFVideoConverter
             checkBoxCut.IsEnabled = true;
             gridSourceMedia.IsEnabled = true;
             buttonOpenOutput.Visibility = Visibility.Visible;
+            AllowSleepMode();
             Title = "AVC to HEVC Converter";
 
             MediaInfo outputFile = await MediaInfo.Open(currentOutputPath);
@@ -600,6 +637,72 @@ namespace FFVideoConverter
             textBlockResolution.Text += $"   ⟶   {outputFile.Width + "x" + outputFile.Height}";
             textBlockInputSize.Text += $"   ⟶   {outputSize}";
             if (!String.IsNullOrEmpty(outputFile.AspectRatio) && outputFile.AspectRatio != "N/A") textBlockResolution.Text += $" ({outputFile.AspectRatio})";
+        }
+
+        private void ButtonDownload_Click(object sender, RoutedEventArgs e)
+        {
+            textBlockProgress.Text = "Starting download...";
+
+            ffmpegEngine = new FFmpegEngine();
+            ffmpegEngine.ProgressChanged += UpdateDownloadProgress;
+            ffmpegEngine.ConversionCompleted += DownloadCompleted;
+            ffmpegEngine.FastCut(mediaInfo, textBoxDestination.Text, TimeSpan.Zero, TimeSpan.Zero);
+
+            currentOutputPath = textBoxDestination.Text;
+            buttonPauseResume.IsEnabled = true;
+            buttonCancel.IsEnabled = true;
+            buttonConvert.IsEnabled = false;
+            buttonDownload.IsEnabled = false;
+            buttonPreview.IsEnabled = false;
+            buttonOpenFile.IsEnabled = false;
+            buttonOpenStream.IsEnabled = false;
+            checkBoxCrop.IsEnabled = false;
+            checkBoxCut.IsEnabled = false;
+            buttonOpenOutput.Visibility = Visibility.Hidden;
+            PlayStoryboard("ProgressAnimationIn");
+            TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
+            BlockSleepMode();
+        }
+
+        private void UpdateDownloadProgress(ProgressData progressData)
+        {
+            double secondsToEncode = progressData.TotalTime.TotalSeconds - progressData.CurrentTime.TotalSeconds;
+            double remainingTime = progressData.EncodingSpeed == 0 ? 0 : (secondsToEncode) / progressData.EncodingSpeed;
+            double percentage = Math.Min(progressData.CurrentFrame * 100 / (mediaInfo.Framerate * progressData.TotalTime.TotalSeconds), 99.4);
+
+            Dispatcher.Invoke(() =>
+            {
+                DoubleAnimation progressAnimation = new DoubleAnimation(percentage, TimeSpan.FromSeconds(0.5));
+                progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
+                TaskbarItemInfo.ProgressValue = percentage / 100;
+                textBlockProgress.Text = $"Progress: {progressData.CurrentTime.ToString(@"hh\:mm\:ss")} / {progressData.TotalTime.ToString(@"hh\:mm\:ss")}";
+                textBlockSize.Text = $"Downloaded: {GetBytesReadable(progressData.CurrentByteSize)}";
+                Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToString(@"hh\:mm\:ss");
+                labelProgress.Content = $"Progress: {Math.Floor(percentage)}%   Remaining time: {TimeSpan.FromSeconds(remainingTime).ToString(@"hh\:mm\:ss")}";
+            }, System.Windows.Threading.DispatcherPriority.Send);
+        }
+
+        private void DownloadCompleted(ProgressData progressData)
+        {
+            DoubleAnimation progressAnimation = new DoubleAnimation(100, TimeSpan.FromSeconds(0));
+            progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
+            textBlockProgress.Text = "Video downloaded!";
+            string outputSize = GetBytesReadable(new FileInfo(currentOutputPath).Length);
+            textBlockSize.Text = "Video size: " + outputSize;
+            TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
+            PlayStoryboard("ProgressAnimationOut");
+            buttonConvert.IsEnabled = true;
+            buttonDownload.IsEnabled = true;
+            buttonPreview.IsEnabled = true;
+            buttonOpenFile.IsEnabled = true;
+            buttonOpenStream.IsEnabled = true;
+            buttonPauseResume.IsEnabled = false;
+            buttonCancel.IsEnabled = false;
+            checkBoxCrop.IsEnabled = true;
+            checkBoxCut.IsEnabled = true;
+            buttonOpenOutput.Visibility = Visibility.Visible;
+            AllowSleepMode();
+            Title = "AVC to HEVC Converter";
         }
 
         private void ButtonPauseResume_Click(object sender, RoutedEventArgs e)
@@ -632,8 +735,7 @@ namespace FFVideoConverter
             textBlockProgress.Text = "Conversion canceled";
             textBlockSize.Text = "";
             TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
-            Storyboard storyboard = FindResource("ProgressAnimationOut") as Storyboard;
-            storyboard.Begin();
+            PlayStoryboard("ProgressAnimationOut");
             buttonPauseResume.Content = "❚❚";
             buttonPauseResume.IsEnabled = false;
             buttonCancel.IsEnabled = false;
@@ -644,6 +746,7 @@ namespace FFVideoConverter
             checkBoxCrop.IsEnabled = true;
             checkBoxCut.IsEnabled = true;
             gridSourceMedia.IsEnabled = true;
+            AllowSleepMode();
             Title = "AVC to HEVC Converter";
         }
 
@@ -683,9 +786,7 @@ namespace FFVideoConverter
         {
             if (mediaElement.Source != null)
             {
-                Storyboard storyboardIn = FindResource("mediaControlsAnimationIn") as Storyboard;
-                Storyboard.SetTarget(storyboardIn, gridSourceControls);
-                storyboardIn.Begin();
+                PlayStoryboard("mediaControlsAnimationIn");
             }
         }
 
@@ -693,9 +794,7 @@ namespace FFVideoConverter
         {
             if (mediaElement.Source != null)
             {
-                Storyboard storyboardIn = FindResource("mediaControlsAnimationOut") as Storyboard;
-                Storyboard.SetTarget(storyboardIn, gridSourceControls);
-                storyboardIn.Begin();
+                PlayStoryboard("mediaControlsAnimationOut");
             }
         }
 
@@ -757,14 +856,12 @@ namespace FFVideoConverter
         {
             if (isPlayerExpanded)
             {
-                Storyboard storyboardIn = FindResource("ExpandMediaPlayerRev") as Storyboard;
-                storyboardIn.Begin();
+                PlayStoryboard("ExpandMediaPlayerRev");
                 isPlayerExpanded = false;
             }
             else
             {
-                Storyboard storyboardIn = FindResource("ExpandMediaPlayer") as Storyboard;
-                storyboardIn.Begin();
+                PlayStoryboard("ExpandMediaPlayer");
                 isPlayerExpanded = true;
             }
         }
@@ -778,7 +875,6 @@ namespace FFVideoConverter
             LastPoint = Mouse.GetPosition(canvasCropVideo);
             isDragging = true;
             Storyboard storyboardIn = FindResource("mediaControlsAnimationOut") as Storyboard;
-            Storyboard.SetTarget(storyboardIn, gridSourceControls);
             storyboardIn.Completed += (s, _e) => { gridSourceControls.IsHitTestVisible = false; };
             if (gridSourceControls.Opacity == 1) storyboardIn.Begin();
         }
@@ -907,7 +1003,6 @@ namespace FFVideoConverter
             isDragging = false;
             gridSourceControls.IsHitTestVisible = true;
             Storyboard storyboardIn = FindResource("mediaControlsAnimationIn") as Storyboard;
-            Storyboard.SetTarget(storyboardIn, gridSourceControls);
             storyboardIn.Completed += (s, _e) => { gridSourceControls.IsHitTestVisible = true; }; 
             if (gridSourceControls.Opacity == 0) storyboardIn.Begin();
             Cursor = Cursors.Arrow;
@@ -1011,10 +1106,16 @@ namespace FFVideoConverter
             return (byte)(encoder == Encoder.H264 ? crf : crf + 5);
         }
 
-        public static Resolution GetResolutionFromString(string resolution)
+        private void PlayStoryboard(string storyboardName)
         {
-            string[] numbers = resolution.Split(' ')[0].Split('x');
-            return new Resolution(Convert.ToInt16(numbers[0]), Convert.ToInt16(numbers[1]));
+            Storyboard storyboard = FindResource(storyboardName) as Storyboard;
+            storyboard.Begin();
+        }
+
+        private void StopStoryboard(string storyboardName)
+        {
+            Storyboard storyboard = FindResource(storyboardName) as Storyboard;
+            storyboard.Stop();
         }
 
         private HitLocation SetHitType(System.Windows.Shapes.Rectangle rect, Point point)
@@ -1079,7 +1180,34 @@ namespace FFVideoConverter
             if (Cursor != desired_cursor) Cursor = desired_cursor;
         }
 
+        private void BlockSleepMode()
+        {
+            SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+        }
+
+        private void AllowSleepMode()
+        {
+            SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+        }
+
+        #endregion
+
+        #region Native methods
+
+        [Flags]
+        public enum EXECUTION_STATE : uint
+        {
+            ES_AWAYMODE_REQUIRED = 0x00000040, //Should only be used by applications that must perform critical background processing while the computer appears to be sleeping. This value must be specified with ES_CONTINUOUS
+            ES_CONTINUOUS = 0x80000000,        //Informs the system that the state being set should remain in effect until the next call that uses ES_CONTINUOUS and one of the other state flags is cleared
+            ES_DISPLAY_REQUIRED = 0x00000002,  //Forces the display to be on by resetting the display idle timer
+            ES_SYSTEM_REQUIRED = 0x00000001    //Forces the system to be in the working state by resetting the system idle timer.
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
+
         #endregion
 
     }
+
 }

@@ -58,6 +58,13 @@ namespace FFVideoConverter
             Height = height;
         }
 
+        public Resolution(string resolution) //resolution must be a string in this form: 1920x1080
+        {
+            string[] numbers = resolution.Split('x');
+            Width = Convert.ToInt16(numbers[0]);
+            Height = Convert.ToInt16(numbers[1]);
+        }
+
         public bool HasValue()
         {
             return Width >= 0 && Height >= 0;
@@ -185,7 +192,14 @@ namespace FFVideoConverter
         {
             progressData = new ProgressData();
             progressData.IsFastCut = true;
-            progressData.TotalTime = end - start;
+            if (end != TimeSpan.Zero)
+            {
+                progressData.TotalTime = end - start;
+            }
+            else
+            {
+                progressData.TotalTime = sourceInfo.Duration - start;
+            }
 
             StringBuilder sb = new StringBuilder("-y");
             sb.Append($" -ss {start}");

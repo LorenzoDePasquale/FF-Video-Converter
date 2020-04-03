@@ -186,7 +186,7 @@ namespace FFVideoConverter
             {
                 bool wasPlaying = mediaElementConverted.IsPlaying;
                 await mediaElementOriginal.Pause();
-                await mediaElementConverted.Open(new Uri($"{Environment.CurrentDirectory}\\temp\\preview_{comboBoxQuality.SelectedIndex}.mkv"));
+                await mediaElementConverted.Open(new Uri($"{AppDomain.CurrentDomain.BaseDirectory}\\temp\\preview_{comboBoxQuality.SelectedIndex}.mkv"));
                 await mediaElementConverted.Pause();
                 await mediaElementConverted.Seek(mediaElementOriginal.Position);
                 if (wasPlaying)

@@ -63,6 +63,11 @@ namespace FFVideoConverter
 
                     stdoutBuilder.Remove(stdoutBuilder.Length - 1, 1);
                     string stdout = stdoutBuilder.ToString();
+                    if (stdout.Length < 5)
+                    {
+                        new MessageBoxWindow("The selected media could not per parsed:\n\n" + source, "Error opening media");
+                        return;
+                    }
                     while (!BracketBalanced(stdout)) stdout += "}";
 
                     using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
