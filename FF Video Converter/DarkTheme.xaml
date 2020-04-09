@@ -5,6 +5,7 @@
     
 
     <SolidColorBrush x:Key="TextColor">#FFC9C9C9</SolidColorBrush>
+    <SolidColorBrush x:Key="TextColorBlue">#FF2669DE</SolidColorBrush>
     <SolidColorBrush x:Key="BackgroundColor">#FF232323</SolidColorBrush>
     <LinearGradientBrush x:Key="ButtonBackgroundColor" EndPoint="0.5,1" StartPoint="0.5,0">
         <GradientStop Color="#FF1859CB" Offset="1"/>
@@ -774,6 +775,9 @@
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Background" Value="{StaticResource DisabledColor}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Trigger.EnterActions>

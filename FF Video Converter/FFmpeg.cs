@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,107 +8,11 @@ using System.Threading.Tasks;
 
 namespace FFVideoConverter
 {
-    [StructLayout(LayoutKind.Auto)]
-    public struct ProgressData
-    {
-        public short EncodingSpeedFps { get; set; }
-        public long CurrentByteSize { get; set; }
-        public float AverageBitrate { get; set; }
-        public float EncodingSpeed { get; set; }
-        public TimeSpan CurrentTime { get; set; }
-        public TimeSpan TotalTime { get; set; }
-        public uint CurrentFrame { get; set; }
-        public bool IsFastCut { get; set; }
-    }
-
-    public struct CropData
-    {
-        public static readonly CropData NoCrop = new CropData(-1, -1, -1, -1);
-
-        public short Left { get; }
-        public short Top { get; }
-        public short Right { get; }
-        public short Bottom { get; }
-
-        public CropData(short left, short top, short right, short bottom)
-        {
-            Left = left;
-            Top = top;
-            Right = right;
-            Bottom = bottom;
-        }
-
-        public bool HasValue()
-        {
-            return Left >= 0 && Top >= 0 && Right >= 0 && Bottom >= 0;
-        }
-    }
-
-    public struct Resolution
-    {
-        public static readonly Resolution SameAsSource = new Resolution(-1, -1);
-
-        public short Width { get; }
-        public short Height { get; }
-
-        public Resolution(short width, short height)
-        {
-            Width = width;
-            Height = height;
-        }
-
-        public Resolution(string resolution) //resolution must be a string in this form: 1920x1080
-        {
-            string[] numbers = resolution.Split('x');
-            Width = Convert.ToInt16(numbers[0]);
-            Height = Convert.ToInt16(numbers[1]);
-        }
-
-        public bool HasValue()
-        {
-            return Width >= 0 && Height >= 0;
-        }
-    }
-
-    public class ConversionOptions
-    {
-        public Encoder Encoder { get; set; }
-        public byte Preset { get; set; }
-        public byte Crf { get; set; }
-        public byte Framerate { get; set; }
-        public Resolution Resolution { get; set; }
-        public CropData CropData { get; set; }
-        public TimeSpan Start { get; set; }
-        public TimeSpan End { get; set; }
-        public bool SkipAudio { get; set; }
-
-        public ConversionOptions(Encoder encoder, byte preset, byte crf)
-        {
-            Encoder = encoder;
-            Preset = preset;
-            Crf = crf;
-            CropData = CropData.NoCrop;
-            Resolution = Resolution.SameAsSource;
-            Framerate = 0;
-            Start = TimeSpan.Zero;
-            End = TimeSpan.Zero;
-            SkipAudio = false;
-        }
-    }
-
-    public enum Encoder
-    {
-        H264,
-        H265
-    }
-
-
     public class FFmpegEngine
     {
         public delegate void ConversionEventHandler(ProgressData progressData);
         public event ConversionEventHandler ProgressChanged;
         public event ConversionEventHandler ConversionCompleted;
-        public static readonly string[] PRESETS = { "veryslow", "slower", "slow", "medium", "fast", "faster", "veryfast" };
 
         private readonly Process convertProcess = new Process();
         private ProgressData progressData;
@@ -128,7 +31,8 @@ namespace FFVideoConverter
         public async void Convert(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
         {
             progressData = new ProgressData();
-            progressData.IsFastCut = false;
+
+            //Duration
             if (conversionOptions.End != TimeSpan.Zero)
             {
                 progressData.TotalTime = conversionOptions.End - conversionOptions.Start;
@@ -138,6 +42,7 @@ namespace FFVideoConverter
                 progressData.TotalTime = sourceInfo.Duration - conversionOptions.Start;
             }
 
+            //Resolution and crop options
             string filters = "";
             if (conversionOptions.Resolution.HasValue() && conversionOptions.CropData.HasValue())
             {
@@ -153,6 +58,7 @@ namespace FFVideoConverter
                 filters = $" -vf \"crop=in_w-{conversionOptions.CropData.Left + conversionOptions.CropData.Right}:in_h-{conversionOptions.CropData.Top + conversionOptions.CropData.Bottom}:{conversionOptions.CropData.Left}:{conversionOptions.CropData.Top}\"";
             }
 
+            //FFMpeg command string
             StringBuilder sb = new StringBuilder("-y");
             sb.Append($" -ss {conversionOptions.Start}");
             sb.Append($" -i \"{sourceInfo.Source}\"");
@@ -162,55 +68,11 @@ namespace FFVideoConverter
                 sb.Append($" -i \"{sourceInfo.AudioSource}\"");
             }
             if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
-            sb.Append(" -c:v " + (conversionOptions.Encoder == Encoder.H264 ? "libx264" : "libx265"));
-            sb.Append(" -movflags faststart -preset " + PRESETS[conversionOptions.Preset]);
-            sb.Append(" -crf " + conversionOptions.Crf);
+            sb.Append(" -c:v " + conversionOptions.Encoder.GetFFMpegCommand());
             if (conversionOptions.Framerate > 0) sb.Append(" -r" + conversionOptions.Framerate);
             sb.Append(filters);
             sb.Append(conversionOptions.SkipAudio ? " -an" : " -c:a copy");
-            sb.Append($" \"{destination}\" -hide_banner");
-
-            convertProcess.StartInfo.Arguments = sb.ToString();
-            convertProcess.Start();
-            convertProcess.BeginErrorReadLine();
-
-            await Task.Run(() =>
-            {
-                convertProcess.WaitForExit();
-                errorWaitHandle.WaitOne();
-            });
-            convertProcess.CancelErrorRead();
-
-            int exitCode = convertProcess.ExitCode;
-            if (exitCode == 0) //conversion not aborted
-            {
-                ConversionCompleted?.Invoke(progressData);
-            }
-        }
-
-        public async void FastCut(MediaInfo sourceInfo, string destination, TimeSpan start, TimeSpan end)
-        {
-            progressData = new ProgressData();
-            progressData.IsFastCut = true;
-            if (end != TimeSpan.Zero)
-            {
-                progressData.TotalTime = end - start;
-            }
-            else
-            {
-                progressData.TotalTime = sourceInfo.Duration - start;
-            }
-
-            StringBuilder sb = new StringBuilder("-y");
-            sb.Append($" -ss {start}");
-            sb.Append($" -i \"{sourceInfo.Source}\"");
-            if (!String.IsNullOrEmpty(sourceInfo.AudioSource))
-            {
-                sb.Append($" -ss {start}");
-                sb.Append($" -i \"{sourceInfo.AudioSource}\"");
-            }
-            if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
-            sb.Append($" -c:v copy -c:a copy -avoid_negative_ts 1 \"{destination}\"");
+            sb.Append($" -avoid_negative_ts 1 \"{destination}\" -hide_banner");
 
             convertProcess.StartInfo.Arguments = sb.ToString();
             convertProcess.Start();

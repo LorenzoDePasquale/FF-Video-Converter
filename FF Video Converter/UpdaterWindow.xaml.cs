@@ -75,7 +75,6 @@ namespace FFVideoConverter
             InitializeComponent();
 
             Height -= 30;
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "LorenzoDePasquale");
         }
 
         #region "Title Bar controls"
@@ -97,6 +96,7 @@ namespace FFVideoConverter
             Version latestVersion, currentVersion;
             try
             {
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "LorenzoDePasquale");
                 using (Stream stream = await httpClient.GetStreamAsync("https://api.github.com/repos/lorenzodepasquale/FF-Video-Converter/releases").ConfigureAwait(false))
                 using (JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false))
                 {
@@ -175,7 +175,7 @@ namespace FFVideoConverter
             progressBarUpdateProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
             if (progress.percentage < 1)
             {
-                textBlockUpdateProgress.Text = $"Downloading update: {MainWindow.GetBytesReadable(progress.currentBytes)} / {MainWindow.GetBytesReadable(progress.totalBytes)} ({(progress.percentage * 100).ToString("F0")}%)";
+                textBlockUpdateProgress.Text = $"Downloading update: {progress.currentBytes.ToBytesString()} / {progress.totalBytes.ToBytesString()} ({(progress.percentage * 100).ToString("F0")}%)";
             }
             else
             {
@@ -189,15 +189,20 @@ namespace FFVideoConverter
                     {
                         File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
                     }
+                    //Restart the application
+                    Application.Current.Shutdown();
+                    Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    new MessageBoxWindow("Couldn't install downloaded update; try updating manually.", "Error").ShowDialog();
+                    new MessageBoxWindow("Couldn't install downloaded update; try updating manually.\n\nError message:\n" + ex.Message, "Error").ShowDialog();
+                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe"))
+                    {
+                        //Restores old file name in case of error
+                        File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
+                    }
                     Close();
                 }
-                //Restart the application
-                Application.Current.Shutdown();
-                Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
             }
         }
     }

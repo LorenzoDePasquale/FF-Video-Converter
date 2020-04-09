@@ -267,16 +267,17 @@
             <TextBlock x:Name="textBlockBitrate" HorizontalAlignment="Left" TextWrapping="NoWrap" VerticalAlignment="Top" Margin="84,85,0,0" />
             <TextBlock x:Name="textBlockResolution" HorizontalAlignment="Left" TextWrapping="NoWrap" VerticalAlignment="Top" Margin="84,110,0,0" />
             <TextBlock x:Name="textBlockInputSize" HorizontalAlignment="Left" TextWrapping="NoWrap" VerticalAlignment="Top" Margin="84,135,0,0" />
-            <TextBlock HorizontalAlignment="Left" Text="Duration:" VerticalAlignment="Top" Margin="10,10,0,0" Foreground="#FF2669DE" />
-            <TextBlock HorizontalAlignment="Left" Text="Codec:" VerticalAlignment="Top" Margin="10,35,0,0" Foreground="#FF2669DE" />
-            <TextBlock HorizontalAlignment="Left" Text="Framerate:" VerticalAlignment="Top" Margin="10,60,0,0" Foreground="#FF2669DE" />
-            <TextBlock HorizontalAlignment="Left" Text="Bitrate:" VerticalAlignment="Top" Margin="10,85,0,0" Foreground="#FF2669DE" />
-            <TextBlock HorizontalAlignment="Left" Text="Resolution:" VerticalAlignment="Top" Margin="10,110,0,0" Foreground="#FF2669DE" />
-            <TextBlock HorizontalAlignment="Left" Text="File size:" VerticalAlignment="Top" Margin="10,135,0,0" Foreground="#FF2669DE" />
+            <TextBlock HorizontalAlignment="Left" Text="Duration:" VerticalAlignment="Top" Margin="10,10,0,0" Foreground="{StaticResource TextColorBlue}" />
+            <TextBlock HorizontalAlignment="Left" Text="Codec:" VerticalAlignment="Top" Margin="10,35,0,0" Foreground="{StaticResource TextColorBlue}" />
+            <TextBlock HorizontalAlignment="Left" Text="Framerate:" VerticalAlignment="Top" Margin="10,60,0,0" Foreground="{StaticResource TextColorBlue}" />
+            <TextBlock HorizontalAlignment="Left" Text="Bitrate:" VerticalAlignment="Top" Margin="10,85,0,0" Foreground="{StaticResource TextColorBlue}" />
+            <TextBlock HorizontalAlignment="Left" Text="Resolution:" VerticalAlignment="Top" Margin="10,110,0,0" Foreground="{StaticResource TextColorBlue}" />
+            <TextBlock HorizontalAlignment="Left" Text="File size:" VerticalAlignment="Top" Margin="10,135,0,0" Foreground="{StaticResource TextColorBlue}" />
         </Grid>
 
         <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,215,216,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpen_Click"/>
         <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,215,14,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpenStream_Click"/>
+        <Button x:Name="buttonShowQueue" Content="Show queue" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,580,-137,0" HorizontalAlignment="Right" Width="127" Click="ButtonShowQueue_Click"/>
 
         <Grid x:Name="gridConversionSettings" Margin="0,260,0,0" Grid.Row="2" Height="262" VerticalAlignment="Top">
             <Button x:Name="buttonPreview" Content="Encoding preview" VerticalAlignment="Top" Margin="90,227,0,0" Click="ButtonPreview_Click" Height="30" HorizontalAlignment="Left" Width="169" ToolTipService.ShowDuration="15000" ToolTip="Compare a 4s clip of the video at every quality settings"/>
@@ -290,23 +291,22 @@
             </Grid>
             <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Encoder" VerticalAlignment="Top" Margin="10,47,0,0" Width="68" TextAlignment="Right"/>
             <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Framerate" VerticalAlignment="Top" Margin="10,83,0,0" Width="68" TextAlignment="Right"/>
-            <ComboBox x:Name="comboBoxEncoder" HorizontalAlignment="Left" Margin="90,44,0,0" VerticalAlignment="Top" Width="169" Height="24" ToolTipService.ShowDuration="15000" ToolTip="H264 is compatible with most devices (like smart TVs)&#xA;H265 is from 25% to 50% more efficient than H264, but requires more time to encode"/>
+            <ComboBox x:Name="comboBoxEncoder" HorizontalAlignment="Left" Margin="90,44,0,0" VerticalAlignment="Top" Width="169" Height="24" SelectionChanged="ComboBoxEncoder_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Native means the file is not re-encoded, thus conversion options are not used; use this mode if you only want to download a web media&#xA;H264 is compatible with most devices (like smart TVs)&#xA;H265 is from 25% to 50% more efficient than H264, but requires more time to encode"/>
             <ComboBox x:Name="comboBoxFramerate" HorizontalAlignment="Left" Margin="90,80,0,0" VerticalAlignment="Top" Width="169" Height="24" />
             <ComboBox x:Name="comboBoxPreset" HorizontalAlignment="Left" Margin="90,116,0,0" VerticalAlignment="Top" Width="169" Height="24" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding speed to compression ratio&#xA;A slower profile will require more time to encode, but the output file will be smaller"/>
             <ComboBox x:Name="comboBoxQuality" HorizontalAlignment="Left" Margin="90,152,0,0" VerticalAlignment="Top" Width="169" Height="24" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding quality to size ratio&#xA;A higher quality will provide a better looking video at the cost of file size (size increases by about 1/3 with every option)" />
             <ComboBox x:Name="comboBoxResolution" HorizontalAlignment="Left" Margin="90,188,0,0" VerticalAlignment="Top" Width="169" Height="24" />
             <Grid x:Name="gridCut" Margin="332,46,10,0" Height="71" VerticalAlignment="Top" >
-                <TextBlock x:Name="textBlockStartBefore" HorizontalAlignment="Left" Margin="124,3,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxFastCut}" MouseLeftButtonDown="TextBlockStartBefore_MouseLeftButtonDown"/>
-                <TextBlock x:Name="textBlockStartAfter" HorizontalAlignment="Left" Margin="124,48,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxFastCut}" MouseLeftButtonDown="TextBlockStartAfter_MouseLeftButtonDown"/>
+                <TextBlock x:Name="textBlockStartBefore" HorizontalAlignment="Left" Margin="124,3,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="Hidden" MouseLeftButtonDown="TextBlockStartBefore_MouseLeftButtonDown"/>
+                <TextBlock x:Name="textBlockStartAfter" HorizontalAlignment="Left" Margin="124,48,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="Hidden" MouseLeftButtonDown="TextBlockStartAfter_MouseLeftButtonDown"/>
                 <TextBox x:Name="textBoxStart" HorizontalAlignment="Left" Height="25" Margin="124,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxStart_TextChanged" />
-                <CheckBox x:Name="checkBoxCut" IsEnabled="False" Content="Cut" HorizontalAlignment="Left" Margin="0,19,0,0" VerticalAlignment="Top" Height="30" Width="64" Checked="CheckBoxCut_Click" Unchecked="CheckBoxCut_Click"/>
+                <CheckBox x:Name="checkBoxCut" IsEnabled="False" Content="Cut" HorizontalAlignment="Left" Margin="0,19,0,0" VerticalAlignment="Top" Height="30" Width="85" Checked="CheckBoxCut_Click" Unchecked="CheckBoxCut_Click" ToolTipService.ShowDuration="15000"/>
                 <TextBlock HorizontalAlignment="Left" Margin="90,25,0,0" TextWrapping="Wrap" Text="Start" VerticalAlignment="Top"/>
                 <TextBox x:Name="textBoxEnd" HorizontalAlignment="Left" Height="23" Margin="264,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxEnd_TextChanged"/>
                 <TextBlock HorizontalAlignment="Left" Margin="238,25,0,0" TextWrapping="Wrap" Text="End" VerticalAlignment="Top"/>
                 <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" Margin="380,24,-15,0" TextWrapping="Wrap" Text="Duration: 00:00:00" VerticalAlignment="Top" Width="110" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}"/>
-                <CheckBox x:Name="checkBoxFastCut" Content="Fast cut" HorizontalAlignment="Left" Margin="0,54,0,-13" VerticalAlignment="Top" Height="30" Width="82" Checked="CheckBoxFastCut_Click" Unchecked="CheckBoxFastCut_Click" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}" ToolTipService.ShowDuration="15000" ToolTip="Cuts the video without re-encoding it. Because no encoding is performed, every other option is ignored&#xA;Although the video can be cut anywhere, cutting at the suggested start positions will provide the most accurate result"/>
             </Grid>
-            <Grid x:Name="gridCrop" Margin="332,127,40,0" Height="125" VerticalAlignment="Top" >
+            <Grid x:Name="gridCrop" Margin="332,120,40,0" Height="125" VerticalAlignment="Top" >
                 <local:IntegerTextBox x:Name="integerTextBoxCropTop" HorizontalAlignment="Left" Height="28" Margin="190,20,0,0" VerticalAlignment="Top" Width="70" Minimum="0" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
                 <local:IntegerTextBox x:Name="integerTextBoxCropLeft" HorizontalAlignment="Left" Height="28" Margin="120,48,0,0" VerticalAlignment="Top" Width="70" Minimum="0" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
                 <local:IntegerTextBox x:Name="integerTextBoxCropBottom" HorizontalAlignment="Left" Height="28" Margin="190,76,0,0" VerticalAlignment="Top" Width="70" Minimum="0" ValueChanged="IntegerTextBoxCrop_ValueChanged" />
@@ -335,7 +335,7 @@
                 </LinearGradientBrush>
             </Button.Background>
         </Button>
-        <Button x:Name="buttonDownload" Content="Download" VerticalAlignment="Top" IsEnabled="False" Margin="857,533,-149,0" Click="ButtonDownload_Click" Height="30" Grid.Row="2" FontSize="14" FontWeight="Bold">
+        <Button x:Name="buttonButton" Content="Button" VerticalAlignment="Top" IsEnabled="False" Margin="857,533,-149,0" Height="30" Grid.Row="2" FontSize="14" FontWeight="Bold">
             <Button.OpacityMask>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="#FF089E0F" Offset="1"/>

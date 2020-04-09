@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -34,6 +35,7 @@ namespace FFVideoConverter
             MediaInfo mediaInfo = new MediaInfo();
             mediaInfo.Source = source;
             await mediaInfo.FF_Open(source);
+            if (!source.StartsWith("http")) mediaInfo.Title = Path.GetFileName(source);
             return mediaInfo;
         }
 
@@ -119,7 +121,7 @@ namespace FFVideoConverter
             }
         }
 
-        private bool BracketBalanced(in string text)
+        private bool BracketBalanced(string text)
         {
             int brackets = 0;
             for (int i = 0; i < text.Length; i++)
@@ -136,7 +138,7 @@ namespace FFVideoConverter
             string line;
             double nearestKeyFrameBefore = 0;
             double nearestKeyFrameAfter = Duration.TotalSeconds;
-            bool isKeyFrame = false;
+            bool isKeyFrame = position == 0;
             const double MAX_DISTANCE = 30;
             double distance = 1;
             double increment = 1;

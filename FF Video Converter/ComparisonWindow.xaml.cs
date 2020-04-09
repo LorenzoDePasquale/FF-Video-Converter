@@ -3,7 +3,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
+
 
 namespace FFVideoConverter
 {
@@ -27,17 +29,16 @@ namespace FFVideoConverter
             this.encoder = encoder;
 
             ffmpegEngine = new FFmpegEngine();
-            ffmpegEngine.ConversionCompleted += FFmpegEngine_ConversionCompleted;
-            ffmpegEngine.ProgressChanged += FFmpegEngine_ProgressChanged;
+            ffmpegEngine.ConversionCompleted += FFmpegEngine_CutCompleted;
 
             mediaElementOriginal.Open(new Uri(mediaFile.Source));
-            labelTitle.Content += encoder == Encoder.H264 ? " (H264)" : " (H265)";
+            labelTitle.Content += $"({encoder})";
             sliderPreview.Maximum = mediaFile.Duration.TotalSeconds;
             Height -= 30; //compensate for setting window chrome height to 0;
 
-            foreach (var item in MainWindow.QUALITY)
+            foreach (Quality quality in Enum.GetValues(typeof(Quality)))
             {
-                comboBoxQuality.Items.Add(item);
+                comboBoxQuality.Items.Add(quality.GetName());
             }
             comboBoxQuality.SelectedIndex = 3;
 
@@ -66,31 +67,37 @@ namespace FFVideoConverter
 
         private void FFmpegEngine_ProgressChanged(ProgressData progressData)
         {
-            if (!progressData.IsFastCut)
-            {
-                double processedSeconds = progressData.CurrentTime.TotalSeconds;
-                double totalSeconds = progressData.TotalTime.TotalSeconds;
-                double relativePercentage = processedSeconds * 100 / totalSeconds;
-                double totalPercentage = 100 / PREVIEW_COUNT * (currentPreview - 1) + relativePercentage / PREVIEW_COUNT;
+            double processedSeconds = progressData.CurrentTime.TotalSeconds;
+            double totalSeconds = progressData.TotalTime.TotalSeconds;
+            double relativePercentage = processedSeconds * 100 / totalSeconds;
+            double totalPercentage = 100 / PREVIEW_COUNT * (currentPreview - 1) + relativePercentage / PREVIEW_COUNT;
 
-                Dispatcher.Invoke(() =>
-                {
-                    DoubleAnimation progressAnimation = new DoubleAnimation(totalPercentage, TimeSpan.FromSeconds(0.5));
-                    progressBarPreview.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
-                }, System.Windows.Threading.DispatcherPriority.Send);
-            }
+            Dispatcher.Invoke(() =>
+            {
+                DoubleAnimation progressAnimation = new DoubleAnimation(totalPercentage, TimeSpan.FromSeconds(0.5));
+                progressBarPreview.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
+            }, System.Windows.Threading.DispatcherPriority.Send);
+        }
+
+        private void FFmpegEngine_CutCompleted(ProgressData progressData)
+        {
+            conversionOptions.Encoder = encoder;
+            conversionOptions.Encoder.Quality = (Quality)currentPreview++;
+            ffmpegEngine.Convert(mediaFile, $"temp\\preview_{currentPreview}.mkv", conversionOptions);
+            textBlockPreviewBuildProgress.Text = $"Creating preview ({currentPreview}/{PREVIEW_COUNT})";
+
+            ffmpegEngine.ConversionCompleted -= FFmpegEngine_CutCompleted;
+            ffmpegEngine.ConversionCompleted += FFmpegEngine_ConversionCompleted;
+            ffmpegEngine.ProgressChanged += FFmpegEngine_ProgressChanged;
         }
 
         private void FFmpegEngine_ConversionCompleted(ProgressData progressData)
         {
             if (currentPreview < PREVIEW_COUNT)
             {
-                string quality = comboBoxQuality.Items[currentPreview].ToString();
-                conversionOptions.Crf = MainWindow.GetCRFFromQuality(quality, encoder);
-                conversionOptions.SkipAudio = true;
+                conversionOptions.Encoder.Quality = (Quality)currentPreview++;
                 ffmpegEngine.Convert(mediaFile, $"temp\\preview_{currentPreview}.mkv", conversionOptions);
-                currentPreview++;
-                textBlockPreviewTimespan.Text = $"Creating preview ({currentPreview}/{PREVIEW_COUNT})";
+                textBlockPreviewBuildProgress.Text = $"Creating preview ({currentPreview}/{PREVIEW_COUNT})";
             }
             else
             {
@@ -112,7 +119,7 @@ namespace FFVideoConverter
                 blurEffect.Radius = 0;
                 buttonPlayPause.IsEnabled = true;
                 sliderPreview.Visibility = Visibility.Hidden;
-                textBlockPreviewTimespan.Text = "Quality";
+                textBlockPreviewBuildProgress.Text = "Quality";
                 Storyboard storyboard = FindResource("ProgressAnimationOut") as Storyboard;
                 storyboard.Begin();
             }
@@ -142,7 +149,7 @@ namespace FFVideoConverter
                 buttonPlayPause.IsEnabled = false;
                 sliderPreview.Visibility = Visibility.Hidden;
                 buttonCreatePreview.Content = "Cancel";
-                textBlockPreviewTimespan.Text = "Cutting original...";
+                textBlockPreviewBuildProgress.Text = "Cutting original...";
                 Storyboard storyboard = FindResource("ProgressAnimationIn") as Storyboard;
                 storyboard.Begin();
                 Directory.CreateDirectory(Environment.CurrentDirectory + "\\temp");
@@ -150,12 +157,15 @@ namespace FFVideoConverter
                 double keyFrameBefore = (await mediaFile.GetNearestBeforeAndAfterKeyFrames(start.TotalSeconds)).before;
                 start = TimeSpan.FromSeconds(keyFrameBefore);
                 end = start.Add(TimeSpan.FromSeconds(4));
-                conversionOptions = new ConversionOptions(encoder, 6, 16)
+                encoder.Preset = Preset.VeryFast;
+                encoder.Quality = Quality.Best;
+                conversionOptions = new ConversionOptions(new NativeEncoder())
                 {
-                    Start = start,
-                    End = end
+                    Start = start.Add(TimeSpan.FromSeconds(0.2)),
+                    End = end,
+                    SkipAudio = true
                 }; 
-                ffmpegEngine.FastCut(mediaFile, Environment.CurrentDirectory + "\\temp\\source.mkv", start.Add(TimeSpan.FromSeconds(0.1)), end);
+                ffmpegEngine.Convert(mediaFile, Environment.CurrentDirectory + "\\temp\\source.mkv", conversionOptions);
             }
             else
             {
@@ -165,19 +175,39 @@ namespace FFVideoConverter
 
         private async void ButtonPlayPause_Click(object sender, RoutedEventArgs e)
         {
+            buttonPlayPause.IsEnabled = false;
             if (buttonPlayPause.Content.ToString() == " ▶️")
             {
-                buttonPlayPause.Content = " ❚❚";
                 await mediaElementConverted.Play();
                 await mediaElementOriginal.Play();
+                buttonPlayPause.Content = " ❚❚";
             }
             else
             {
-                buttonPlayPause.Content = " ▶️";
-                await mediaElementConverted.Pause();
                 await mediaElementOriginal.Pause();
-                await mediaElementConverted.Seek(mediaElementOriginal.Position);
+                if (mediaElementConverted.Source != null)
+                {
+                    await mediaElementConverted.Pause();
+                    await mediaElementConverted.Seek(mediaElementOriginal.FramePosition);
+                    //Try to sync frame position by stepping a frame at a time
+                    if (mediaElementConverted.FramePosition < mediaElementOriginal.FramePosition)
+                    {
+                        while (mediaElementOriginal.FramePosition - mediaElementConverted.FramePosition > mediaElementOriginal.PositionStep)
+                        {
+                            await mediaElementConverted.StepForward();
+                        }
+                    }
+                    else
+                    {
+                        while (mediaElementConverted.FramePosition - mediaElementOriginal.FramePosition > mediaElementOriginal.PositionStep)
+                        {
+                            await mediaElementConverted.StepBackward();
+                        }
+                    }
+                }
+                buttonPlayPause.Content = " ▶️";
             }
+            buttonPlayPause.IsEnabled = true;
         }
 
         private async void ComboBoxQuality_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -235,6 +265,19 @@ namespace FFVideoConverter
             await mediaElementConverted.Pause();
             await mediaElementOriginal.StepBackward();
             await mediaElementConverted.Seek(mediaElementOriginal.Position);
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            //If there is no space to show the window at its native size, make the window fullscreen
+            if (Width > SystemParameters.WorkArea.Width || Height > SystemParameters.WorkArea.Height)
+            {
+                Width = SystemParameters.WorkArea.Width;
+                Height = SystemParameters.WorkArea.Height;
+                Left = 0;
+                Top = 0;
+                gridTitlebar.MouseDown -= Grid_MouseDown;
+            }
         }
 
         private void SliderPreview_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)

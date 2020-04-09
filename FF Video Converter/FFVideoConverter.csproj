@@ -58,6 +58,7 @@
     <StartupObject>
     </StartupObject>
   </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.IO.Compression.FileSystem" />
@@ -78,15 +79,25 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Data structures.cs" />
+    <Compile Include="DragAdorner.cs" />
+    <Compile Include="Encoders.cs" />
     <Compile Include="IntegerTextBox.xaml.cs">
       <DependentUpon>IntegerTextBox.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Job.cs" />
     <Compile Include="MediaInfo.cs" />
     <Compile Include="MessageBoxWindow.xaml.cs">
       <DependentUpon>MessageBoxWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="OpenStreamWindow.xaml.cs">
       <DependentUpon>OpenStreamWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="QuestionBoxWindow.xaml.cs">
+      <DependentUpon>QuestionBoxWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="QueueWindow.xaml.cs">
+      <DependentUpon>QueueWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="RangeSlider.xaml.cs">
       <DependentUpon>RangeSlider.xaml</DependentUpon>
@@ -133,6 +144,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OpenStreamWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="QuestionBoxWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="QueueWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -196,6 +215,9 @@
       <Version>6.0.8</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf">
+      <Version>1.1.19</Version>
     </PackageReference>
     <PackageReference Include="System.Text.Json">
       <Version>4.7.1</Version>
