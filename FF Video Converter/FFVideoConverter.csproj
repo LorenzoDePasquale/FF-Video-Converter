@@ -79,6 +79,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CompletedWindow.xaml.cs">
+      <DependentUpon>CompletedWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Data structures.cs" />
     <Compile Include="DragAdorner.cs" />
     <Compile Include="Encoders.cs" />
@@ -112,6 +115,10 @@
     <Compile Include="VideoUrlParser.cs" />
     <Compile Include="WindowBlur.cs" />
     <Page Include="ComparisonWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="CompletedWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -212,18 +219,15 @@
       <Version>4.2.330</Version>
     </PackageReference>
     <PackageReference Include="Fody">
-      <Version>6.0.8</Version>
+      <Version>6.1.1</Version>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf">
-      <Version>1.1.19</Version>
     </PackageReference>
     <PackageReference Include="System.Text.Json">
       <Version>4.7.1</Version>
     </PackageReference>
     <PackageReference Include="YoutubeExplode">
-      <Version>4.7.16</Version>
+      <Version>5.0.1</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

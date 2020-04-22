@@ -206,6 +206,11 @@ namespace FFVideoConverter
             }
         }
 
+        public static string ToFormattedString(this TimeSpan t, bool showMilliseconds = false)
+        {
+            return showMilliseconds ? t.ToString(@"hh\:mm\:ss\.ff") : t.ToString(@"hh\:mm\:ss");
+        }
+
         #endregion
     }
 }

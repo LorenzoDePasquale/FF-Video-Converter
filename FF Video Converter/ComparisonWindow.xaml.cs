@@ -3,7 +3,6 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 
@@ -17,7 +16,7 @@ namespace FFVideoConverter
         private ConversionOptions conversionOptions;
         private TimeSpan start, end;
         private const int PREVIEW_COUNT = 6;
-        private int currentPreview = 0;
+        private int currentPreview = 1;
         private bool isSeeking = false, userInput = true, wasPlaying = false;
 
 
@@ -29,10 +28,11 @@ namespace FFVideoConverter
             this.encoder = encoder;
 
             ffmpegEngine = new FFmpegEngine();
-            ffmpegEngine.ConversionCompleted += FFmpegEngine_CutCompleted;
+            ffmpegEngine.ConversionCompleted += FFmpegEngine_ConversionCompleted;
+            ffmpegEngine.ProgressChanged += FFmpegEngine_ProgressChanged;
 
             mediaElementOriginal.Open(new Uri(mediaFile.Source));
-            labelTitle.Content += $"({encoder})";
+            labelTitle.Content += $" ({encoder})";
             sliderPreview.Maximum = mediaFile.Duration.TotalSeconds;
             Height -= 30; //compensate for setting window chrome height to 0;
 
@@ -62,7 +62,7 @@ namespace FFVideoConverter
                 start = TimeSpan.FromSeconds(mediaFile.Duration.TotalSeconds - 4);
                 end = TimeSpan.FromSeconds(mediaFile.Duration.TotalSeconds);
             }
-            textBlockPreviewTimespan.Text = $"Preview timespan: {start.ToString(@"hh\:mm\:ss")} - {end.ToString(@"hh\:mm\:ss")}";
+            textBlockPreviewTimespan.Text = $"Preview timespan: {start.ToFormattedString()} - {end.ToFormattedString()}";
         }
 
         private void FFmpegEngine_ProgressChanged(ProgressData progressData)
@@ -79,24 +79,12 @@ namespace FFVideoConverter
             }, System.Windows.Threading.DispatcherPriority.Send);
         }
 
-        private void FFmpegEngine_CutCompleted(ProgressData progressData)
-        {
-            conversionOptions.Encoder = encoder;
-            conversionOptions.Encoder.Quality = (Quality)currentPreview++;
-            ffmpegEngine.Convert(mediaFile, $"temp\\preview_{currentPreview}.mkv", conversionOptions);
-            textBlockPreviewBuildProgress.Text = $"Creating preview ({currentPreview}/{PREVIEW_COUNT})";
-
-            ffmpegEngine.ConversionCompleted -= FFmpegEngine_CutCompleted;
-            ffmpegEngine.ConversionCompleted += FFmpegEngine_ConversionCompleted;
-            ffmpegEngine.ProgressChanged += FFmpegEngine_ProgressChanged;
-        }
-
         private void FFmpegEngine_ConversionCompleted(ProgressData progressData)
         {
             if (currentPreview < PREVIEW_COUNT)
             {
                 conversionOptions.Encoder.Quality = (Quality)currentPreview++;
-                ffmpegEngine.Convert(mediaFile, $"temp\\preview_{currentPreview}.mkv", conversionOptions);
+                ffmpegEngine.Convert(mediaFile, $"temp\\preview_{currentPreview - 1}.mkv", conversionOptions);
                 textBlockPreviewBuildProgress.Text = $"Creating preview ({currentPreview}/{PREVIEW_COUNT})";
             }
             else
@@ -111,7 +99,7 @@ namespace FFVideoConverter
         {
             if (progressBarPreview.Value == 100)
             {
-                mediaElementOriginal.Open(new Uri(Environment.CurrentDirectory + "\\temp\\source.mkv"));
+                mediaElementOriginal.Open(new Uri($"{Environment.CurrentDirectory}\\temp\\preview_0.mkv"));
                 mediaElementConverted.Open(new Uri($"{Environment.CurrentDirectory}\\temp\\preview_{comboBoxQuality.SelectedIndex}.mkv"));
                 sliderComparison.Visibility = Visibility.Visible;
                 textBlockConverted.Visibility = Visibility.Visible;
@@ -149,7 +137,7 @@ namespace FFVideoConverter
                 buttonPlayPause.IsEnabled = false;
                 sliderPreview.Visibility = Visibility.Hidden;
                 buttonCreatePreview.Content = "Cancel";
-                textBlockPreviewBuildProgress.Text = "Cutting original...";
+                textBlockPreviewBuildProgress.Text = $"Creating preview ({currentPreview}/{PREVIEW_COUNT})";
                 Storyboard storyboard = FindResource("ProgressAnimationIn") as Storyboard;
                 storyboard.Begin();
                 Directory.CreateDirectory(Environment.CurrentDirectory + "\\temp");
@@ -159,13 +147,13 @@ namespace FFVideoConverter
                 end = start.Add(TimeSpan.FromSeconds(4));
                 encoder.Preset = Preset.VeryFast;
                 encoder.Quality = Quality.Best;
-                conversionOptions = new ConversionOptions(new NativeEncoder())
+                conversionOptions = new ConversionOptions(encoder)
                 {
-                    Start = start.Add(TimeSpan.FromSeconds(0.2)),
+                    Start = start,
                     End = end,
                     SkipAudio = true
                 }; 
-                ffmpegEngine.Convert(mediaFile, Environment.CurrentDirectory + "\\temp\\source.mkv", conversionOptions);
+                ffmpegEngine.Convert(mediaFile, Environment.CurrentDirectory + "\\temp\\preview_0.mkv", conversionOptions);
             }
             else
             {
@@ -189,21 +177,6 @@ namespace FFVideoConverter
                 {
                     await mediaElementConverted.Pause();
                     await mediaElementConverted.Seek(mediaElementOriginal.FramePosition);
-                    //Try to sync frame position by stepping a frame at a time
-                    if (mediaElementConverted.FramePosition < mediaElementOriginal.FramePosition)
-                    {
-                        while (mediaElementOriginal.FramePosition - mediaElementConverted.FramePosition > mediaElementOriginal.PositionStep)
-                        {
-                            await mediaElementConverted.StepForward();
-                        }
-                    }
-                    else
-                    {
-                        while (mediaElementConverted.FramePosition - mediaElementOriginal.FramePosition > mediaElementOriginal.PositionStep)
-                        {
-                            await mediaElementConverted.StepBackward();
-                        }
-                    }
                 }
                 buttonPlayPause.Content = " ▶️";
             }

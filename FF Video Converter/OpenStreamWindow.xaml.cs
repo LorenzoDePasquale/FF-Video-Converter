@@ -121,9 +121,16 @@ namespace FFVideoConverter
                             return;
                         }
 
-                        comboBoxAudioQuality.Items.Add("[No Audio]");
                         comboBoxQuality.SelectedIndex = 0;
-                        comboBoxAudioQuality.SelectedIndex = 0;
+                        if (comboBoxAudioQuality.Items.Count > 0)
+                        {
+                            comboBoxAudioQuality.SelectedIndex = 0;
+                            comboBoxAudioQuality.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            comboBoxAudioQuality.Visibility = Visibility.Hidden;
+                        }
                         buttonOpen.Content = "Open selected quality";
                         if (comboBoxQuality.Items.Count == 1 && comboBoxAudioQuality.Items.Count == 1) //Only one option -> automatically select that option
                         {
@@ -143,12 +150,22 @@ namespace FFVideoConverter
                 buttonOpen.IsEnabled = false;
                 labelTitle.Content = $"Loading {host} video...";
                 StreamInfo selectedVideo = (StreamInfo)comboBoxQuality.SelectedItem;
-                MediaStream = await MediaInfo.Open(selectedVideo.Url);
-                if (comboBoxAudioQuality.SelectedItem.ToString() != "[No Audio]")
+                try
+                {
+                    MediaStream = await MediaInfo.Open(selectedVideo.Url);
+                }
+                catch (Exception ex)
+                {
+                    new MessageBoxWindow(ex.Message, "Error opening selected url").ShowDialog();
+                    Close();
+                    return;
+                }
+                if (comboBoxAudioQuality.Items.Count > 0)
                 {
                     StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
                     MediaStream.AudioSource = selectedAudio.Url;
                     MediaStream.AudioCodec = selectedAudio.Codec;
+                    new MessageBoxWindow("The audio stream relative to this video is separate, therefore the integrated player will play the video without audio.\nWhen converting or downloading this video however, audio and video will be muxed toghether", "Info").ShowDialog();
                 }
                 MediaStream.Title = selectedVideo.Title;
                 Close();

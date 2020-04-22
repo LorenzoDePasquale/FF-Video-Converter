@@ -9,23 +9,35 @@ using System.Windows.Media;
 
 namespace FFVideoConverter
 {
+    public enum QueueCompletedAction { Nothing, Sleep, Shutdown };
+
     public partial class QueueWindow : Window
     {
+        public bool QueueActive
+        {
+            get => buttonStartStopQueue.Content.ToString() == "Stop queue";
+            set => buttonStartStopQueue.Content = value ? "Stop queue" : "Start queue";
+        }
+        public QueueCompletedAction QueueCompletedAction { get => (QueueCompletedAction)comboBoxShutdown.SelectedIndex; }
+        public event Action QueueStarted;
+
         private Point draggingStartPoint = new Point();
         private int draggedItemIndex = -1;
         private DragAdorner dragAdorner;
         private readonly ObservableCollection<Job> queuedJobs;
-        private readonly ObservableCollection<Job> completedJobs;
+        private readonly MainWindow mainWindow;
+        private Job selectedJob;
+        private bool dropAfter = false;
 
 
-        public QueueWindow(ObservableCollection<Job> queuedJobs, ObservableCollection<Job> completedJobs)
+        public QueueWindow(MainWindow mainWindow, ObservableCollection<Job> queuedJobs)
         {
             InitializeComponent();
 
+            this.mainWindow = mainWindow;
             this.queuedJobs = queuedJobs;
-            this.completedJobs = completedJobs;
-            listViewJobs.ItemsSource = queuedJobs;
-            listViewCompletedJobs.ItemsSource = completedJobs;
+            listViewQueuedJobs.ItemsSource = queuedJobs;
+            comboBoxShutdown.SelectedIndex = 0;
         }
 
         #region Title Bar controls
@@ -45,100 +57,136 @@ namespace FFVideoConverter
             Close();
         }
 
-        #endregion
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Hide();
+        }
 
+        #endregion
 
         private void ButtonEdit_Click(object sender, RoutedEventArgs e)
         {
-            
+            if (selectedJob != null)
+            {
+                if (new QuestionBoxWindow("Opening this job will remove it from the queue and overwrite your current conversion settings.\nAre you sure you want to open it?", "Queue").ShowDialog() == true)
+                {
+                    mainWindow.OpenJob(selectedJob);
+                    queuedJobs.Remove(selectedJob);
+                    Close();
+                }
+            }
         }
 
         private void ButtonRemove_Click(object sender, RoutedEventArgs e)
         {
-            if (listViewJobs.SelectedIndex > -1)
+            if (selectedJob != null)
             {
-                queuedJobs.RemoveAt(listViewJobs.SelectedIndex);
+                queuedJobs.RemoveAt(listViewQueuedJobs.SelectedIndex);
             }
+        }
 
-            //TODO: if user removes the job that is running, ask confirmation before removing it, then ask MainWindow to stop it before removing
+        private void ButtonStartStopQueue_Click(object sender, RoutedEventArgs e)
+        {
+            QueueActive = !QueueActive;
+            if (QueueActive) QueueStarted?.Invoke();
         }
 
         private void ListViewJobs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (listViewJobs.SelectedIndex == -1) return;
-
-            ConversionOptions conversionOptions = queuedJobs[listViewJobs.SelectedIndex].ConversionOptions;
-
-            textBlockEncoder.Text = conversionOptions.Encoder.ToString();
-            if (conversionOptions.Encoder is NativeEncoder)
+            selectedJob = (Job)listViewQueuedJobs.SelectedItem;
+            if (listViewQueuedJobs.SelectedIndex == -1)
             {
-                textBlockProfile.Visibility = Visibility.Collapsed;
-                textBlockProfileLabel.Visibility = Visibility.Collapsed;
-                textBlockQuality.Visibility = Visibility.Collapsed;
-                textBlockQualityLabel.Visibility = Visibility.Collapsed;
-                textBlockFramerate.Visibility = Visibility.Collapsed;
-                textBlockFramerateLabel.Visibility = Visibility.Collapsed;
-                textBlockResolution.Visibility = Visibility.Collapsed;
-                textBlockResolutionLabel.Visibility = Visibility.Collapsed;
-                textBlockCrop.Visibility = Visibility.Collapsed;
-                textBlockCropLabel.Visibility = Visibility.Collapsed;
+                stackPanelContent.Visibility = Visibility.Hidden;
+                stackPanelLabel.Visibility = Visibility.Hidden;
+                buttonEdit.Visibility = Visibility.Hidden;
+                buttonRemove.Visibility = Visibility.Hidden;
             }
             else
             {
-                textBlockProfile.Visibility = Visibility.Visible;
-                textBlockProfileLabel.Visibility = Visibility.Visible;
-                textBlockQuality.Visibility = Visibility.Visible;
-                textBlockQualityLabel.Visibility = Visibility.Visible;
-                textBlockFramerate.Visibility = Visibility.Visible;
-                textBlockFramerateLabel.Visibility = Visibility.Visible;
-                textBlockCrop.Visibility = Visibility.Visible;
-                textBlockCropLabel.Visibility = Visibility.Visible;
-                textBlockResolution.Visibility = Visibility.Visible;
-                textBlockResolutionLabel.Visibility = Visibility.Visible; 
-                textBlockProfile.Text = conversionOptions.Encoder.Preset.GetName();
-                textBlockQuality.Text = conversionOptions.Encoder.Quality.GetName();
-                if (conversionOptions.Framerate > 0)
+                stackPanelContent.Visibility = Visibility.Visible;
+                stackPanelLabel.Visibility = Visibility.Visible;
+                buttonEdit.Visibility = Visibility.Visible;
+                buttonRemove.Visibility = Visibility.Visible;
+
+                ConversionOptions conversionOptions = ((Job)listViewQueuedJobs.SelectedItem).ConversionOptions;
+
+                textBlockEncoder.Text = conversionOptions.Encoder.ToString();
+                if (conversionOptions.Encoder is NativeEncoder)
                 {
-                    textBlockFramerate.Text = conversionOptions.Framerate.ToString() + " fps";
-                }
-                else
-                {
-                    textBlockFramerate.Text = "same as source";
-                }
-                if (conversionOptions.CropData.HasValue())
-                {
+                    textBlockProfile.Visibility = Visibility.Collapsed;
+                    textBlockProfileLabel.Visibility = Visibility.Collapsed;
+                    textBlockQuality.Visibility = Visibility.Collapsed;
+                    textBlockQualityLabel.Visibility = Visibility.Collapsed;
+                    textBlockFramerate.Visibility = Visibility.Collapsed;
+                    textBlockFramerateLabel.Visibility = Visibility.Collapsed;
                     textBlockResolution.Visibility = Visibility.Collapsed;
                     textBlockResolutionLabel.Visibility = Visibility.Collapsed;
-                    textBlockCrop.Text = conversionOptions.CropData.ToString();
+                    textBlockCrop.Visibility = Visibility.Collapsed;
+                    textBlockCropLabel.Visibility = Visibility.Collapsed;
+                    textBlockRotation.Visibility = Visibility.Collapsed;
+                    textBlockRotationLabel.Visibility = Visibility.Collapsed;
                 }
                 else
                 {
-                    textBlockCrop.Visibility = Visibility.Collapsed;
-                    textBlockCropLabel.Visibility = Visibility.Collapsed;
-                    textBlockResolution.Text = conversionOptions.Resolution.ToString();
+                    textBlockProfile.Visibility = Visibility.Visible;
+                    textBlockProfileLabel.Visibility = Visibility.Visible;
+                    textBlockQuality.Visibility = Visibility.Visible;
+                    textBlockQualityLabel.Visibility = Visibility.Visible;
+                    textBlockFramerate.Visibility = Visibility.Visible;
+                    textBlockFramerateLabel.Visibility = Visibility.Visible;
+                    textBlockCrop.Visibility = Visibility.Visible;
+                    textBlockCropLabel.Visibility = Visibility.Visible;
+                    textBlockResolution.Visibility = Visibility.Visible;
+                    textBlockResolutionLabel.Visibility = Visibility.Visible;
+                    textBlockRotation.Visibility = Visibility.Visible;
+                    textBlockRotationLabel.Visibility = Visibility.Visible;
+                    textBlockProfile.Text = conversionOptions.Encoder.Preset.GetName();
+                    textBlockQuality.Text = conversionOptions.Encoder.Quality.GetName();
+                    if (conversionOptions.Framerate > 0)
+                    {
+                        textBlockFramerate.Text = conversionOptions.Framerate.ToString() + " fps";
+                    }
+                    else
+                    {
+                        textBlockFramerate.Text = "same as source";
+                    }
+                    if (conversionOptions.CropData.HasValue())
+                    {
+                        textBlockResolution.Visibility = Visibility.Collapsed;
+                        textBlockResolutionLabel.Visibility = Visibility.Collapsed;
+                        textBlockCrop.Text = conversionOptions.CropData.ToString();
+                    }
+                    else
+                    {
+                        textBlockCrop.Visibility = Visibility.Collapsed;
+                        textBlockCropLabel.Visibility = Visibility.Collapsed;
+                        textBlockResolution.Text = conversionOptions.Resolution.ToString();
+                    }
+                    textBlockRotation.Text = conversionOptions.Rotation.ToString();
                 }
-            }
-            if (conversionOptions.Start != TimeSpan.Zero)
-            {
-                textBlockStart.Visibility = Visibility.Visible;
-                textBlockStartLabel.Visibility = Visibility.Visible;
-                textBlockStart.Text = conversionOptions.Start.ToString(@"hh\:mm\:ss\.ff");
-            }
-            else
-            {
-                textBlockStart.Visibility = Visibility.Collapsed;
-                textBlockStartLabel.Visibility = Visibility.Collapsed;
-            }
-            if (conversionOptions.End != TimeSpan.Zero)
-            {
-                textBlockEnd.Visibility = Visibility.Visible;
-                textBlockEndLabel.Visibility = Visibility.Visible;
-                textBlockEnd.Text = conversionOptions.End.ToString(@"hh\:mm\:ss\.ff");
-            }
-            else
-            {
-                textBlockEnd.Visibility = Visibility.Collapsed;
-                textBlockEndLabel.Visibility = Visibility.Collapsed;
+                if (conversionOptions.Start != TimeSpan.Zero)
+                {
+                    textBlockStart.Visibility = Visibility.Visible;
+                    textBlockStartLabel.Visibility = Visibility.Visible;
+                    textBlockStart.Text = conversionOptions.Start.ToFormattedString(true);
+                }
+                else
+                {
+                    textBlockStart.Visibility = Visibility.Collapsed;
+                    textBlockStartLabel.Visibility = Visibility.Collapsed;
+                }
+                if (conversionOptions.End != TimeSpan.Zero)
+                {
+                    textBlockEnd.Visibility = Visibility.Visible;
+                    textBlockEndLabel.Visibility = Visibility.Visible;
+                    textBlockEnd.Text = conversionOptions.End.ToFormattedString(true);
+                }
+                else
+                {
+                    textBlockEnd.Visibility = Visibility.Collapsed;
+                    textBlockEndLabel.Visibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -156,17 +204,21 @@ namespace FFVideoConverter
                 {
                     Job job = (Job)draggedItem.Content;
                     draggedItemIndex = queuedJobs.IndexOf(job);
+                    listViewQueuedJobs.SelectedIndex = -1;
                     //Setup dragAdorner
                     VisualBrush brush = new VisualBrush(draggedItem);
-                    dragAdorner = new DragAdorner(listViewJobs, draggedItem.RenderSize, brush);
-                    AdornerLayer layer = AdornerLayer.GetAdornerLayer(listViewJobs);
+                    dragAdorner = new DragAdorner(listViewQueuedJobs, draggedItem.RenderSize, brush);
+                    dragAdorner.Opacity = 0.75;
+                    AdornerLayer layer = AdornerLayer.GetAdornerLayer(listViewQueuedJobs);
                     layer.Add(dragAdorner);
+                    insertionLine.Visibility = Visibility.Visible;
                     //Do drag-drop
                     DataObject dragData = new DataObject("Job", job);
                     DragDrop.DoDragDrop(draggedItem, dragData, DragDropEffects.Copy | DragDropEffects.Move);
                     //Drag ended
                     layer.Remove(dragAdorner);
                     dragAdorner = null;
+                    insertionLine.Visibility = Visibility.Collapsed;
                     draggedItemIndex = -1;
                 }
             }
@@ -205,22 +257,44 @@ namespace FFVideoConverter
                 {
                     Job job = (Job)draggedOverItem.Content;
                     newIndex = queuedJobs.IndexOf(job);
+                    if (newIndex > draggedItemIndex)
+                    {
+                        newIndex--;
+                    }
+                    if (dropAfter && newIndex < queuedJobs.Count - 1)
+                    {
+                        newIndex++;
+                    }
                     if (draggedItemIndex >= 0 && newIndex >= 0)
                     {
                         queuedJobs.Move(draggedItemIndex, newIndex);
                     }
                 }
+                listViewQueuedJobs.SelectedIndex = newIndex;
             }
         }
 
         private void ListViewJobs_DragOver(object sender, DragEventArgs e)
         {
             e.Effects = DragDropEffects.Move;
-            Point mousePosition = e.GetPosition(listViewJobs);
-            ListViewItem itemBeingDragged = (ListViewItem)listViewJobs.ItemContainerGenerator.ContainerFromIndex(draggedItemIndex);
-            Point itemPosition = itemBeingDragged.TranslatePoint(new Point(0, 0), listViewJobs);
+
+            //Move dragAdorner
+            Point mousePosition = e.GetPosition(listViewQueuedJobs);
+            ListViewItem itemBeingDragged = (ListViewItem)listViewQueuedJobs.ItemContainerGenerator.ContainerFromIndex(draggedItemIndex);
             double topOffset = mousePosition.Y - itemBeingDragged.RenderSize.Height / 2;
-            dragAdorner.SetOffsets(itemPosition.X, topOffset);
+            dragAdorner.SetOffsets(mousePosition.X - draggingStartPoint.X, topOffset);
+
+            //Move insertionLine
+            ListViewItem draggedOverItem = FindAnchestor<ListViewItem>((DependencyObject)e.OriginalSource);
+            if (draggedOverItem != null)
+            {
+                mousePosition = e.GetPosition(draggedOverItem);
+                dropAfter = mousePosition.Y > draggedOverItem.RenderSize.Height / 2;
+                Point draggedOverPosition = draggedOverItem.TransformToAncestor(listViewQueuedJobs).Transform(new Point(0, 0));
+                double verticalPosition = draggedOverPosition.Y - 5;
+                if (dropAfter) verticalPosition += draggedOverItem.RenderSize.Height;
+                insertionLine.Margin = new Thickness(0, verticalPosition, 0, 0);
+            }
         }
 
         private T FindAnchestor<T>(DependencyObject current) where T : DependencyObject

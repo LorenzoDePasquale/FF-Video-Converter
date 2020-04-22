@@ -169,7 +169,7 @@ namespace FFVideoConverter
             }
         }
 
-        private void UpdateProgress((float percentage, long currentBytes, long totalBytes) progress)
+        private async void UpdateProgress((float percentage, long currentBytes, long totalBytes) progress)
         {
             DoubleAnimation progressAnimation = new DoubleAnimation(progress.percentage * 100, TimeSpan.FromSeconds(0.5));
             progressBarUpdateProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
@@ -183,12 +183,15 @@ namespace FFVideoConverter
                 textBlockUpdateProgress.Text = "Extracting update...";
                 try
                 {
-                    File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe");
-                    ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "update.zip", AppDomain.CurrentDomain.BaseDirectory + "update");
-                    foreach (string file in Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory + "update"))
+                    await Task.Run(() =>
                     {
-                        File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
-                    }
+                        File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe");
+                        ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "update.zip", AppDomain.CurrentDomain.BaseDirectory + "update");
+                        foreach (string file in Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory + "update"))
+                        {
+                            File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
+                        }
+                    });
                     //Restart the application
                     Application.Current.Shutdown();
                     Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");

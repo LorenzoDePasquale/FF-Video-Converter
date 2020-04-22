@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -17,7 +16,6 @@ namespace FFVideoConverter
         private readonly Process convertProcess = new Process();
         private ProgressData progressData;
         private int i = 0;
-        private readonly AutoResetEvent errorWaitHandle = new AutoResetEvent(false);
 
         public FFmpegEngine()
         {
@@ -42,25 +40,17 @@ namespace FFVideoConverter
                 progressData.TotalTime = sourceInfo.Duration - conversionOptions.Start;
             }
 
-            //Resolution and crop options
+            //Filters
             string filters = "";
-            if (conversionOptions.Resolution.HasValue() && conversionOptions.CropData.HasValue())
+            if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue())
             {
-                filters = $" -vf \"scale={conversionOptions.Resolution.Width}:{conversionOptions.Resolution.Height}," +
-                          $" crop=in_w-{conversionOptions.CropData.Left + conversionOptions.CropData.Right}:in_h-{conversionOptions.CropData.Top + conversionOptions.CropData.Bottom}:{conversionOptions.CropData.Left}:{conversionOptions.CropData.Top}\"";
-            }
-            else if (conversionOptions.Resolution.HasValue())
-            {
-                filters = $" -vf \"scale={conversionOptions.Resolution.Width}:{conversionOptions.Resolution.Height}\"";
-            }
-            else if(conversionOptions.CropData.HasValue())
-            {
-                filters = $" -vf \"crop=in_w-{conversionOptions.CropData.Left + conversionOptions.CropData.Right}:in_h-{conversionOptions.CropData.Top + conversionOptions.CropData.Bottom}:{conversionOptions.CropData.Left}:{conversionOptions.CropData.Top}\"";
+                filters = " -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString);
             }
 
             //FFMpeg command string
             StringBuilder sb = new StringBuilder("-y");
             sb.Append($" -ss {conversionOptions.Start}");
+            //sb.Append($" -hwaccel dxva2 -i \"{sourceInfo.Source}\"");
             sb.Append($" -i \"{sourceInfo.Source}\"");
             if (!String.IsNullOrEmpty(sourceInfo.AudioSource))
             {
@@ -69,7 +59,7 @@ namespace FFVideoConverter
             }
             if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
             sb.Append(" -c:v " + conversionOptions.Encoder.GetFFMpegCommand());
-            if (conversionOptions.Framerate > 0) sb.Append(" -r" + conversionOptions.Framerate);
+            if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
             sb.Append(filters);
             sb.Append(conversionOptions.SkipAudio ? " -an" : " -c:a copy");
             sb.Append($" -avoid_negative_ts 1 \"{destination}\" -hide_banner");
@@ -77,11 +67,11 @@ namespace FFVideoConverter
             convertProcess.StartInfo.Arguments = sb.ToString();
             convertProcess.Start();
             convertProcess.BeginErrorReadLine();
+            convertProcess.PriorityClass = ProcessPriorityClass.BelowNormal;
 
             await Task.Run(() =>
             {
                 convertProcess.WaitForExit();
-                errorWaitHandle.WaitOne();
             });
             convertProcess.CancelErrorRead();
 
@@ -92,15 +82,31 @@ namespace FFVideoConverter
             }
         }
 
+        private string ConcatFilters(params string[] filters)
+        {
+            if (filters.Length == 0) return "";
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append('"');
+            foreach (var filter in filters)
+            {
+                if (filter.Length != 0)
+                {
+                    sb.Append(filter);
+                    sb.Append(',');
+                }    
+            }
+            sb.Remove(sb.Length - 1, 1);
+            sb.Append('"');
+            return sb.ToString();
+        }
+
         private void ConvertProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             string line = e.Data;
 
-            if (line == null)
-            {
-                errorWaitHandle.Set();
-            }
-            else
+            if (line != null)
             {
                 if (line.StartsWith("frame")) //frame=   47 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x    
                 {
@@ -119,6 +125,10 @@ namespace FFVideoConverter
 
                     ProgressChanged?.Invoke(progressData);
                 }
+                else if (line.StartsWith("Error"))
+                {
+                    //TODO: raise exception
+                }
             }
         }
 
@@ -136,8 +146,11 @@ namespace FFVideoConverter
         {
             try
             {
-                if (convertProcess != null && !convertProcess.HasExited) 
-                    convertProcess.Kill();
+                if (convertProcess != null && !convertProcess.HasExited)
+                {
+                    convertProcess.Kill(); 
+                    convertProcess.CancelErrorRead();
+                }
             }
             catch (Exception)
             {

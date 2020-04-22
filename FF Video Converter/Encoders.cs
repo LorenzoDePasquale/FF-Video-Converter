@@ -7,9 +7,9 @@
     {
         public Quality Quality { get; set; }
         public Preset Preset { get; set; }
-        public abstract int Crf { get; }
 
         public abstract string GetFFMpegCommand();
+        public abstract override string ToString();
 
         public static Encoder FromName(string name)
         {
@@ -21,8 +21,6 @@
 
     public class NativeEncoder : Encoder
     {
-        public override int Crf { get { return 0; } }
-
         public NativeEncoder()
         {
         }
@@ -40,13 +38,7 @@
 
     public class H264Encoder : Encoder
     {
-        public override int Crf
-        {
-            get
-            {
-                return 18 + (int)Quality * 4;
-            }
-        }
+        private int Crf => 18 + (int)Quality * 4;
 
         public H264Encoder()
         {
@@ -54,7 +46,7 @@
 
         public override string ToString()
         {
-            return "H264";
+            return "H264 (x264)";
         }
 
         public override string GetFFMpegCommand()
@@ -65,13 +57,7 @@
 
     public class H265Encoder : Encoder
     {
-        public override int Crf
-        {
-            get
-            {
-                return 23 + (int)Quality * 4;
-            }
-        }
+        private int Crf => 21 + (int)Quality * 4;
 
         public H265Encoder()
         {
@@ -79,7 +65,7 @@
 
         public override string ToString()
         {
-            return "H265";
+            return "H265 (x265)";
         }
 
         public override string GetFFMpegCommand()

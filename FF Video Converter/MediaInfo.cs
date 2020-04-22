@@ -18,11 +18,11 @@ namespace FFVideoConverter
         public string AudioCodec { get; set; }
         public double Framerate { get; set; }
         public double Bitrate { get; set; }
-        public string Source { get; set; }
+        public string Source { get; private set; }
         public string AudioSource { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
-        public string AspectRatio { get; set; }
+        public Resolution Resolution { get; private set; }
+        public int Width => Resolution.Width;
+        public int Height => Resolution.Height;
         public bool IsLocal { get { return !Source.StartsWith("http"); } }
 
 
@@ -67,16 +67,17 @@ namespace FFVideoConverter
                     string stdout = stdoutBuilder.ToString();
                     if (stdout.Length < 5)
                     {
-                        new MessageBoxWindow("The selected media could not per parsed:\n\n" + source, "Error opening media");
-                        return;
+                        throw new Exception("Failed to parse media file:\n\n" + source); //Since it's not possible to create a Window from this thread, an Exception is thrown; whoever called this method will have to show the user the error
                     }
-                    while (!BracketBalanced(stdout)) stdout += "}";
+                    while (!BracketBalanced(stdout)) stdout += "}"; //For some reason output brakets sometimes are unbalanced, so it's necessary to manually balance them
 
                     using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
                     {
                         JsonElement streamsElement = jsonOutput.RootElement.GetProperty("streams");
                         JsonElement videoStreamElement = streamsElement[0];
                         JsonElement audioStreamElement = new JsonElement();
+
+                        //Find first audio and video streams
                         for (int i = 0; i < streamsElement.GetArrayLength(); i++)
                         {
                             if (streamsElement[i].GetProperty("codec_type").GetString() == "video")
@@ -93,14 +94,19 @@ namespace FFVideoConverter
                                 break;
                             }
                         }
+
+                        //Get resolution
+                        short width = 0, height = 0;
                         if (videoStreamElement.TryGetProperty("codec_name", out JsonElement e))
                             Codec = e.GetString();
                         if (videoStreamElement.TryGetProperty("width", out e))
-                            Width = e.GetInt32();
+                            width = e.GetInt16();
                         if (videoStreamElement.TryGetProperty("height", out e))
-                            Height = e.GetInt32();
-                        if (videoStreamElement.TryGetProperty("display_aspect_ratio", out JsonElement _))
-                            AspectRatio = videoStreamElement.GetProperty("display_aspect_ratio").GetString();
+                            height = e.GetInt16();
+                        if (width > 0 && height > 0)
+                            Resolution = new Resolution(width, height);
+
+                        //Get framerate
                         string fps = videoStreamElement.GetProperty("r_frame_rate").GetString();
                         if (fps != "N/A")
                         {
@@ -108,6 +114,8 @@ namespace FFVideoConverter
                             int b = Convert.ToInt32(fps.Remove(0, fps.IndexOf('/') + 1));
                             Framerate = Math.Round(a / (double)b, 2);
                         }
+
+                        //Get remaining properties
                         if (audioStreamElement.ValueKind != JsonValueKind.Undefined && audioStreamElement.TryGetProperty("codec_name", out e))
                             AudioCodec = e.GetString();
                         JsonElement formatElement = jsonOutput.RootElement.GetProperty("format");

@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
 
         <Grid x:Name="gridTitleBar" Grid.Row="1" Background="#7F060606" MouseDown="Grid_MouseDown" ClipToBounds="True">
-            <Button x:Name="buttonClose" Content="_X" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222" FontWeight="Bold" FontSize="14" />
+            <Button x:Name="buttonClose" Content="X" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222" FontWeight="Bold" FontSize="14" />
             <Label x:Name="labelTitle" Content="FF Video Converter" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FFCACACB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold"/>
         </Grid>
 

@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml;
 using YoutubeExplode;
-using YoutubeExplode.Models.MediaStreams;
 
 
 namespace FFVideoConverter
@@ -50,20 +49,25 @@ namespace FFVideoConverter
         public override async Task<List<StreamInfo>> GetVideoList(string url)
         {
             YoutubeClient youtubeClient = new YoutubeClient();
-            string videoId = YoutubeClient.ParseVideoId(url);
-            var video = await youtubeClient.GetVideoAsync(videoId).ConfigureAwait(false);
-            var mediaStreamsInfoSet = await youtubeClient.GetVideoMediaStreamInfosAsync(videoId).ConfigureAwait(false);
+            var video = await youtubeClient.Videos.GetAsync(url).ConfigureAwait(false);
+            var streamManifest = await youtubeClient.Videos.Streams.GetManifestAsync(video.Id).ConfigureAwait(false);
             List<StreamInfo> videoList = new List<StreamInfo>();
             string displayValue;
-            foreach (VideoStreamInfo videoStreamInfo in mediaStreamsInfoSet.Video)
+            foreach (var videoStreamInfo in streamManifest.GetVideoOnly())
             {
-                displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoStreamInfo.VideoEncoding}) - {videoStreamInfo.Size.ToBytesString()}";
-                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.VideoEncoding.ToString(), videoStreamInfo.Size));
+                string videoCodec = videoStreamInfo.VideoCodec;
+                if (videoCodec.Contains("avc"))
+                {
+                    videoCodec = "h264";
+                }
+                displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoCodec}) - {videoStreamInfo.Size.TotalBytes.ToBytesString()}";
+                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoCodec, videoStreamInfo.Size.TotalBytes));
             }
-            foreach (AudioStreamInfo audioStreamInfo in mediaStreamsInfoSet.Audio)
+            foreach (var audioStreamInfo in streamManifest.GetAudioOnly())
             {
-                displayValue = $"{audioStreamInfo.Bitrate / 1000} Kbps ({audioStreamInfo.AudioEncoding}) - {audioStreamInfo.Size.ToBytesString()}";
-                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.AudioEncoding.ToString(), audioStreamInfo.Size));
+                string audioCodec = audioStreamInfo.AudioCodec.Replace("mp4a.40.2", "aac");
+                displayValue = $"{audioStreamInfo.Bitrate.BitsPerSecond / 1000} Kbps ({audioCodec}) - {audioStreamInfo.Size.TotalBytes.ToBytesString()}";
+                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioCodec, audioStreamInfo.Size.TotalBytes));
             }
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
             return videoList;
@@ -102,8 +106,8 @@ namespace FFVideoConverter
             XmlDocument document = new XmlDocument();
             document.LoadXml(dashContent);
             XmlNode periodNode = document.DocumentElement.FirstChild;
-            string durationValue = periodNode.Attributes["duration"].Value.Replace("PT", "").Replace("S", "");
-            double duration = Double.Parse(durationValue, System.Globalization.CultureInfo.InvariantCulture);
+            double duration = XmlConvert.ToTimeSpan(periodNode.Attributes["duration"].Value).TotalSeconds;
+
             foreach (XmlNode adaptationSet in periodNode.ChildNodes)
             {
                 foreach (XmlNode representation in adaptationSet.ChildNodes)
@@ -224,37 +228,6 @@ namespace FFVideoConverter
             return videoList;
         }
 
-    }
-
-    class FacebookParser2 : VideoUrlParser //NOT WORKING (Facebook detects this is not a browser and returns a different page
-    {
-        public override async Task<List<StreamInfo>> GetVideoList(string url)
-        {
-            List<StreamInfo> videoList = new List<StreamInfo>();
-            string videoId = url.Substring(url.IndexOf('=') + 1);
-            string embedUrl = "https://www.facebook.com/video/embed?video_id=" + videoId;
-
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36"); //Facebook won't return page without a user agent
-                byte[] response = await client.GetByteArrayAsync(embedUrl).ConfigureAwait(false);
-                string pageSource = Encoding.UTF8.GetString(response, 0, response.Length);
-                int startIndex = 0;
-                int endIndex = 0;
-                while ((startIndex = pageSource.IndexOf("FBQualityLabel", startIndex)) > -1) // FBQualityLabel=\"640p\">\u003CBaseURL>http:\/\/videourl\u003C\/BaseURL>
-                {
-                    startIndex += 16; 
-                    endIndex = pageSource.IndexOf('\\', startIndex);
-                    string label = pageSource.Substring(startIndex, endIndex - startIndex);
-                    startIndex = pageSource.IndexOf("http", startIndex);
-                    endIndex = pageSource.IndexOf("BaseURL", startIndex) - 8;
-                    string videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
-                    videoList.Add(new StreamInfo(videoUrl, false, "TODO", label, "", 0));
-                } 
-            }
-
-            return videoList;
-        }
     }
 
 

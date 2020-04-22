@@ -114,6 +114,9 @@ namespace FFVideoConverter
 			textBox.SelectionChanged += OnSelectionChanged;
 			DataObject.AddPastingHandler(textBox, OnPaste);
 			_timerFormat = GetTimeFormat(textBox); //Get default
+
+			//Disable the possibility to drag text inside the textBox, because bad things were happening....
+			DataObject.AddCopyingHandler(_textBox, (sender, e) => { if (e.IsDragDrop) e.CancelCommand(); });
 		}
 
 		#region Event Handlers

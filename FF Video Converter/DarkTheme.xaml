@@ -47,7 +47,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="ResizeMode" Value="NoResize" />
-        <Setter Property="Background" Value="#E5363636" />
+        <Setter Property="Background" Value="#D8363636" />
         <Setter Property="local:WindowBlur.IsEnabled" Value="True" />
     </Style>
 
@@ -129,6 +129,25 @@
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}" x:Key="GreenButton">
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FF097016" Offset="1"/>
+                    <GradientStop Color="#FF17B610"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="OpacityMask">
+            <Setter.Value>
+                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                    <GradientStop Color="#FF089E0F" Offset="1"/>
+                    <GradientStop Color="#FF35E42D"/>
+                </LinearGradientBrush>
             </Setter.Value>
         </Setter>
     </Style>
@@ -291,7 +310,6 @@
     <Style TargetType="{x:Type Button}" x:Key="TitleBarButton">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -300,7 +318,7 @@
                         <Border CornerRadius="0" x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
                         <Border CornerRadius="0" x:Name="mouseOver" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="#FF575757" SnapsToDevicePixels="True" />
                         <Border CornerRadius="0" x:Name="pressed" Opacity="0" BorderBrush="#FF2B2B2B" BorderThickness="{TemplateBinding BorderThickness}" Background="{StaticResource PressedColor}" SnapsToDevicePixels="True" />
-                        <ContentPresenter ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" Focusable="False" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        <TextBlock Text="{TemplateBinding Content}" FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}" Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}" Focusable="False" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -1032,7 +1050,7 @@
     </Style>
 
     <Style TargetType="{x:Type ScrollBar}">
-        <Setter Property="Width" Value="13" />
+        <Setter Property="Width" Value="10" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
