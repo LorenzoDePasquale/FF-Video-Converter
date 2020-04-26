@@ -5,7 +5,9 @@ Simple video converter with cutting and cropping functionality, powered by the f
 
 ## Features
 
-- Encode video files in H264 and H265
+- Encode video files in H264 and H265 and export them in mp4 or mkv format
+- Experimental support for Nvidia H264 and H265 hardware accelerated encoders (only on RTX video cards, because  of lack of B-frame support on older gpus) <p align="center"><img width="700" src="https://i.imgur.com/QASTmmD.png"></p>
+- Experimental support for Intel H264 and H265 hardware accelerated encoders; on computers with a dedicated GPU, Intel iGPU must be manually enabled for QuickSync to work
 - Change framerate and resolution
 - Cut video, with or without re-encoding it (with possibility of cutting at keyframes)
 - Visually crop video
