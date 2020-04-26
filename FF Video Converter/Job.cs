@@ -4,7 +4,7 @@ using System.IO;
 
 namespace FFVideoConverter
 {
-    public enum JobState { Queued, Running, Paused, Canceled, Completed }
+    public enum JobState { Queued, Running, Paused, Canceled, Completed, Failed }
     public enum JobType { Conversion, FastCut, Download }
 
     public struct ConversioResult

@@ -16,6 +16,7 @@ namespace FFVideoConverter
         private readonly Process convertProcess = new Process();
         private ProgressData progressData;
         private int i = 0;
+        private string outputLine = "";
 
         public FFmpegEngine()
         {
@@ -58,7 +59,7 @@ namespace FFVideoConverter
                 sb.Append($" -i \"{sourceInfo.AudioSource}\"");
             }
             if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
-            sb.Append(" -c:v " + conversionOptions.Encoder.GetFFMpegCommand());
+            sb.Append(" -movflags faststart -c:v " + conversionOptions.Encoder.GetFFMpegCommand());
             if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
             sb.Append(filters);
             sb.Append(conversionOptions.SkipAudio ? " -an" : " -c:a copy");
@@ -75,9 +76,14 @@ namespace FFVideoConverter
             });
             convertProcess.CancelErrorRead();
 
-            int exitCode = convertProcess.ExitCode;
-            if (exitCode == 0) //conversion not aborted
+            int exitCode = convertProcess.ExitCode; //0: success; -1: stopped; 1: error
+            if (exitCode == 0)
             {
+                ConversionCompleted?.Invoke(progressData);
+            }
+            else
+            {
+                progressData.ErrorMessage = outputLine;
                 ConversionCompleted?.Invoke(progressData);
             }
         }
@@ -104,30 +110,35 @@ namespace FFVideoConverter
 
         private void ConvertProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            string line = e.Data;
+            outputLine = e.Data ?? outputLine;
 
-            if (line != null)
+            if (e.Data != null)
             {
-                if (line.StartsWith("frame")) //frame=   47 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x    
+                if (outputLine.StartsWith("frame")) //frame=   47 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x    
                 {
-                    progressData.CurrentFrame = System.Convert.ToUInt32(line.Remove(line.IndexOf(" fps")).Remove(0, 6));
-                    progressData.EncodingSpeedFps = System.Convert.ToInt16(line.Remove(line.IndexOf(" q")).Remove(0, line.IndexOf("fps") + 4).Replace(".", ""));
-                    progressData.CurrentByteSize = System.Convert.ToInt32(line.Remove(line.IndexOf(" time") - 2).Remove(0, line.IndexOf("size") + 5)) * 1000;
-                    progressData.CurrentTime = TimeSpan.Parse(line.Remove(line.IndexOf(" bit")).Remove(0, line.IndexOf("time") + 5));
-                    float currentBitrate = line.Contains("bitrate=N/A") ? 0 : System.Convert.ToSingle(line.Remove(line.IndexOf("kbits")).Remove(0, line.IndexOf("bitrate") + 8), CultureInfo.InvariantCulture);
+                    progressData.CurrentFrame = System.Convert.ToUInt32(outputLine.Remove(outputLine.IndexOf(" fps")).Remove(0, 6));
+                    progressData.EncodingSpeedFps = System.Convert.ToInt16(outputLine.Remove(outputLine.IndexOf(" q")).Remove(0, outputLine.IndexOf("fps") + 4).Replace(".", ""));
+                    progressData.CurrentByteSize = System.Convert.ToInt32(outputLine.Remove(outputLine.IndexOf(" time") - 2).Remove(0, outputLine.IndexOf("size") + 5)) * 1000;
+                    progressData.CurrentTime = TimeSpan.Parse(outputLine.Remove(outputLine.IndexOf(" bit")).Remove(0, outputLine.IndexOf("time") + 5));
+                    float currentBitrate = outputLine.Contains("bitrate=N/A") ? 0 : System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf("kbits")).Remove(0, outputLine.IndexOf("bitrate") + 8), CultureInfo.InvariantCulture);
                     if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
                     {
                         progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
                     }
 
-                    if (line.EndsWith("N/A    ") || line.EndsWith("x")) progressData.EncodingSpeed = 0;
-                    else progressData.EncodingSpeed = System.Convert.ToSingle(line.Remove(line.IndexOf('x')).Remove(0, line.IndexOf("speed") + 6), CultureInfo.InvariantCulture);
+                    if (outputLine.EndsWith("N/A    ") || outputLine.EndsWith("x")) progressData.EncodingSpeed = 0;
+                    else progressData.EncodingSpeed = System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf('x')).Remove(0, outputLine.IndexOf("speed") + 6), CultureInfo.InvariantCulture);
 
                     ProgressChanged?.Invoke(progressData);
                 }
-                else if (line.StartsWith("Error"))
+                else if (outputLine.StartsWith("Error"))
                 {
-                    //TODO: raise exception
+                    try
+                    {
+                        convertProcess.Kill();
+                    }
+                    catch (Exception)
+                    { }
                 }
             }
         }

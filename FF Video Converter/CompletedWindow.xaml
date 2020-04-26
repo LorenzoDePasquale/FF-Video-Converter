@@ -102,8 +102,8 @@
                 <Setter.Value>
                     <ControlTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Label, StringFormat='\{0:0\}: '}" Foreground="{StaticResource TextColorBlue}"/>
-                            <TextBlock Text="{Binding Content}" />
+                            <TextBlock Text="{Binding Label, StringFormat='\{0\}: '}" Foreground="{StaticResource TextColorBlue}"/>
+                            <TextBlock Text="{Binding Content}" TextWrapping="WrapWithOverflow" Width="320"/>   <!-- Terrible, but only way to make it wrap -->
                         </StackPanel>
                     </ControlTemplate>
                 </Setter.Value>
@@ -114,7 +114,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate>
-                        <Grid Margin="4" Background="Transparent">       <!--Background can't be null because IsMouseOver is always false when background is null-->
+                        <Grid Margin="4" Background="Transparent">       <!-- Background can't be null because IsMouseOver is always false when background is null -->
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="380" />
                                 <ColumnDefinition Width="31" />
@@ -143,6 +143,11 @@
                             </Trigger>
                             <DataTrigger Binding="{Binding State}" Value="{x:Static local:JobState.Canceled}">
                                 <Setter TargetName="textBlockStatus" Property="Text" Value="Canceled" />
+                                <Setter TargetName="textBlockStatus" Property="Foreground" Value="#FFCD2121" />
+                                <Setter TargetName="buttonOpen" Property="Visibility" Value="Hidden" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="{x:Static local:JobState.Failed}">
+                                <Setter TargetName="textBlockStatus" Property="Text" Value="Failed" />
                                 <Setter TargetName="textBlockStatus" Property="Foreground" Value="#FFCD2121" />
                                 <Setter TargetName="buttonOpen" Property="Visibility" Value="Hidden" />
                             </DataTrigger>

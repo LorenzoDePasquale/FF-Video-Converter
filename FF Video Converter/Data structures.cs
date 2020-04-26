@@ -14,6 +14,7 @@ namespace FFVideoConverter
         public TimeSpan CurrentTime { get; set; }
         public TimeSpan TotalTime { get; set; }
         public uint CurrentFrame { get; set; }
+        public string ErrorMessage { get; set; }
     }
 
     public struct CropData

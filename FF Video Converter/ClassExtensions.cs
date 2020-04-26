@@ -187,8 +187,6 @@ namespace FFVideoConverter
         {
             switch (preset)
             {
-                case Preset.VerySlow:
-                    return "Very slow";
                 case Preset.Slower:
                     return "Slower";
                 case Preset.Slow:

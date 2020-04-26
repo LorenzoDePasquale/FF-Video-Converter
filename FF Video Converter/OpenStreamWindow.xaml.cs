@@ -144,6 +144,10 @@ namespace FFVideoConverter
                         }
                     }
                 }
+                else
+                {
+                    new MessageBoxWindow("Enter a valid url", "FF Video Converter").ShowDialog();
+                }
             }
             else
             {
