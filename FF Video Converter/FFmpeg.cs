@@ -16,7 +16,9 @@ namespace FFVideoConverter
         private readonly Process convertProcess = new Process();
         private ProgressData progressData;
         private int i = 0;
-        private string outputLine = "";
+        private string outputLine;
+        private bool stopped = false;
+
 
         public FFmpegEngine()
         {
@@ -69,6 +71,7 @@ namespace FFVideoConverter
             convertProcess.Start();
             convertProcess.BeginErrorReadLine();
             convertProcess.PriorityClass = ProcessPriorityClass.BelowNormal;
+            stopped = false;
 
             await Task.Run(() =>
             {
@@ -76,12 +79,12 @@ namespace FFVideoConverter
             });
             convertProcess.CancelErrorRead();
 
-            int exitCode = convertProcess.ExitCode; //0: success; -1: stopped; 1: error
+            int exitCode = convertProcess.ExitCode; //0: success; -1: killed; 1: crashed
             if (exitCode == 0)
             {
                 ConversionCompleted?.Invoke(progressData);
             }
-            else
+            else if (!stopped)
             {
                 progressData.ErrorMessage = outputLine;
                 ConversionCompleted?.Invoke(progressData);
@@ -159,6 +162,7 @@ namespace FFVideoConverter
             {
                 if (convertProcess != null && !convertProcess.HasExited)
                 {
+                    stopped = true;
                     convertProcess.Kill(); 
                     convertProcess.CancelErrorRead();
                 }
