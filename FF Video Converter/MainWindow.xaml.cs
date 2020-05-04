@@ -59,15 +59,17 @@ namespace FFVideoConverter
             };
 
             //Setup comboboxes
+            comboBoxFormat.Items.Add("MP4");
+            comboBoxFormat.Items.Add("MKV");
             comboBoxEncoder.Items.Add(new NativeEncoder());
             comboBoxEncoder.Items.Add(new H264Encoder());
             comboBoxEncoder.Items.Add(new H265Encoder());
-            if (H264Nvenc.IsAvaiable())
+            if (VideoAdapters.Contains("nvidia geforce rtx"))
             {
                 comboBoxEncoder.Items.Add(new H264Nvenc());
                 comboBoxEncoder.Items.Add(new H265Nvenc());
             }
-            if (H264QuickSync.IsAvaiable())
+            if (VideoAdapters.Contains("intel"))
             {
                 comboBoxEncoder.Items.Add(new H264QuickSync());
                 comboBoxEncoder.Items.Add(new H265QuickSync());
@@ -177,11 +179,20 @@ namespace FFVideoConverter
             {
                 string extension = Path.GetExtension(sourcePath);
                 textBoxDestination.Text = sourcePath.Remove(sourcePath.LastIndexOf('.')) + " converted" + extension;
+                if (extension == ".mkv")
+                {
+                    comboBoxFormat.SelectedIndex = 1;
+                }
+                else
+                {
+                    comboBoxFormat.SelectedIndex = 0;
+                }
                 labelTitle.Content = Path.GetFileName(sourcePath);
             }
             else
             {
                 textBoxDestination.Text = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\{(String.IsNullOrEmpty(mediaInfo.Title) ? "stream" : mediaInfo.Title)}.mp4";
+                comboBoxFormat.SelectedIndex = 0;
                 labelTitle.Content = !String.IsNullOrEmpty(mediaInfo.Title) ? mediaInfo.Title : "[Network stream]";
             }
 
@@ -419,6 +430,15 @@ namespace FFVideoConverter
 
         #region Conversion settings
 
+        private void ComboBoxFormat_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (textBoxDestination.Text.Length > 0)
+            {
+                string extension = comboBoxFormat.SelectedItem.ToString().ToLower();
+                textBoxDestination.Text = Path.ChangeExtension(textBoxDestination.Text, extension);
+            }
+        }
+
         private void ComboBoxEncoder_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             Encoder selectedEncoder = (Encoder)comboBoxEncoder.SelectedItem;
@@ -460,7 +480,7 @@ namespace FFVideoConverter
                 comboBoxFramerate.IsEnabled = true;
                 comboBoxResolution.IsEnabled = true;
                 comboBoxRotation.IsEnabled = true;
-                checkBoxCrop.IsEnabled = true;
+                if (mediaInfo != null) checkBoxCrop.IsEnabled = true;
                 checkBoxCut.Content = "Cut";
                 checkBoxCut.ToolTip = "Cut the video and re-encode it with the selected encoder";
                 textBlockStartBefore.Visibility = Visibility.Hidden;

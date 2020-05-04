@@ -1002,7 +1002,7 @@
                 <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Grid >
                         <ToggleButton x:Name="ToggleButton" Template="{StaticResource ComboBoxToggleButton}" Grid.Column="2" Focusable="false" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,2,23,0" VerticalAlignment="Stretch" HorizontalAlignment="Left" />
+                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,0,23,0" VerticalAlignment="Center" HorizontalAlignment="Left" />
                         <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
                             <Grid x:Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                 <Border x:Name="DropDownBorder" BorderThickness="2 0 2 2" CornerRadius="0 0 4 4" Margin="0,-1,20,0" Background="{DynamicResource BackgroundColor}" BorderBrush="{DynamicResource BorderColor}"/>
@@ -1017,12 +1017,12 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Type ComboBoxItem}" TargetType="{x:Type ComboBoxItem}">
+    <Style TargetType="{x:Type ComboBoxItem}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ComboBoxItem}">
                     <Border x:Name="border" Margin="0, 0, 20, 0" CornerRadius="4" Background="{x:Null}" BorderBrush="Transparent" BorderThickness="0,1">
-                        <ContentPresenter x:Name="textBlock" Content="{Binding}" DockPanel.Dock="Left" Margin="10,2,0,2" />
+                        <TextBlock x:Name="textBlock" Text="{Binding}" DockPanel.Dock="Left" Margin="10,2,0,2" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">

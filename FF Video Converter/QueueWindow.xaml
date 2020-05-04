@@ -46,7 +46,7 @@
             <Label x:Name="labelTitle" Content="Queue" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FFCACACB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold"/>
         </Grid>
 
-        <Grid x:Name="insertionLine" Margin="0,16,0,0" Grid.Row="2" Visibility="Collapsed" Height="11" VerticalAlignment="Top" IsHitTestVisible="False">
+        <Grid x:Name="insertionLine" Margin="0,16,0,0" Grid.Row="1" Visibility="Collapsed" Height="11" VerticalAlignment="Top" IsHitTestVisible="False">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="6" />
                 <ColumnDefinition Width="*" />
