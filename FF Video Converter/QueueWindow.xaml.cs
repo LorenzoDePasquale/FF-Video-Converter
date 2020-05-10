@@ -37,6 +37,9 @@ namespace FFVideoConverter
             this.mainWindow = mainWindow;
             this.queuedJobs = queuedJobs;
             listViewQueuedJobs.ItemsSource = queuedJobs;
+            comboBoxShutdown.Items.Add("Do nothing");
+            comboBoxShutdown.Items.Add("Sleep");
+            comboBoxShutdown.Items.Add("Shutdown");
             comboBoxShutdown.SelectedIndex = 0;
         }
 

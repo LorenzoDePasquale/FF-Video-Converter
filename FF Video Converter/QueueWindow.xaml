@@ -64,11 +64,7 @@
 
         <Button x:Name="buttonStartStopQueue" Content="Start queue" Margin="10,0,0,8" HorizontalAlignment="Left" Width="219" Height="30" VerticalAlignment="Bottom" Click="ButtonStartStopQueue_Click" Grid.Row="2" Style="{StaticResource GreenButton}" Grid.Column="1"/>
         <TextBlock Text="When finished" Grid.Row="2" Margin="10,0,301,10" Height="21" VerticalAlignment="Bottom" />
-        <ComboBox x:Name="comboBoxShutdown" Grid.Row="2" Margin="109,0,144,10" Height="24" VerticalAlignment="Bottom" >
-            <TextBlock Text="Do nothing"/>
-            <TextBlock Text="Sleep"/>
-            <TextBlock Text="Shutdown"/>
-        </ComboBox>
+        <ComboBox x:Name="comboBoxShutdown" Grid.Row="2" Margin="109,0,144,10" Height="24" VerticalAlignment="Bottom" />
 
         <StackPanel x:Name="stackPanelLabel" Grid.Column="1" Grid.Row="1" Orientation="Vertical" Margin="10,48,0,0" HorizontalAlignment="Left" Width="68" Visibility="Hidden">
             <TextBlock x:Name="textBlockEncoderLabel" Text="Encoder:" HorizontalAlignment="Left" Width="53" Height="20" Foreground="{StaticResource TextColorBlue}"/>

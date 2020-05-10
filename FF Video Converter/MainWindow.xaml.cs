@@ -785,9 +785,16 @@ namespace FFVideoConverter
                 File.Create(textBoxDestination.Text).Dispose();
                 File.Delete(textBoxDestination.Text); //Delete in case file is never converted
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                new MessageBoxWindow("Error creating output file at the selected destination path.\nMake sure the destination path is valid and that the file is not beign written to by another process", "FF Video Converter").ShowDialog();
+                if (ex is UnauthorizedAccessException)
+                {
+                    new MessageBoxWindow("Error creating output file at the selected destination path.\nMake sure the destination file is not read-only, and is not beign written to by another process", "FF Video Converter").ShowDialog();
+                }
+                else
+                {
+                    new MessageBoxWindow("Error creating output file at the selected destination path.\nMake sure the destination path and file name are valid", "FF Video Converter").ShowDialog();
+                }
                 return true;
             }
 
@@ -816,27 +823,23 @@ namespace FFVideoConverter
             double remainingTime = progressData.EncodingSpeed == 0 ? 0 : (secondsToEncode) / progressData.EncodingSpeed;
             double percentage = Math.Min(progressData.CurrentFrame * 100 / (runningJob.OutputFramerate * progressData.TotalTime.TotalSeconds), 99.4);
             long approximateOutputByteSize = progressData.CurrentByteSize + (long)(progressData.AverageBitrate * 1000 * secondsToEncode / 8);
-
-            Dispatcher.Invoke(() =>
+            DoubleAnimation progressAnimation = new DoubleAnimation(percentage, TimeSpan.FromSeconds(0.5));
+            progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
+            TaskbarItemInfo.ProgressValue = percentage / 100;
+            if (runningJob.JobType != JobType.Download)
             {
-                DoubleAnimation progressAnimation = new DoubleAnimation(percentage, TimeSpan.FromSeconds(0.5));
-                progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
-                TaskbarItemInfo.ProgressValue = percentage / 100;
-                if (runningJob.JobType != JobType.Download)
-                {
-                    textBlockProgress.Text = $"Processed: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
-                    if (mediaInfo.IsLocal) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
-                    textBlockSize.Text = $"Output size: {progressData.CurrentByteSize.ToBytesString()}";
-                    if (progressData.AverageBitrate > 0) textBlockSize.Text += $" / {approximateOutputByteSize.ToBytesString()} (estimated)";
-                }
-                else
-                {
-                    textBlockProgress.Text = $"Progress: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
-                    textBlockSize.Text = $"Downloaded: {progressData.CurrentByteSize.ToBytesString()}";
-                }
-                Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToFormattedString();
-                labelProgress.Content = $"Progress: {Math.Round(percentage)}%   Remaining time: {TimeSpan.FromSeconds(remainingTime).ToFormattedString()}";
-            }, System.Windows.Threading.DispatcherPriority.Send);
+                textBlockProgress.Text = $"Processed: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
+                if (mediaInfo.IsLocal) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
+                textBlockSize.Text = $"Output size: {progressData.CurrentByteSize.ToBytesString()}";
+                if (progressData.AverageBitrate > 0) textBlockSize.Text += $" / {approximateOutputByteSize.ToBytesString()} (estimated)";
+            }
+            else
+            {
+                textBlockProgress.Text = $"Progress: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
+                textBlockSize.Text = $"Downloaded: {progressData.CurrentByteSize.ToBytesString()}";
+            }
+            Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToFormattedString();
+            labelProgress.Content = $"Progress: {Math.Round(percentage)}%   Remaining time: {TimeSpan.FromSeconds(remainingTime).ToFormattedString()}";
         }
 
         private async void ConversionCompleted(ProgressData progressData)

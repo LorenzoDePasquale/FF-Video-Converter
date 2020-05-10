@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -18,6 +19,7 @@ namespace FFVideoConverter
         private int i = 0;
         private string outputLine;
         private bool stopped = false;
+        private SynchronizationContext synchronizationContext;
 
 
         public FFmpegEngine()
@@ -32,6 +34,9 @@ namespace FFVideoConverter
         public async void Convert(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
         {
             progressData = new ProgressData();
+
+            //Captures the Synchronization Context of the caller, in order to invoke the events on its original thread
+            synchronizationContext = SynchronizationContext.Current;
 
             //Duration
             if (conversionOptions.End != TimeSpan.Zero)
@@ -50,12 +55,16 @@ namespace FFVideoConverter
                 filters = " -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString);
             }
 
+            //Get nearest before keyframe
+            var keyframes = await sourceInfo.GetNearestBeforeAndAfterKeyFrames(conversionOptions.Start.TotalSeconds).ConfigureAwait(false);
+            TimeSpan startTime = TimeSpan.FromSeconds(keyframes.before);
+
             //FFMpeg command string
             StringBuilder sb = new StringBuilder("-y");
-            sb.Append($" -ss {conversionOptions.Start}");
-            //sb.Append($" -hwaccel dxva2 -i \"{sourceInfo.Source}\"");
+            sb.Append($" -ss {startTime}");
             sb.Append($" -i \"{sourceInfo.Source}\"");
-            if (!String.IsNullOrEmpty(sourceInfo.AudioSource))
+            sb.Append($" -ss {conversionOptions.Start - startTime}");
+            if (!String.IsNullOrEmpty(sourceInfo.AudioSource)) //TODO: test with separate audio
             {
                 sb.Append($" -ss {conversionOptions.Start}");
                 sb.Append($" -i \"{sourceInfo.AudioSource}\"");
@@ -76,19 +85,22 @@ namespace FFVideoConverter
             await Task.Run(() =>
             {
                 convertProcess.WaitForExit();
-            });
+            }).ConfigureAwait(false);
             convertProcess.CancelErrorRead();
 
             int exitCode = convertProcess.ExitCode; //0: success; -1: killed; 1: crashed
-            if (exitCode == 0)
+            synchronizationContext.Post(new SendOrPostCallback((o) =>
             {
-                ConversionCompleted?.Invoke(progressData);
-            }
-            else if (!stopped)
-            {
-                progressData.ErrorMessage = outputLine;
-                ConversionCompleted?.Invoke(progressData);
-            }
+                if (exitCode == 0)
+                {
+                    ConversionCompleted?.Invoke(progressData);
+                }
+                else if (!stopped)
+                {
+                    progressData.ErrorMessage = outputLine;
+                    ConversionCompleted?.Invoke(progressData);
+                }
+            }), null);
         }
 
         private string ConcatFilters(params string[] filters)
@@ -132,7 +144,10 @@ namespace FFVideoConverter
                     if (outputLine.EndsWith("N/A    ") || outputLine.EndsWith("x")) progressData.EncodingSpeed = 0;
                     else progressData.EncodingSpeed = System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf('x')).Remove(0, outputLine.IndexOf("speed") + 6), CultureInfo.InvariantCulture);
 
-                    ProgressChanged?.Invoke(progressData);
+                    synchronizationContext.Post(new SendOrPostCallback((o) =>
+                    {
+                        ProgressChanged?.Invoke(progressData);
+                    }), null);
                 }
                 else if (outputLine.StartsWith("Error"))
                 {
