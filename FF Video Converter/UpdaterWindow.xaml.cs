@@ -22,14 +22,16 @@ namespace FFVideoConverter
         {
             public int Major { get; }
             public int Minor { get; }
+            public int Build { get; }
 
-            public Version(int major, int minor)
+            public Version(int major, int minor, int build = 0)
             {
                 Major = major;
                 Minor = minor;
+                Build = build;
             }
 
-            public static Version Parse(string version)  //format: v0.1-beta or v1.2
+            public static Version Parse(string version)  //format: v0.1-beta or v1.2 or v1.2.1
             {
                 version = version.Substring(1);
                 if (version.Contains("-"))
@@ -37,7 +39,7 @@ namespace FFVideoConverter
                     version = version.Split('-')[0];
                 }
                 string[] versionNumbers = version.Split('.');
-                return new Version(Convert.ToInt32(versionNumbers[0]), Convert.ToInt32(versionNumbers[1]));
+                return new Version(Convert.ToInt32(versionNumbers[0]), Convert.ToInt32(versionNumbers[1]), versionNumbers.Length > 2 ? Convert.ToInt32(versionNumbers[2]) : 0);
             }
 
             public static bool operator >(Version v1, Version v2)
@@ -47,6 +49,10 @@ namespace FFVideoConverter
                     return true;
                 }
                 else if (v1.Major == v2.Major && v1.Minor > v2.Minor)
+                {
+                    return true;
+                }
+                else if (v1.Minor == v2.Minor && v1.Build > v2.Build)
                 {
                     return true;
                 }
@@ -60,6 +66,10 @@ namespace FFVideoConverter
                     return true;
                 }
                 else if (v1.Major == v2.Major && v1.Minor < v2.Minor)
+                {
+                    return true;
+                }
+                else if (v1.Minor == v2.Minor && v1.Build < v2.Build)
                 {
                     return true;
                 }
@@ -108,7 +118,7 @@ namespace FFVideoConverter
                 return false; //If update check fails, return as there was no update; no point in bothering the user
             }
             System.Version v = Assembly.GetExecutingAssembly().GetName().Version;
-            currentVersion = new Version(v.Major, v.Minor);
+            currentVersion = new Version(v.Major, v.Minor, v.Build);
             return currentVersion < latestVersion;
         }
 
@@ -116,6 +126,7 @@ namespace FFVideoConverter
         {
             System.Version v = Assembly.GetExecutingAssembly().GetName().Version;
             textBlockCurrentVersion.Text = $"v{v.Major}.{v.Minor}";
+            if (v.Build > 0) textBlockCurrentVersion.Text += $".{v.Build}";
             textBlockNewVersion.Text = $"Searching for new versions...";
 
             try
@@ -125,7 +136,9 @@ namespace FFVideoConverter
                 {
                     Version newVersion = Version.Parse(document.RootElement[0].GetProperty("tag_name").GetString()); //Releases are sorted by most recent
                     DateTime date = DateTime.Parse(document.RootElement[0].GetProperty("published_at").GetString());
-                    textBlockNewVersion.Text = $"v{newVersion.Major}.{newVersion.Minor}  ({date.ToString("dd/MM/yyyy")})";
+                    textBlockNewVersion.Text = $"v{newVersion.Major}.{newVersion.Minor}";
+                    if (newVersion.Build > 0) textBlockNewVersion.Text += $".{newVersion.Build}";
+                    textBlockNewVersion.Text += $"  ({date:dd/MM/yyyy})";
                     downloadUrl = document.RootElement[0].GetProperty("assets")[0].GetProperty("browser_download_url").GetString();
 
                     for (int i = 0; i < Math.Min(document.RootElement.GetArrayLength(), 10); i++)

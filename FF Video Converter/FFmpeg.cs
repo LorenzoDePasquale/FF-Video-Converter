@@ -63,10 +63,9 @@ namespace FFVideoConverter
             StringBuilder sb = new StringBuilder("-y");
             sb.Append($" -ss {startTime}");
             sb.Append($" -i \"{sourceInfo.Source}\"");
-            sb.Append($" -ss {conversionOptions.Start - startTime}");
             if (!String.IsNullOrEmpty(sourceInfo.AudioSource)) //TODO: test with separate audio
             {
-                sb.Append($" -ss {conversionOptions.Start}");
+                sb.Append($" -ss {startTime}");
                 sb.Append($" -i \"{sourceInfo.AudioSource}\"");
             }
             if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
@@ -74,6 +73,7 @@ namespace FFVideoConverter
             if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
             sb.Append(filters);
             sb.Append(conversionOptions.SkipAudio ? " -an" : " -c:a copy");
+            sb.Append($" -ss {conversionOptions.Start - startTime}");
             sb.Append($" -avoid_negative_ts 1 \"{destination}\" -hide_banner");
 
             convertProcess.StartInfo.Arguments = sb.ToString();
