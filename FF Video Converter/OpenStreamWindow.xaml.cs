@@ -156,20 +156,22 @@ namespace FFVideoConverter
                 StreamInfo selectedVideo = (StreamInfo)comboBoxQuality.SelectedItem;
                 try
                 {
-                    MediaStream = await MediaInfo.Open(selectedVideo.Url);
+                    if (comboBoxAudioQuality.Items.Count > 0)
+                    {
+                        StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
+                        MediaStream = await MediaInfo.Open(selectedVideo.Url, selectedAudio.Url);
+                        new MessageBoxWindow("The audio stream relative to this video is separate, therefore the integrated player will play the video without audio.\nWhen converting or downloading this video however, audio and video will be muxed toghether", "Info").ShowDialog();
+                    }
+                    else
+                    {
+                        MediaStream = await MediaInfo.Open(selectedVideo.Url);
+                    }
                 }
                 catch (Exception ex)
                 {
                     new MessageBoxWindow(ex.Message, "Error opening selected url").ShowDialog();
                     Close();
                     return;
-                }
-                if (comboBoxAudioQuality.Items.Count > 0)
-                {
-                    StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
-                    MediaStream.AudioSource = selectedAudio.Url;
-                    MediaStream.AudioCodec = selectedAudio.Codec;
-                    new MessageBoxWindow("The audio stream relative to this video is separate, therefore the integrated player will play the video without audio.\nWhen converting or downloading this video however, audio and video will be muxed toghether", "Info").ShowDialog();
                 }
                 MediaStream.Title = selectedVideo.Title;
                 Close();

@@ -151,6 +151,9 @@
                                 <Setter TargetName="textBlockStatus" Property="Foreground" Value="#FFCD2121" />
                                 <Setter TargetName="buttonOpen" Property="Visibility" Value="Hidden" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding JobType}" Value="{x:Static local:JobType.AudioExport}">
+                                <Setter TargetName="buttonEdit" Property="IsEnabled" Value="false" />
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

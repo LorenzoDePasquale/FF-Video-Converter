@@ -205,7 +205,6 @@ namespace FFVideoConverter
         }
     }
 
-    [StructLayout(LayoutKind.Auto)]
     public struct ConversionOptions
     {
         public Encoder Encoder { get; set; }
@@ -228,8 +227,6 @@ namespace FFVideoConverter
             Start = TimeSpan.Zero;
             End = TimeSpan.Zero;
             SkipAudio = false;
-
-            
         }
 
         /*public T GetFilter<T>() where T : IFilter

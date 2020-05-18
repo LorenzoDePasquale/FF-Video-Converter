@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -12,19 +13,22 @@ namespace FFVideoConverter
     public class MediaInfo
     {
         public string Title { get; set; }
-        public TimeSpan Duration { get; set; }
-        public long Size { get; set; }
-        public string Codec { get; set; }
-        public string AudioCodec { get; set; }
-        public double Framerate { get; set; }
-        public double Bitrate { get; set; }
+        public TimeSpan Duration { get; private set; }
+        public long Size { get; private set; }
+        public string Codec { get; private set; }
+        public string ExternalAudioCodec { get; private set; }
+        public double Framerate { get; private set; }
+        public double Bitrate { get; private set; }
         public string Source { get; private set; }
-        public string AudioSource { get; set; }
+        public string ExternalAudioSource { get; private set; }
+        public IReadOnlyList<AudioTrack> AudioTracks => audioTracks;
         public Resolution Resolution { get; private set; }
         public int Width => Resolution.Width;
         public int Height => Resolution.Height;
-        public bool IsLocal { get { return !Source.StartsWith("http"); } }
+        public bool IsLocal => !Source.StartsWith("http");
+        public bool HasExternalAudio => !String.IsNullOrEmpty(ExternalAudioSource);
 
+        private AudioTrack[] audioTracks;
 
         private MediaInfo()
         {
@@ -34,8 +38,19 @@ namespace FFVideoConverter
         {
             MediaInfo mediaInfo = new MediaInfo();
             mediaInfo.Source = source;
-            await mediaInfo.FF_Open(source);
+            await mediaInfo.FF_Open(source).ConfigureAwait(false);
             if (!source.StartsWith("http")) mediaInfo.Title = Path.GetFileName(source);
+            return mediaInfo;
+        }
+
+        public static async Task<MediaInfo> Open(string source, string externalAudioSource)
+        {
+            MediaInfo mediaInfo = new MediaInfo();
+            mediaInfo.Source = source;
+            mediaInfo.ExternalAudioSource = externalAudioSource;
+            await mediaInfo.FF_Open(source).ConfigureAwait(false);
+            if (!source.StartsWith("http")) mediaInfo.Title = Path.GetFileName(source);
+            await mediaInfo.FF_ExternalAudioOpen(externalAudioSource).ConfigureAwait(false);
             return mediaInfo;
         }
 
@@ -74,24 +89,19 @@ namespace FFVideoConverter
                     using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
                     {
                         JsonElement streamsElement = jsonOutput.RootElement.GetProperty("streams");
-                        JsonElement videoStreamElement = streamsElement[0];
-                        JsonElement audioStreamElement = new JsonElement();
+                        JsonElement videoStreamElement = new JsonElement();
+                        List<JsonElement> audioStreamElements = new List<JsonElement>();
 
-                        //Find first audio and video streams
+                        //Find first video stream and all audio streams
                         for (int i = 0; i < streamsElement.GetArrayLength(); i++)
                         {
                             if (streamsElement[i].GetProperty("codec_type").GetString() == "video")
                             {
-                                videoStreamElement = streamsElement[i];
-                                break;
+                                if (videoStreamElement.ValueKind == JsonValueKind.Undefined) videoStreamElement = streamsElement[i];
                             }
-                        }
-                        for (int i = 0; i < streamsElement.GetArrayLength(); i++)
-                        {
-                            if (streamsElement[i].GetProperty("codec_type").GetString() == "audio")
+                            else if (streamsElement[i].GetProperty("codec_type").GetString() == "audio")
                             {
-                                audioStreamElement = streamsElement[i];
-                                break;
+                                audioStreamElements.Add(streamsElement[i]);
                             }
                         }
 
@@ -116,14 +126,115 @@ namespace FFVideoConverter
                         }
 
                         //Get remaining properties
-                        if (audioStreamElement.ValueKind != JsonValueKind.Undefined && audioStreamElement.TryGetProperty("codec_name", out e))
-                            AudioCodec = e.GetString();
                         JsonElement formatElement = jsonOutput.RootElement.GetProperty("format");
                         double totalSeconds = Double.Parse(formatElement.GetProperty("duration").GetString(), CultureInfo.InvariantCulture);
                         Duration = TimeSpan.FromSeconds(totalSeconds);
                         Size = Int64.Parse(formatElement.GetProperty("size").GetString());
                         Bitrate = Double.Parse(formatElement.GetProperty("bit_rate").GetString(), CultureInfo.InvariantCulture) / 1000;
                         Bitrate = Math.Round(Bitrate);
+
+                        //Get audio properties
+                        audioTracks = new AudioTrack[audioStreamElements.Count];
+                        for (int i = 0; i < audioStreamElements.Count; i++)
+                        {
+                            string codec = "";
+                            int bitrate = 0, sampleRate = 0, index = 0;
+                            string language = "";
+                            bool defaultTrack = false;
+                            if (audioStreamElements[i].TryGetProperty("codec_name", out e))
+                                codec = e.GetString();
+                            if (audioStreamElements[i].TryGetProperty("bit_rate", out e))
+                                bitrate = Convert.ToInt32(e.GetString());
+                            if (audioStreamElements[i].TryGetProperty("sample_rate", out e))
+                                sampleRate = Convert.ToInt32(e.GetString());
+                            index = audioStreamElements[i].GetProperty("index").GetInt32();
+                            JsonElement e2 = audioStreamElements[i].GetProperty("tags");
+                            if (e2.TryGetProperty("language", out e))
+                                language = e.GetString();
+                            e2 = audioStreamElements[i].GetProperty("disposition");
+                            if (e2.TryGetProperty("default", out e))
+                                defaultTrack = Convert.ToBoolean(e.GetByte());
+                            audioTracks[i] = new AudioTrack(codec, bitrate, sampleRate, totalSeconds, index, language, defaultTrack);
+                        }
+
+                    }
+                });
+            }
+        }
+
+        private async Task FF_ExternalAudioOpen(string audioSource)
+        {
+            StringBuilder stdoutBuilder = new StringBuilder();
+            using (Process process = new Process())
+            {
+                process.StartInfo.FileName = "ffprobe";
+                process.StartInfo.Arguments = "-i \"" + audioSource + "\" -v quiet -print_format json -show_format -show_streams -hide_banner";
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.Start();
+
+                await Task.Run(() =>
+                {
+                    while (process.StandardOutput.Peek() > -1)
+                    {
+                        string line = process.StandardOutput.ReadLine();
+                        stdoutBuilder.Append(line);
+                        if (line.Contains("probe_score")) //For some reason ffprobe sometimes hangs for 30-60 seconds before closing, so it's necessary to manually stop at the end of the output
+                        {
+                            break;
+                        }
+                    }
+
+                    stdoutBuilder.Remove(stdoutBuilder.Length - 1, 1);
+                    string stdout = stdoutBuilder.ToString();
+                    if (stdout.Length < 5)
+                    {
+                        throw new Exception("Failed to parse media file:\n\n" + audioSource); //Since it's not possible to create a Window from this thread, an Exception is thrown; whoever called this method will have to show the user the error
+                    }
+                    while (!BracketBalanced(stdout)) stdout += "}"; //For some reason output brakets sometimes are unbalanced, so it's necessary to manually balance them
+
+                    using (JsonDocument jsonOutput = JsonDocument.Parse(stdout))
+                    {
+                        JsonElement streamsElement = jsonOutput.RootElement.GetProperty("streams");
+                        JsonElement audioStreamElement = new JsonElement();
+
+                        //Find first audio stream
+                        for (int i = 0; i < streamsElement.GetArrayLength(); i++)
+                        {
+                            if (streamsElement[i].GetProperty("codec_type").GetString() == "audio")
+                            {
+                                audioStreamElement = streamsElement[i];
+                                break;
+                            }
+                        }
+
+                        //Get audio properties
+                        string codec = "";
+                        int bitrate = 0, sampleRate = 0, index = 0;
+                        string language = "";
+                        bool defaultTrack = false;
+                        if (audioStreamElement.TryGetProperty("codec_name", out JsonElement e))
+                            codec = e.GetString();
+                        if (audioStreamElement.TryGetProperty("bit_rate", out e))
+                            bitrate = Convert.ToInt32(e.GetString());
+                        if (audioStreamElement.TryGetProperty("sample_rate", out e))
+                            sampleRate = Convert.ToInt32(e.GetString());
+                        index = audioStreamElement.GetProperty("index").GetInt32();
+                        JsonElement e2 = audioStreamElement.GetProperty("tags");
+                        if (e2.TryGetProperty("language", out e))
+                            language = e.GetString();
+                        e2 = audioStreamElement.GetProperty("disposition");
+                        if (e2.TryGetProperty("default", out e))
+                            defaultTrack = Convert.ToBoolean(e.GetByte());
+                        ExternalAudioCodec = codec;
+
+                        JsonElement formatElement = jsonOutput.RootElement.GetProperty("format");
+                        Size += Convert.ToInt64(formatElement.GetProperty("size").GetString());
+                        bitrate = Convert.ToInt32(formatElement.GetProperty("bit_rate").GetString());
+
+                        Array.Resize(ref audioTracks, audioTracks.Length + 1);
+                        audioTracks[audioTracks.Length - 1] = new AudioTrack(codec, bitrate, sampleRate, Duration.TotalSeconds, index, language, defaultTrack);
                     }
                 });
             }

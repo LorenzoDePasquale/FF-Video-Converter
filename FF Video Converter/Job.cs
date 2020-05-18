@@ -5,7 +5,7 @@ using System.IO;
 namespace FFVideoConverter
 {
     public enum JobState { Queued, Running, Paused, Canceled, Completed, Failed }
-    public enum JobType { Conversion, FastCut, Download }
+    public enum JobType { Conversion, FastCut, Download, AudioExport }
 
     public struct ConversioResult
     {
@@ -52,6 +52,15 @@ namespace FFVideoConverter
                 JobType = JobType.Conversion;
             }
             OutputFramerate = (float)(conversionOptions.Framerate > 0 ? conversionOptions.Framerate : sourceInfo.Framerate);
+            ConversionResults = new List<ConversioResult>();
+        }
+
+        public Job(MediaInfo sourceInfo, string destination, AudioTrack audioTrack)
+        {
+            SourceInfo = sourceInfo;
+            Destination = destination;
+            State = JobState.Queued;
+            JobType = JobType.AudioExport;
             ConversionResults = new List<ConversioResult>();
         }
     }

@@ -52,8 +52,8 @@ namespace FFVideoConverter
 
         private void ButtonRemove_Click(object sender, RoutedEventArgs e)
         {
-            //If the job is removed from the listview, the application crashes because for some fucking reason the framework, after removing the item, instead of fucking deleting it, sets the IsEpanded property of the expander to false, 
-            //then tries to animate the expander that doesn't exists animore and cries because it's fucking null.... OF COURSE IT'S NULL YOU FUCKING IDIOT
+            //If the job is removed from the listview, the application crashes because for some fucking reason the framework, after removing the item, instead of fucking deleting it, sets the IsExpanded property of the expander to false, 
+            //then tries to animate the expander that doesn't exists anymore and cries because it's fucking null.... OF COURSE IT'S NULL YOU FUCKING IDIOT
             //That's why the only way to remove a job is to set it's corresponding listviewitem to collapsed
             Button button = (Button)sender;
             ListViewItem selectedItem = (ListViewItem)button.TemplatedParent;

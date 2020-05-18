@@ -54,7 +54,8 @@ namespace FFVideoConverter
             mediaElement.PositionChanged += MediaElementInput_PositionChanged;
             mediaElement.MediaOpening += (sender, e) =>
             {
-                e.Options.IsSubtitleDisabled = true; 
+                e.Options.IsSubtitleDisabled = true;
+                e.Options.DecoderParams.EnableFastDecoding = true;
                 mediaOptions = e.Options;
             };
 
@@ -115,10 +116,6 @@ namespace FFVideoConverter
             queuedJobs.CollectionChanged += (s, e) =>
             {
                 buttonShowQueue.Content = $"Show queue ({queuedJobs.Count})";
-            };
-            completedJobs.CollectionChanged += (s, e) =>
-            {
-                buttonOpenOutput.Content = $"Show completed ({completedJobs.Count})";
             };
 
             //Setup ffmpeg
@@ -191,9 +188,18 @@ namespace FFVideoConverter
             }
             else
             {
-                textBoxDestination.Text = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\{(String.IsNullOrEmpty(mediaInfo.Title) ? "stream" : mediaInfo.Title)}.mp4";
+                if (String.IsNullOrEmpty(mediaInfo.Title))
+                {
+                    textBoxDestination.Text = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\stream.mp4";
+                    labelTitle.Content = "[Network stream]";
+                }
+                else
+                {
+                    string validTitle = String.Join("", mediaInfo.Title.Split(Path.GetInvalidFileNameChars()));
+                    textBoxDestination.Text = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\{validTitle}.mp4";
+                    labelTitle.Content = mediaInfo.Title;
+                }
                 comboBoxFormat.SelectedIndex = 0;
-                labelTitle.Content = !String.IsNullOrEmpty(mediaInfo.Title) ? mediaInfo.Title : "[Network stream]";
             }
 
             mediaElement.Open(new Uri(sourcePath));
@@ -201,16 +207,20 @@ namespace FFVideoConverter
             borderSource.BorderThickness = new Thickness(0);
 
             textBlockDuration.Text = mediaInfo.Duration.ToFormattedString(true);
-            textBlockCodec.Text = $"{mediaInfo.Codec} / {mediaInfo.AudioCodec}";
+            textBlockCodec.Text = mediaInfo.Codec;
             double fps = Math.Round(mediaInfo.Framerate, 2);
             textBlockFramerate.Text = !Double.IsNaN(fps) ? fps + " fps" : "-";
             textBlockBitrate.Text = mediaInfo.Bitrate + " Kbps";
             textBlockResolution.Text = mediaInfo.Resolution.HasValue() ? mediaInfo.Resolution.ToString() : "-";
             textBlockAspectRatio.Text = mediaInfo.Resolution.AspectRatio.ToString();
             textBlockInputSize.Text = mediaInfo.Size.ToBytesString();
-            if (!String.IsNullOrEmpty(mediaInfo.AudioSource))
+
+            listViewAudioTracks.Items.Clear();
+            foreach (var audioTrack in mediaInfo.AudioTracks)
             {
-                textBlockInputSize.Text += " (video only)";
+                AudioTrackControl audioTrackControl = new AudioTrackControl(audioTrack);
+                audioTrackControl.ExportButtonClicked += AudioTrackControl_ExportButtonClicked;
+                listViewAudioTracks.Items.Add(audioTrackControl);
             }
 
             checkBoxCrop.IsEnabled = true;
@@ -240,16 +250,16 @@ namespace FFVideoConverter
         {
             comboBoxFramerate.Items.Clear();
             comboBoxFramerate.Items.Add("Same as source");
-            if (framerate >= 23)
-                comboBoxFramerate.Items.Add("24");
-            if (framerate >= 29)
-                comboBoxFramerate.Items.Add("30");
-            if (framerate >= 59)
-                comboBoxFramerate.Items.Add("60");
-            if (framerate >= 119)
-                comboBoxFramerate.Items.Add("120");
-            if (framerate >= 143)
+            if (framerate > 144)
                 comboBoxFramerate.Items.Add("144");
+            if (framerate > 120)
+                comboBoxFramerate.Items.Add("120");
+            if (framerate > 60)
+                comboBoxFramerate.Items.Add("60");
+            if (framerate > 30)
+                comboBoxFramerate.Items.Add("30");
+            if (framerate > 24)
+                comboBoxFramerate.Items.Add("24");
             comboBoxFramerate.SelectedIndex = 0;
         }
 
@@ -430,12 +440,29 @@ namespace FFVideoConverter
 
         #region Conversion settings
 
+        private void ButtonVideoTab_Click(object sender, RoutedEventArgs e)
+        {
+            gridVideoSettings.Visibility = Visibility.Visible;
+            gridAudioSettings.Visibility = Visibility.Hidden;
+            buttonAudioTab.IsChecked = false;
+            buttonVideoTab.IsChecked = true; //Necessary to maintain this button checked if clicked while already checked
+        }
+
+        private void ButtonAudioTab_Click(object sender, RoutedEventArgs e)
+        {
+            gridVideoSettings.Visibility = Visibility.Hidden;
+            gridAudioSettings.Visibility = Visibility.Visible;
+            buttonVideoTab.IsChecked = false;
+            buttonAudioTab.IsChecked = true; //Necessary to maintain this button checked if clicked while already checked
+        }
+
         private void ComboBoxFormat_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (textBoxDestination.Text.Length > 0)
             {
                 string extension = comboBoxFormat.SelectedItem.ToString().ToLower();
                 textBoxDestination.Text = Path.ChangeExtension(textBoxDestination.Text, extension);
+                SetConvertButtonText();
             }
         }
 
@@ -457,18 +484,6 @@ namespace FFVideoConverter
                 {
                     textBlockStartBefore.Visibility = Visibility.Visible;
                     textBlockStartAfter.Visibility = Visibility.Visible;
-                    buttonConvert.Content = "Fast cut";
-                }
-                else
-                {
-                    if (mediaInfo != null && !mediaInfo.IsLocal)
-                    {
-                        buttonConvert.Content = "Download";
-                    }
-                    else
-                    {
-                        buttonConvert.Content = "Do nothing"; // ¯\_(ツ)_/¯
-                    }
                 }
                 TextBoxStart_TextChanged(null, null);
                 PlayStoryboard("PreviewButtonAnimationOut");
@@ -485,10 +500,10 @@ namespace FFVideoConverter
                 checkBoxCut.ToolTip = "Cut the video and re-encode it with the selected encoder";
                 textBlockStartBefore.Visibility = Visibility.Hidden;
                 textBlockStartAfter.Visibility = Visibility.Hidden;
-                buttonConvert.Content = "Convert";
                 textBoxStart.ClearValue(TextBox.ForegroundProperty);
                 PlayStoryboard("PreviewButtonAnimationIn");
             }
+            SetConvertButtonText();
         }
 
         private void ButtonSave_Click(object sender, RoutedEventArgs e)
@@ -498,8 +513,8 @@ namespace FFVideoConverter
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Select the destination file";
                 sfd.Filter = "MKV|*.mkv|MP4|*.mp4";
-                sfd.FileName = Path.GetFileNameWithoutExtension(mediaInfo.Source) + "_converted";
-                string extension = mediaInfo.Source.Substring(mediaInfo.Source.LastIndexOf('.'));
+                sfd.FileName = Path.GetFileNameWithoutExtension(textBoxDestination.Text) + "_converted";
+                string extension = textBoxDestination.Text.Substring(textBoxDestination.Text.LastIndexOf('.'));
                 if (extension == ".mp4") sfd.FilterIndex = 2;
                 bool? result = sfd.ShowDialog();
                 if (result == true)
@@ -607,7 +622,6 @@ namespace FFVideoConverter
 
                 if (comboBoxEncoder.SelectedIndex == 0)
                 {
-                    buttonConvert.Content = "Fast cut";
                     textBlockStartBefore.Visibility = Visibility.Visible;
                     textBlockStartAfter.Visibility = Visibility.Visible;
                     TextBoxStart_TextChanged(null, null);
@@ -619,18 +633,8 @@ namespace FFVideoConverter
                 textBlockStartBefore.Visibility = Visibility.Hidden;
                 textBlockStartAfter.Visibility = Visibility.Hidden;
                 textBoxStart.ClearValue(TextBox.ForegroundProperty);
-                if (comboBoxEncoder.SelectedIndex == 0)
-                {
-                    if (mediaInfo.IsLocal)
-                    {
-                        buttonConvert.Content = "Do nothing"; // ¯\_(ツ)_ /¯
-                    }
-                    else
-                    {
-                        buttonConvert.Content = "Download";
-                    }
-                }
             }
+            SetConvertButtonText();
         }
 
         private void CheckBoxCrop_Click(object sender, RoutedEventArgs e)
@@ -689,7 +693,41 @@ namespace FFVideoConverter
         {
             if (mediaOptions != null)
             {
-                mediaOptions.VideoFilter = ((Rotation)comboBoxRotation.SelectedIndex).FilterString;
+                if (comboBoxResolution.SelectedIndex == 0)
+                {
+                    mediaOptions.VideoFilter = mediaInfo.Resolution.FilterString + ",";
+                }
+                else
+                {
+                    mediaOptions.VideoFilter = Resolution.FromString(comboBoxResolution.SelectedItem.ToString()).FilterString + ",";
+                }
+                mediaOptions.VideoFilter += ((Rotation)comboBoxRotation.SelectedIndex).FilterString;
+                //Make changes visible if the player is paused
+                if (mediaElement.IsPaused)
+                {
+                    mediaElement.ChangeMedia();
+                }
+            }
+        }
+
+        private void ComboBoxResolution_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (mediaOptions != null && comboBoxResolution.SelectedIndex != -1)
+            {
+                if (comboBoxResolution.SelectedIndex == 0)
+                {
+                    mediaOptions.VideoFilter = mediaInfo.Resolution.FilterString + ",";
+                }
+                else
+                {
+                    mediaOptions.VideoFilter = Resolution.FromString(comboBoxResolution.SelectedItem.ToString()).FilterString + ",";
+                }
+                mediaOptions.VideoFilter += ((Rotation)comboBoxRotation.SelectedIndex).FilterString;
+                //Make changes visible if the player is paused
+                if (mediaElement.IsPaused)
+                {
+                    mediaElement.ChangeMedia();
+                }
             }
         }
 
@@ -765,8 +803,9 @@ namespace FFVideoConverter
                 new MessageBoxWindow(@"¯\_(ツ)_/¯", "FF Video Converter").ShowDialog();
                 return true;
             }
-            if (textBoxDestination.Text.EndsWith("mp4") && mediaInfo.AudioCodec?.ToLower() == "opus")
+            if (textBoxDestination.Text.EndsWith("mp4") && mediaInfo.ExternalAudioCodec?.ToLower() == "opus")
             {
+                //To be removed after ffmpeg 4.3 update
                 new MessageBoxWindow("Opus audio in mp4 container is currently unsupported.\nEither use aac audio or mkv container.", "FF Video Converter").ShowDialog();
                 return true;
             }
@@ -817,26 +856,73 @@ namespace FFVideoConverter
             BlockSleepMode();
         }
 
+        private void AudioTrackControl_ExportButtonClicked(AudioTrack audioTrack)
+        {
+            if (buttonConvert.IsEnabled)
+            {
+                SaveFileDialog sfd = new SaveFileDialog();
+                sfd.Title = "Select the destination file";
+                if (audioTrack.Codec.ToLower() == "aac")
+                {
+                    sfd.Filter = "AAC audio file|*.aac|MP4 audio container|*.m4a";
+                }
+                else if (audioTrack.Codec.ToLower() == "opus")
+                {
+                    sfd.Filter = "Opus audio file|*.opus";
+                }
+                else
+                {
+                    sfd.Filter = "MP4 audio container|*.m4a";
+                }
+                sfd.FileName = Path.GetFileNameWithoutExtension(textBoxDestination.Text) + "_audio_" + audioTrack.Language;
+                sfd.FilterIndex = 1;
+                bool? result = sfd.ShowDialog();
+                if (result == true)
+                {
+                    ffmpegEngine.ExtractAudioTrack(mediaInfo, audioTrack.StreamIndex, sfd.FileName, TimeSpan.Zero, TimeSpan.Zero);
+                    runningJob = new Job(mediaInfo, sfd.FileName, audioTrack);
+
+                    buttonPauseResume.IsEnabled = true;
+                    buttonCancel.IsEnabled = true;
+                    buttonConvert.IsEnabled = false;
+                    buttonPreview.IsEnabled = false;
+                    buttonPlayPause.Content = " ▶️";
+                    PlayStoryboard("ProgressAnimationIn");
+                    TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
+                }
+            }
+            else
+            {
+                new MessageBoxWindow("Can't perform this operation while there is a conversion running", "FF Video Converter").ShowDialog();
+            }
+        }
+
         private void UpdateProgress(ProgressData progressData)
         {
             double secondsToEncode = progressData.TotalTime.TotalSeconds - progressData.CurrentTime.TotalSeconds;
             double remainingTime = progressData.EncodingSpeed == 0 ? 0 : (secondsToEncode) / progressData.EncodingSpeed;
-            double percentage = Math.Min(progressData.CurrentFrame * 100 / (runningJob.OutputFramerate * progressData.TotalTime.TotalSeconds), 99.4);
+            double percentage = Math.Min(progressData.CurrentTime.TotalSeconds * 100 / progressData.TotalTime.TotalSeconds, 99.4);
             long approximateOutputByteSize = progressData.CurrentByteSize + (long)(progressData.AverageBitrate * 1000 * secondsToEncode / 8);
             DoubleAnimation progressAnimation = new DoubleAnimation(percentage, TimeSpan.FromSeconds(0.5));
             progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
             TaskbarItemInfo.ProgressValue = percentage / 100;
-            if (runningJob.JobType != JobType.Download)
+            if (runningJob.JobType == JobType.Conversion || runningJob.JobType == JobType.FastCut)
             {
                 textBlockProgress.Text = $"Processed: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
                 if (mediaInfo.IsLocal) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
                 textBlockSize.Text = $"Output size: {progressData.CurrentByteSize.ToBytesString()}";
                 if (progressData.AverageBitrate > 0) textBlockSize.Text += $" / {approximateOutputByteSize.ToBytesString()} (estimated)";
             }
-            else
+            else if (runningJob.JobType == JobType.Download)
             {
                 textBlockProgress.Text = $"Progress: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
                 textBlockSize.Text = $"Downloaded: {progressData.CurrentByteSize.ToBytesString()}";
+            }
+            else
+            {
+                textBlockProgress.Text = $"Progress: {progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
+                if (mediaInfo.IsLocal) textBlockProgress.Text += $"  @ {progressData.EncodingSpeed}x speed";
+                textBlockSize.Text = $"Output size: {progressData.CurrentByteSize.ToBytesString()}";
             }
             Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToFormattedString();
             labelProgress.Content = $"Progress: {Math.Round(percentage)}%   Remaining time: {TimeSpan.FromSeconds(remainingTime).ToFormattedString()}";
@@ -863,58 +949,69 @@ namespace FFVideoConverter
             {
                 DoubleAnimation progressAnimation = new DoubleAnimation(100, TimeSpan.FromSeconds(0));
                 progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
+
                 long outputSize = new FileInfo(runningJob.Destination).Length;
-                if (runningJob.JobType == JobType.Conversion)
+                switch (runningJob.JobType)
                 {
-                    textBlockProgress.Text = "Video converted!";
-                    textBlockSize.Text = "Output size: " + outputSize.ToBytesString();
-                }
-                else if (runningJob.JobType == JobType.FastCut)
-                {
-                    textBlockProgress.Text = "Video cut!";
-                    textBlockSize.Text = "Output size: " + outputSize.ToBytesString();
-                }
-                else
-                {
-                    textBlockProgress.Text = "Video downloaded!";
-                    textBlockSize.Text = "Video size: " + outputSize.ToBytesString();
+                    case JobType.Conversion:
+                        textBlockProgress.Text = "Video converted!";
+                        textBlockSize.Text = "Output size: " + outputSize.ToBytesString();
+                        break;
+                    case JobType.FastCut:
+                        textBlockProgress.Text = "Video cut!";
+                        textBlockSize.Text = "Output size: " + outputSize.ToBytesString();
+                        break;
+                    case JobType.Download:
+                        textBlockProgress.Text = "Video downloaded!";
+                        textBlockSize.Text = "Video size: " + outputSize.ToBytesString();
+                        break;
+                    case JobType.AudioExport:
+                        textBlockProgress.Text = "Audio exported!";
+                        textBlockSize.Text = "Audio size: " + outputSize.ToBytesString();
+                        break;
                 }
 
-                MediaInfo outputFile = await MediaInfo.Open(runningJob.Destination);
-                int percentageDifference = 100 - (int)(outputSize / (float)runningJob.SourceInfo.Size * 100);
-                string videoOnly = String.IsNullOrEmpty(runningJob.SourceInfo.AudioSource) ? "" : " (video only)";
-                string biggerSmaller = percentageDifference >= 0 ? "smaller" : "bigger";
-                if (runningJob.JobType == JobType.Download)
+                if (runningJob.JobType == JobType.AudioExport)
                 {
-                    runningJob.ConversionResults.Add(new ConversioResult("Duration", outputFile.Duration.ToFormattedString(true)));
-                    runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{outputFile.Codec} / {outputFile.AudioCodec}"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Framerate", $"{outputFile.Framerate} fps"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{outputFile.Bitrate} Kbps"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Resolution", outputFile.Resolution.ToString()));
-                    runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", outputFile.Resolution.AspectRatio.ToString()));
                     runningJob.ConversionResults.Add(new ConversioResult("Size", outputSize.ToBytesString()));
                 }
                 else
                 {
-                    runningJob.ConversionResults.Add(new ConversioResult("Duration", $"{runningJob.SourceInfo.Duration.ToFormattedString(true)}   ⟶   {outputFile.Duration.ToFormattedString(true)}"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{runningJob.SourceInfo.Codec} / {runningJob.SourceInfo.AudioCodec}   ⟶   {outputFile.Codec} / {outputFile.AudioCodec}"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Framerate", $"{runningJob.SourceInfo.Framerate} fps   ⟶   {outputFile.Framerate} fps"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{runningJob.SourceInfo.Bitrate} Kbps   ⟶   {outputFile.Bitrate} Kbps"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Resolution", $"{runningJob.SourceInfo.Resolution}   ⟶   {outputFile.Resolution}"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", $"{runningJob.SourceInfo.Resolution.AspectRatio}   ⟶   {outputFile.Resolution.AspectRatio}"));
-                    runningJob.ConversionResults.Add(new ConversioResult("Size", $"{runningJob.SourceInfo.Size.ToBytesString()}{videoOnly}   ⟶   {outputSize.ToBytesString()}  ({Math.Abs(percentageDifference)}% {biggerSmaller})"));
-                }
+                    MediaInfo outputFile = await MediaInfo.Open(runningJob.Destination);
+                    int percentageDifference = 100 - (int)(outputSize / (float)runningJob.SourceInfo.Size * 100);
+                    string biggerSmaller = percentageDifference >= 0 ? "smaller" : "bigger";
+                    if (runningJob.JobType == JobType.Download)
+                    {
+                        runningJob.ConversionResults.Add(new ConversioResult("Duration", outputFile.Duration.ToFormattedString(true)));
+                        runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{outputFile.Codec}"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Framerate", $"{outputFile.Framerate} fps"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{outputFile.Bitrate} Kbps"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Resolution", outputFile.Resolution.ToString()));
+                        runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", outputFile.Resolution.AspectRatio.ToString()));
+                        runningJob.ConversionResults.Add(new ConversioResult("Size", outputSize.ToBytesString()));
+                    }
+                    else
+                    {
+                        runningJob.ConversionResults.Add(new ConversioResult("Duration", $"{runningJob.SourceInfo.Duration.ToFormattedString(true)}   ⟶   {outputFile.Duration.ToFormattedString(true)}"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{runningJob.SourceInfo.Codec}   ⟶   {outputFile.Codec}"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Framerate", $"{runningJob.SourceInfo.Framerate} fps   ⟶   {outputFile.Framerate} fps"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{runningJob.SourceInfo.Bitrate} Kbps   ⟶   {outputFile.Bitrate} Kbps"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Resolution", $"{runningJob.SourceInfo.Resolution}   ⟶   {outputFile.Resolution}"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", $"{runningJob.SourceInfo.Resolution.AspectRatio}   ⟶   {outputFile.Resolution.AspectRatio}"));
+                        runningJob.ConversionResults.Add(new ConversioResult("Size", $"{runningJob.SourceInfo.Size.ToBytesString()}   ⟶   {outputSize.ToBytesString()}  ({Math.Abs(percentageDifference)}% {biggerSmaller})"));
+                    }
 
-                //Show conversion results compared to original values, only if the conversion was not a download and the loaded media is the same as the converted one
-                if (runningJob.JobType != JobType.Download && mediaInfo.Source == runningJob.SourceInfo.Source)
-                {
-                    textBlockDuration.Text = $"{runningJob.SourceInfo.Duration.ToFormattedString(true)}   ⟶   {outputFile.Duration.ToFormattedString(true)}";
-                    textBlockCodec.Text = $"{runningJob.SourceInfo.Codec} / {runningJob.SourceInfo.AudioCodec}   ⟶   {outputFile.Codec} / {outputFile.AudioCodec}";
-                    textBlockFramerate.Text = $"{runningJob.SourceInfo.Framerate} fps   ⟶   {outputFile.Framerate} fps";
-                    textBlockBitrate.Text = $"{runningJob.SourceInfo.Bitrate} Kbps   ⟶   {outputFile.Bitrate} Kbps";
-                    textBlockResolution.Text = $"{runningJob.SourceInfo.Resolution}   ⟶   {outputFile.Resolution}";
-                    textBlockAspectRatio.Text = $"{runningJob.SourceInfo.Resolution.AspectRatio}   ⟶   {outputFile.Resolution.AspectRatio}";
-                    textBlockInputSize.Text = $"{runningJob.SourceInfo.Size.ToBytesString()}{videoOnly}   ⟶   {outputSize.ToBytesString()}  ({Math.Abs(percentageDifference)}% {biggerSmaller})";
+                    //Show conversion results compared to original values, only if the conversion was not a download and the loaded media is the same as the converted one
+                    if (runningJob.JobType != JobType.Download && mediaInfo.Source == runningJob.SourceInfo.Source)
+                    {
+                        textBlockDuration.Text = $"{runningJob.SourceInfo.Duration.ToFormattedString(true)}   ⟶   {outputFile.Duration.ToFormattedString(true)}";
+                        textBlockCodec.Text = $"{runningJob.SourceInfo.Codec}   ⟶   {outputFile.Codec}";
+                        textBlockFramerate.Text = $"{runningJob.SourceInfo.Framerate} fps   ⟶   {outputFile.Framerate} fps";
+                        textBlockBitrate.Text = $"{runningJob.SourceInfo.Bitrate} Kbps   ⟶   {outputFile.Bitrate} Kbps";
+                        textBlockResolution.Text = $"{runningJob.SourceInfo.Resolution}   ⟶   {outputFile.Resolution}";
+                        textBlockAspectRatio.Text = $"{runningJob.SourceInfo.Resolution.AspectRatio}   ⟶   {outputFile.Resolution.AspectRatio}";
+                        textBlockInputSize.Text = $"{runningJob.SourceInfo.Size.ToBytesString()}   ⟶   {outputSize.ToBytesString()}  ({Math.Abs(percentageDifference)}% {biggerSmaller})";
+                    }
                 }
 
                 runningJob.State = JobState.Completed;
@@ -961,7 +1058,7 @@ namespace FFVideoConverter
                 
                 runningJob.State = JobState.Canceled;
                 runningJob.ConversionResults.Add(new ConversioResult("Duration", runningJob.SourceInfo.Duration.ToFormattedString(true)));
-                runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{runningJob.SourceInfo.Codec} / {runningJob.SourceInfo.AudioCodec}"));
+                runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{runningJob.SourceInfo.Codec}"));
                 runningJob.ConversionResults.Add(new ConversioResult("Framerate", $"{runningJob.SourceInfo.Framerate} fps"));
                 runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{runningJob.SourceInfo.Bitrate} Kbps"));
                 runningJob.ConversionResults.Add(new ConversioResult("Resolution", runningJob.SourceInfo.Resolution.ToString()));
@@ -1450,6 +1547,37 @@ namespace FFVideoConverter
             if (Cursor != desired_cursor) Cursor = desired_cursor;
         }
 
+        private void SetConvertButtonText()
+        {
+            Encoder selectedEncoder = (Encoder)comboBoxEncoder.SelectedItem;
+            if (selectedEncoder is NativeEncoder)
+            {
+                if (checkBoxCut.IsChecked == true)
+                {
+                    buttonConvert.Content = "Fast cut";
+                }
+                else
+                {
+                    if (mediaInfo != null && !mediaInfo.IsLocal)
+                    {
+                        buttonConvert.Content = "Download";
+                    }
+                    else if (Path.GetExtension(mediaInfo.Source) != Path.GetExtension(textBoxDestination.Text))
+                    {
+                        buttonConvert.Content = "Remux";
+                    }
+                    else
+                    {
+                        buttonConvert.Content = "Do nothing"; // ¯\_(ツ)_/¯
+                    }
+                }
+            }
+            else
+            {
+                buttonConvert.Content = "Convert";
+            }
+        }
+
         private void BlockSleepMode()
         {
             SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
@@ -1480,5 +1608,6 @@ namespace FFVideoConverter
         static extern bool SetSuspendState(bool hiberate, bool forceCritical, bool disableWakeEvent);
 
         #endregion
+
     }
 }

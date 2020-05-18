@@ -1,10 +1,10 @@
-﻿<Window
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:FFVideoConverter"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         x:Name="window" x:Class="FFVideoConverter.MainWindow"
-        Title="FF Video Converter" Height="715" Width="853" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="FF Video Converter" Height="764" Width="853" Style="{StaticResource BlurWindowStyle}" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing">
+    <!--Max height for 720p/1080p150% screens is 715-->
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -47,56 +47,56 @@
                 <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="6" />
             </DoubleAnimationUsingKeyFrames>
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="borderSource">
-                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="470">
+                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="495"> <!-- old value 470 -->
                     <EasingDoubleKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseOut"/>
                     </EasingDoubleKeyFrame.EasingFunction>
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCut">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="27,280,0,-89">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="27,265,0,-119">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCrop">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="435,251,-63,-114">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="435,236,-63,-149">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockOutputDuration">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="2,82,0,-28">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="2,61,0,-9">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockOutputSize">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="2,109,0,-21">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="2,90,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockOutputResolution">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="71,109,0,-21">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="71,90,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonConvert">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="277,666,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="277,705,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonAddToQueue">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,666,277,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,705,277,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -109,22 +109,8 @@
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="comboBoxRotation">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="90,236,0,0">
-                    <EasingThicknessKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseInOut"/>
-                    </EasingThicknessKeyFrame.EasingFunction>
-                </EasingThicknessKeyFrame>
-            </ThicknessAnimationUsingKeyFrames>
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockRotation">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,240,0,0">
-                    <EasingThicknessKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseInOut"/>
-                    </EasingThicknessKeyFrame.EasingFunction>
-                </EasingThicknessKeyFrame>
-            </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonShowQueue">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,533,-154,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,577,-154,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -151,21 +137,21 @@
                 <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="3" />
             </DoubleAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCut">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="332,46,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="332,12,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCrop">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="332,127,40,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="332,86,40,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockOutputDuration">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="380,24,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="380,24,-15,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -186,42 +172,28 @@
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonConvert">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="277,532,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="277,576,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonAddToQueue">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,532,277,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,576,277,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridProgress">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,569,0,0">
-                    <EasingThicknessKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseInOut"/>
-                    </EasingThicknessKeyFrame.EasingFunction>
-                </EasingThicknessKeyFrame>
-            </ThicknessAnimationUsingKeyFrames>
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="comboBoxRotation">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="90,224,0,0">
-                    <EasingThicknessKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseInOut"/>
-                    </EasingThicknessKeyFrame.EasingFunction>
-                </EasingThicknessKeyFrame>
-            </ThicknessAnimationUsingKeyFrames>
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="textBlockRotation">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,228,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,617,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonShowQueue">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,533,14,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="0,577,14,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -235,7 +207,7 @@
 
         <Storyboard x:Key="PreviewButtonAnimationIn" >
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonPreview">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,533,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,577,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -244,7 +216,7 @@
         </Storyboard>
         <Storyboard x:Key="PreviewButtonAnimationOut" >
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonPreview">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="-154,533,0,0">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="-154,577,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -253,18 +225,13 @@
         </Storyboard>
     </Window.Resources>
 
-    <Window.Style>
-        <StaticResource ResourceKey="BlurWindowStyle"/>
-    </Window.Style>
-
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="0*"/>
             <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Grid x:Name="gridTitleBar" Grid.Row="1" Background="#7F060606" MouseDown="Grid_MouseDown" ClipToBounds="True">
+        <Grid x:Name="gridTitleBar" Grid.Row="0" Background="#7F060606" MouseDown="Grid_MouseDown" ClipToBounds="True">
             <Button x:Name="buttonClose" Content="X" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222" FontWeight="Bold" FontSize="14" />
             <Button x:Name="buttonMinimize" Content="___" Height="30" Margin="0,0,29,0" VerticalAlignment="Top" Click="ButtonMinimize_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFEEEEEE" FontWeight="Bold" FontSize="8" FontFamily="Calibri"/>
             <Button x:Name="buttonUpdate" Content="↓" Visibility="Hidden" Height="30" Margin="0,0,59,0" VerticalAlignment="Top" Click="ButtonUpdate_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FF299910" FontWeight="Bold" FontSize="15" FontFamily="Calibri" ToolTip="Update avaiable!"/>
@@ -272,7 +239,7 @@
             <Label x:Name="labelProgress" Content="Progress: 0%   Remaining time: 00:00:00" Height="30" Margin="0,25,0,-25" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#FFCBCBCB" Background="{x:Null}" FontSize="16" FontWeight="DemiBold"/>
         </Grid>
 
-        <Grid x:Name="gridMediaDetails" Grid.Row="2" Margin="0,37,13,0" Height="172" VerticalAlignment="Top" HorizontalAlignment="Right" Width="394">
+        <Grid x:Name="gridMediaDetails" Grid.Row="1" Margin="0,37,13,0" Height="172" VerticalAlignment="Top" HorizontalAlignment="Right" Width="394">
             <Grid x:Name="TopLabel" Margin="0,-26,0,0" Height="26" VerticalAlignment="Top">
                 <Border VerticalAlignment="Top" CornerRadius="4 4 0 0" Margin="140,0" Height="21" BorderThickness="1" Background="{StaticResource BackgroundColor}" BorderBrush="{StaticResource BorderColor}" />
                 <Border VerticalAlignment="Top" Margin="140,20,140,0" Height="2" Background="{StaticResource BackgroundColor}"/>
@@ -301,33 +268,38 @@
             <TextBlock HorizontalAlignment="Left" Text="File size:" VerticalAlignment="Top" Margin="10,145,0,0" Foreground="{StaticResource TextColorBlue}" />
         </Grid>
 
-        <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,218,216,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpen_Click"/>
-        <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,218,14,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpenStream_Click"/>
-        <Button x:Name="buttonShowQueue" Content="Show queue" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,533,14,0" HorizontalAlignment="Right" Width="140" Click="ButtonShowQueue_Click"/>
-        <Button x:Name="buttonConvert" Content="Convert" VerticalAlignment="Top" IsEnabled="False" Margin="277,532,0,0" Click="ButtonConvert_Click" Height="30" Grid.Row="2" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" Width="140" Style="{StaticResource GreenButton}"/>
-        <Button x:Name="buttonAddToQueue" Content="Add to queue" Grid.Row="2" VerticalAlignment="Top" Height="30" Margin="0,532,277,0" HorizontalAlignment="Right" Width="140" IsEnabled="False" Click="ButtonConvert_Click" Style="{StaticResource GreenButton}"/>
-        <Button x:Name="buttonPreview" Content="Quality preview" Grid.Row="2" VerticalAlignment="Top" Margin="10,533,0,0" Click="ButtonPreview_Click" Height="30" HorizontalAlignment="Left" Width="140" ToolTipService.ShowDuration="15000" ToolTip="Compare a 4s clip of the video at every quality settings"/>
+        <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,218,216,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpen_Click"/>
+        <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,218,14,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpenStream_Click"/>
+        <Button x:Name="buttonShowQueue" Content="Show queue" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,577,14,0" HorizontalAlignment="Right" Width="140" Click="ButtonShowQueue_Click"/>
+        <Button x:Name="buttonConvert" Content="Convert" VerticalAlignment="Top" IsEnabled="False" Margin="277,576,0,0" Click="ButtonConvert_Click" Height="30" Grid.Row="1" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" Width="140" Style="{StaticResource GreenButton}"/>
+        <Button x:Name="buttonAddToQueue" Content="Add to queue" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,576,277,0" HorizontalAlignment="Right" Width="140" IsEnabled="False" Click="ButtonConvert_Click" Style="{StaticResource GreenButton}"/>
+        <Button x:Name="buttonPreview" Content="Quality preview" Grid.Row="1" VerticalAlignment="Top" Margin="10,577,0,0" Click="ButtonPreview_Click" Height="30" HorizontalAlignment="Left" Width="140" ToolTipService.ShowDuration="15000" ToolTip="Compare a 4s clip of the video at every quality settings"/>
 
-        <Grid x:Name="gridConversionSettings" Margin="0,260,0,0" Grid.Row="2" Height="262" VerticalAlignment="Top">
-            <Grid x:Name="gridDestination" Margin="80,9,101,0" Height="25" VerticalAlignment="Top">
-                <TextBox x:Name="textBoxDestination" Margin="10,0,0,0" Padding="0,0,24,0"/>
-                <Button x:Name="buttonSave" Content="···" FontSize="19" Margin="0,1,4,0" Click="ButtonSave_Click" Style="{StaticResource ClearButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="23"/>
-            </Grid>
-            <ComboBox x:Name="comboBoxFormat" Margin="0,9,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="86" SelectedIndex="0" SelectionChanged="ComboBoxFormat_SelectionChanged" />
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Quality" VerticalAlignment="Top" Margin="10,119,0,0" Width="68" TextAlignment="Right"/>
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Framerate" VerticalAlignment="Top" Margin="10,155,0,0" Width="68" TextAlignment="Right"/>
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Destination" VerticalAlignment="Top" Margin="10,11,0,0"/>
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Resolution" VerticalAlignment="Top" Margin="10,191,0,0" Width="68" TextAlignment="Right"/>
-            <TextBlock x:Name="textBlockRotation" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Rotation" VerticalAlignment="Top" Margin="10,228,0,0" Width="68" TextAlignment="Right"/>
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Encoder" VerticalAlignment="Top" Margin="10,47,0,0" Width="68" TextAlignment="Right"/>
-            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Profile" VerticalAlignment="Top" Margin="10,83,0,0" Width="68" TextAlignment="Right"/>
-            <ComboBox x:Name="comboBoxEncoder" DisplayMemberPath="Name" HorizontalAlignment="Left" Margin="90,44,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxEncoder_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Native means the file is not re-encoded, thus conversion options are not used; use this mode if you only want to download a web media&#xA;H264 is compatible with most devices (like smart TVs)&#xA;H265 is from 25% to 50% more efficient than H264, but requires more time to encode&#xA;Hardware encoders like QuickSync or Nvenc can encode much faster than software encoders, but at a lower quality per bitrate"/>
-            <ComboBox x:Name="comboBoxPreset" HorizontalAlignment="Left" Margin="90,80,0,0" VerticalAlignment="Top" Width="177" Height="24" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding speed to quality ratio&#xA;A slower profile will require more time to encode, but it will result in better quality than a faster profile at the same bitrate"/>
-            <ComboBox x:Name="comboBoxQuality" HorizontalAlignment="Left" Margin="90,116,0,0" VerticalAlignment="Top" Width="177" Height="24" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding quality to size ratio&#xA;A higher quality will provide a better looking video at the cost of file size (size increases by about 1/3 with every option)" />
-            <ComboBox x:Name="comboBoxFramerate" HorizontalAlignment="Left" Margin="90,152,0,0" VerticalAlignment="Top" Width="177" Height="24" />
-            <ComboBox x:Name="comboBoxResolution" HorizontalAlignment="Left" Margin="90,188,0,0" VerticalAlignment="Top" Width="177" Height="24" />
-            <ComboBox x:Name="comboBoxRotation" HorizontalAlignment="Left" Margin="90,224,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxRotation_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Select the rotation to apply to every frame&#xA;This operation is performed after an eventual crop operation"/>
-            <Grid x:Name="gridCut" Margin="332,46,0,0" Height="71" VerticalAlignment="Top" HorizontalAlignment="Left" Width="505" >
+        <Grid x:Name="gridDestination" Margin="0,265,0,0" Height="25" Grid.Row="1" VerticalAlignment="Top">
+            <TextBox x:Name="textBoxDestination" Margin="90,0,101,0" Padding="0,0,24,0"/>
+            <Button x:Name="buttonSave" Content="···" FontSize="19" Margin="0,1,105,0" Click="ButtonSave_Click" Style="{StaticResource ClearButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Width="24" Height="23"/>
+            <ComboBox x:Name="comboBoxFormat" Margin="0,0,10,0" VerticalAlignment="Top" Height="24" HorizontalAlignment="Right" Width="86" SelectedIndex="0" SelectionChanged="ComboBoxFormat_SelectionChanged" />
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Destination" VerticalAlignment="Top" Margin="10,4,0,0"/>
+        </Grid>
+
+        <Rectangle Grid.Row="1" Stroke="#FF252525" Margin="10,318,10,0" RadiusX="7.5" RadiusY="7.5" StrokeThickness="1" Fill="#992E2E2E" Height="240" VerticalAlignment="Top" />
+        <ToggleButton x:Name="buttonVideoTab" IsChecked="True" Content="Video" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,303,423,0" HorizontalAlignment="Right" Width="100" Style="{StaticResource TabLeftButton}" Click="ButtonVideoTab_Click"/>
+        <ToggleButton x:Name="buttonAudioTab" Content="Audio" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,303,323,0" HorizontalAlignment="Right" Width="100" Style="{StaticResource TabRightButton}" Click="ButtonAudioTab_Click"/>
+
+        <Grid x:Name="gridVideoSettings" Margin="0,331,0,0" Grid.Row="1" Height="222" VerticalAlignment="Top" >
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Quality" VerticalAlignment="Top" Margin="17,85,0,0" Width="68" TextAlignment="Right"/>
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Framerate" VerticalAlignment="Top" Margin="17,121,0,0" Width="68" TextAlignment="Right"/>
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Resolution" VerticalAlignment="Top" Margin="17,157,0,0" Width="68" TextAlignment="Right"/>
+            <TextBlock x:Name="textBlockRotation" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Rotation" VerticalAlignment="Top" Margin="17,194,0,0" Width="68" TextAlignment="Right"/>
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Encoder" VerticalAlignment="Top" Margin="17,13,0,0" Width="68" TextAlignment="Right"/>
+            <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Profile" VerticalAlignment="Top" Margin="17,49,0,0" Width="68" TextAlignment="Right"/>
+            <ComboBox x:Name="comboBoxEncoder" DisplayMemberPath="Name" HorizontalAlignment="Left" Margin="97,10,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxEncoder_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Native means the file is not re-encoded, thus conversion options are not used; use this mode if you only want to download a web media&#xA;H264 is compatible with most devices (like smart TVs)&#xA;H265 is from 25% to 50% more efficient than H264, but requires more time to encode&#xA;Hardware encoders like QuickSync or Nvenc can encode much faster than software encoders, but at a lower quality per bitrate"/>
+            <ComboBox x:Name="comboBoxPreset" HorizontalAlignment="Left" Margin="97,46,0,0" VerticalAlignment="Top" Width="177" Height="24" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding speed to quality ratio&#xA;A slower profile will require more time to encode, but it will result in better quality than a faster profile at the same bitrate"/>
+            <ComboBox x:Name="comboBoxQuality" HorizontalAlignment="Left" Margin="97,82,0,0" VerticalAlignment="Top" Width="177" Height="24" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding quality to size ratio&#xA;A higher quality will provide a better looking video at the cost of file size (size increases by about 1/3 with every option)" />
+            <ComboBox x:Name="comboBoxFramerate" HorizontalAlignment="Left" Margin="97,118,0,0" VerticalAlignment="Top" Width="177" Height="24" />
+            <ComboBox x:Name="comboBoxResolution" HorizontalAlignment="Left" Margin="97,154,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxResolution_SelectionChanged" />
+            <ComboBox x:Name="comboBoxRotation" HorizontalAlignment="Left" Margin="97,190,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxRotation_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Select the rotation to apply to every frame&#xA;This operation is performed after an eventual crop operation"/>
+            <Grid x:Name="gridCut" Margin="332,12,0,0" Height="71" VerticalAlignment="Top" HorizontalAlignment="Left" Width="505" >
                 <TextBlock x:Name="textBlockStartBefore" HorizontalAlignment="Left" Margin="124,3,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="Hidden" MouseLeftButtonDown="TextBlockStartBefore_MouseLeftButtonDown"/>
                 <TextBlock x:Name="textBlockStartAfter" HorizontalAlignment="Left" Margin="124,48,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="Hidden" MouseLeftButtonDown="TextBlockStartAfter_MouseLeftButtonDown"/>
                 <TextBox x:Name="textBoxStart" HorizontalAlignment="Left" Height="25" Margin="124,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxStart_TextChanged" />
@@ -337,7 +309,7 @@
                 <TextBlock HorizontalAlignment="Left" Margin="238,25,0,0" TextWrapping="Wrap" Text="End" VerticalAlignment="Top"/>
                 <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" Margin="380,24,-15,0" TextWrapping="Wrap" Text="Duration: 00:00:00" VerticalAlignment="Top" Width="110" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}"/>
             </Grid>
-            <Grid x:Name="gridCrop" Margin="332,120,40,0" Height="125" VerticalAlignment="Top" >
+            <Grid x:Name="gridCrop" Margin="332,86,40,0" Height="125" VerticalAlignment="Top" >
                 <local:IntegerTextBox x:Name="integerTextBoxCropTop" HorizontalAlignment="Left" Height="28" Margin="190,20,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
                 <local:IntegerTextBox x:Name="integerTextBoxCropLeft" HorizontalAlignment="Left" Height="28" Margin="120,48,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
                 <local:IntegerTextBox x:Name="integerTextBoxCropBottom" HorizontalAlignment="Left" Height="28" Margin="190,76,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged" />
@@ -352,7 +324,13 @@
             </Grid>
         </Grid>
 
-        <Border x:Name="borderSource" Grid.Row="2" Background="Transparent" CornerRadius="16" Margin="10,15,0,0" MouseEnter="MediaElementInput_MouseEnter" MouseLeave="MediaElementInput_MouseLeave" BorderThickness="3" Height="236" VerticalAlignment="Top" HorizontalAlignment="Left" Width="413">
+        <Grid x:Name="gridAudioSettings" Margin="0,331,0,0" Grid.Row="1" Height="230" VerticalAlignment="Top" Visibility="Hidden">
+            <ScrollViewer Margin="10,10" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="listViewAudioTracks" />
+            </ScrollViewer>
+        </Grid>
+
+        <Border x:Name="borderSource" Grid.Row="1" Background="Transparent" CornerRadius="16" Margin="10,15,0,0" MouseEnter="MediaElementInput_MouseEnter" MouseLeave="MediaElementInput_MouseLeave" BorderThickness="3" Height="236" VerticalAlignment="Top" HorizontalAlignment="Left" Width="413">
             <Border.BorderBrush>
                 <VisualBrush>
                     <VisualBrush.Visual>
@@ -403,7 +381,7 @@
             </Grid>
         </Border>
 
-        <Grid x:Name="gridProgress" Grid.Row="2" Height="57" VerticalAlignment="Top" Margin="0,569,0,0">
+        <Grid x:Name="gridProgress" Grid.Row="1" Height="57" VerticalAlignment="Top" Margin="0,617,0,0">
             <Grid x:Name="gridProgressBar" Margin="10,5,10,0" Height="25" VerticalAlignment="Top">
                 <ProgressBar x:Name="progressBarConvertProgress" />
                 <Border Margin="370,0,370,-20" Background="{StaticResource BackgroundColor}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1 0 1 1" CornerRadius="0,0,10,10" Height="19" VerticalAlignment="Bottom"/>
@@ -419,7 +397,7 @@
             </Grid>
             <TextBlock x:Name="textBlockProgress" TextWrapping="Wrap" VerticalAlignment="Top" Margin="13,35,476,-1" Height="23"/>
             <TextBlock x:Name="textBlockSize" TextWrapping="Wrap" VerticalAlignment="Top" Margin="13,59,476,-25" Height="23"/>
-            <Button x:Name="buttonOpenOutput" Content="Show completed" Margin="0,49,13,-20" Height="28" Visibility="Hidden" VerticalAlignment="Top" Click="ButtonOpenOutput_Click" HorizontalAlignment="Right" Width="140" />
+            <Button x:Name="buttonOpenOutput" Content="Show completed" Margin="0,44,13,-15" Height="28" Visibility="Hidden" VerticalAlignment="Top" Click="ButtonOpenOutput_Click" HorizontalAlignment="Right" Width="140" />
         </Grid>
     </Grid>
 </Window>

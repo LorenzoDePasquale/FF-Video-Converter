@@ -80,6 +80,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AudioTrack.cs" />
+    <Compile Include="AudioTrackControl.xaml.cs">
+      <DependentUpon>AudioTrackControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CompletedWindow.xaml.cs">
       <DependentUpon>CompletedWindow.xaml</DependentUpon>
     </Compile>
@@ -115,6 +119,10 @@
     </Compile>
     <Compile Include="VideoUrlParser.cs" />
     <Compile Include="WindowBlur.cs" />
+    <Page Include="AudioTrackControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ComparisonWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -225,10 +233,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.Text.Json">
-      <Version>4.7.1</Version>
+      <Version>4.7.2</Version>
     </PackageReference>
     <PackageReference Include="YoutubeExplode">
-      <Version>5.0.3</Version>
+      <Version>5.0.4</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
