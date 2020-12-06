@@ -3,6 +3,9 @@
     public class AudioTrack
     {
         public string Codec { get; }
+        /// <summary>
+        /// Audio bitrate (in bit)
+        /// </summary>
         public int Bitrate { get; }
         public int SampleRate { get; }
         public string Language { get; }

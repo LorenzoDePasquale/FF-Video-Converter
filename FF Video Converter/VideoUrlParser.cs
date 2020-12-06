@@ -18,16 +18,14 @@ namespace FFVideoConverter
         public string Url { get; }
         public string Title { get; }
         public string DisplayValue { get; }
-        public string Codec { get; }
         public long Size { get; }
 
-        public StreamInfo(string url, bool isAudio, string title, string displayValue, string codec, long size)
+        public StreamInfo(string url, bool isAudio, string title, string displayValue, long size)
         {
             Url = url;
             IsAudio = isAudio;
             Title = title;
             DisplayValue = displayValue;
-            Codec = codec;
             Size = size;
         }
 
@@ -55,19 +53,27 @@ namespace FFVideoConverter
             string displayValue;
             foreach (var videoStreamInfo in streamManifest.GetVideoOnly())
             {
-                string videoCodec = videoStreamInfo.VideoCodec;
-                if (videoCodec.Contains("avc"))
+                string videoCodec;
+                if (videoStreamInfo.VideoCodec.Contains("avc"))
                 {
                     videoCodec = "h264";
                 }
+                else if (videoStreamInfo.VideoCodec.Contains("av01"))
+                {
+                    videoCodec = "av1";
+                }
+                else
+                {
+                    videoCodec = videoStreamInfo.VideoCodec;
+                }
                 displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoCodec}) - {videoStreamInfo.Size.TotalBytes.ToBytesString()}";
-                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoCodec, videoStreamInfo.Size.TotalBytes));
+                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.Size.TotalBytes));
             }
             foreach (var audioStreamInfo in streamManifest.GetAudioOnly())
             {
                 string audioCodec = audioStreamInfo.AudioCodec.Replace("mp4a.40.2", "aac");
                 displayValue = $"{audioStreamInfo.Bitrate.BitsPerSecond / 1000} Kbps ({audioCodec}) - {audioStreamInfo.Size.TotalBytes.ToBytesString()}";
-                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioCodec, audioStreamInfo.Size.TotalBytes));
+                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.Size.TotalBytes));
             }
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
             return videoList;
@@ -92,7 +98,7 @@ namespace FFVideoConverter
                 foreach (var (dash, label, size) in GetDashInfos(dashContent))
                 {
                     displayValue = $"{label} - {size.ToBytesString()}";
-                    videoList.Add(new StreamInfo(baseVideoUrl + dash, dash == "audio", title, displayValue, dash == "audio" ? "aac" : "", size));
+                    videoList.Add(new StreamInfo(baseVideoUrl + dash, dash == "audio", title, displayValue, size));
 
                 }
                 videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
@@ -164,7 +170,7 @@ namespace FFVideoConverter
                 //Get m3u8 playlists
                 foreach (var (relativeUrl, label) in GetPlaylists(m3u8Content))
                 {
-                    videoList.Add(new StreamInfo($"https://video.twimg.com{relativeUrl}", false, title, label, "", 0));
+                    videoList.Add(new StreamInfo($"https://video.twimg.com{relativeUrl}", false, title, label, 0));
                 }
 
                 document.Dispose();
@@ -216,13 +222,13 @@ namespace FFVideoConverter
                 {
                     endIndex = pageSource.IndexOf('"', startIndex);
                     videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
-                    videoList.Add(new StreamInfo(videoUrl, false, title, "HD Source", "", 0));
+                    videoList.Add(new StreamInfo(videoUrl, false, title, "HD Source", 0));
                 }
                 //Get SD source
                 startIndex = pageSource.IndexOf("sd_src", endIndex) + 8;
                 endIndex = pageSource.IndexOf('"', startIndex);
                 videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
-                videoList.Add(new StreamInfo(videoUrl, false, title, "SD Source", "", 0));
+                videoList.Add(new StreamInfo(videoUrl, false, title, "SD Source", 0));
             }
 
             return videoList;
@@ -255,7 +261,7 @@ namespace FFVideoConverter
                 startIndex = response.IndexOf("name") + 8;
                 endIndex = response.IndexOf('"', startIndex);
                 string ownerName = response.Substring(startIndex, endIndex - startIndex);
-                videoList.Add(new StreamInfo(videoUrl, false, $"Instagram post by @{ownerName}", "", "", 0));
+                videoList.Add(new StreamInfo(videoUrl, false, $"Instagram post by @{ownerName}", "", 0));
             }
 
             return videoList;

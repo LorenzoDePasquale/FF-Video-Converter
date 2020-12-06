@@ -252,10 +252,10 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
-                    <Grid >
-                        <Border x:Name="border" CornerRadius="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
-                        <Border x:Name="mouseOver" CornerRadius="{Binding ElementName=border, Path=CornerRadius}" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding OpacityMask}" SnapsToDevicePixels="True" />
-                        <Border x:Name="pressed" CornerRadius="{Binding ElementName=border, Path=CornerRadius}" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True"/>
+                    <Grid>
+                        <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
+                        <Border x:Name="mouseOver" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding OpacityMask}" SnapsToDevicePixels="True" />
+                        <Border x:Name="pressed" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True"/>
                         <ContentPresenter Content="{TemplateBinding Content}" TextBlock.Foreground="{TemplateBinding Foreground}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -409,196 +409,15 @@
         </Setter>
     </Style>
 
-    <Style TargetType="{x:Type ToggleButton}" x:Key="TabLeftButton" >
-        <Setter Property="Background" Value="{StaticResource ButtonBackgroundColor}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="FontSize" Value="{StaticResource FontSize}"/>
-        <Setter Property="FontWeight" Value="{StaticResource FontWeight}" />
-        <Setter Property="OpacityMask" Value="{StaticResource MouseOverColor}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ToggleButton}">
-                    <Grid>
-                        <Border CornerRadius="5,0,0,5" x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
-                        <Border CornerRadius="5,0,0,5" x:Name="mouseOver" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding OpacityMask}" SnapsToDevicePixels="True" />
-                        <local:ShadowBorder x:Name="pressed" Opacity="0" CornerRadius="5,0,0,5"/>
-                        <ContentPresenter Content="{TemplateBinding Content}" TextBlock.Foreground="{TemplateBinding Foreground}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" ContentStringFormat="{TemplateBinding ContentStringFormat}"/>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="1" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="0" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00" Value="{x:Static Visibility.Hidden}"/>
-                                        </ObjectAnimationUsingKeyFrames>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="pressed" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.140" Value="1" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="pressed" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.140" Value="0" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00.150" Value="{x:Static Visibility.Visible}"/>
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="1" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="0" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource DisabledColor}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="{x:Type ToggleButton}" x:Key="TabRightButton" >
-        <Setter Property="Background" Value="{StaticResource ButtonBackgroundColor}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="FontSize" Value="{StaticResource FontSize}"/>
-        <Setter Property="FontWeight" Value="{StaticResource FontWeight}" />
-        <Setter Property="OpacityMask" Value="{StaticResource MouseOverColor}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ToggleButton}">
-                    <Grid>
-                        <Border CornerRadius="0,5,5,0" x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" />
-                        <Border CornerRadius="0,5,5,0" x:Name="mouseOver" Opacity="0" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding OpacityMask}" SnapsToDevicePixels="True" />
-                        <local:ShadowBorder x:Name="pressed" Opacity="0" CornerRadius="0,5,5,0"/>
-                        <ContentPresenter Content="{TemplateBinding Content}" TextBlock.Foreground="{TemplateBinding Foreground}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" ContentStringFormat="{TemplateBinding ContentStringFormat}"/>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="1" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="0" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00" Value="{x:Static Visibility.Hidden}"/>
-                                        </ObjectAnimationUsingKeyFrames>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="pressed" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.140" Value="1" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="pressed" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.140" Value="0" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00.150" Value="{x:Static Visibility.Visible}"/>
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="1" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="mouseOver" Storyboard.TargetProperty="Opacity">
-                                            <LinearDoubleKeyFrame KeyTime="00:00:00.150" Value="0" />
-                                        </DoubleAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="border" Property="Background" Value="{StaticResource DisabledColor}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style TargetType="{x:Type TextBlock}">
         <Setter Property="Foreground" Value="{StaticResource TextColor}"/>
         <Setter Property="FontSize" Value="{StaticResource FontSize}"/>
         <Setter Property="FontWeight" Value="{StaticResource FontWeight}" />
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextColor}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style TargetType="{x:Type TextBox}">
@@ -703,14 +522,12 @@
                                 <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TickBar x:Name="TopTick" Fill="{TemplateBinding Foreground}" Height="4" Margin="0,0,0,2" Placement="Top" Grid.Row="0" Visibility="Collapsed"/>
-                            <TickBar x:Name="BottomTick" Fill="{TemplateBinding Foreground}" Height="4" Margin="0,2,0,0" Placement="Bottom" Grid.Row="2" Visibility="Collapsed"/>
                             <Grid Grid.Row="1" >
                                 <Grid.OpacityMask>
                                     <VisualBrush Visual="{Binding ElementName=Border2}" />
                                 </Grid.OpacityMask>
-                                <Border x:Name="Border2" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="11" Margin="5,0" VerticalAlignment="Center" />
-                                <Border x:Name="TrackBackground" ClipToBounds="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="11" Margin="5,0" VerticalAlignment="Center">
+                                <Border x:Name="Border2" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="11" Margin="4,0" VerticalAlignment="Center" />
+                                <Border x:Name="TrackBackground" ClipToBounds="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="12" Margin="4,0" VerticalAlignment="Center">
                                     <Border Background="Transparent" BorderBrush="Black" BorderThickness="0 2 3 1" Margin="-6">
                                         <Border.Effect>
                                             <DropShadowEffect ShadowDepth="7" BlurRadius="10"/>
@@ -727,13 +544,17 @@
                                         <RepeatButton.Style>
                                             <Style TargetType="{x:Type RepeatButton}">
                                                 <Setter Property="OverridesDefaultStyle" Value="True"/>
-                                                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
                                                 <Setter Property="Focusable" Value="False"/>
                                                 <Setter Property="IsTabStop" Value="False"/>
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                            <Rectangle Fill="{TemplateBinding Background}" Height="0" Width="{TemplateBinding Width}"/>
+                                                            <Border x:Name="border" Background="{StaticResource ButtonBackgroundColor}" Height="10" Width="{TemplateBinding Width}" Margin="5, 0, -2, 0" CornerRadius="5, 0, 0, 5" BorderThickness="1" BorderBrush="{StaticResource BackgroundColor}"/>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter TargetName="border" Property="Background" Value="{StaticResource DisabledColor}" />
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
                                                         </ControlTemplate>
                                                     </Setter.Value>
                                                 </Setter>
@@ -776,8 +597,11 @@
                                                         <Setter Property="Fill" TargetName="grip" Value="{StaticResource MouseOverColor}"/>
                                                     </Trigger>
                                                     <Trigger Property="IsDragging" Value="True">
-                                                        <Setter Property="Fill" TargetName="grip" Value="{StaticResource BackgroundColor}"/>
+                                                        <Setter Property="Fill" TargetName="grip" Value="{StaticResource ButtonBackgroundColor}"/>
                                                         <Setter Property="Stroke" TargetName="grip" Value="{StaticResource BorderColor}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="grip" Property="Fill" Value="{StaticResource DisabledColor}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -788,70 +612,6 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="TickPlacement" Value="TopLeft">
-                            <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
-                            <Setter Property="Template" TargetName="Thumb">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type Thumb}">
-                                        <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                            <Path x:Name="grip" Data="M0,6C0,6 5.5,0 5.5,0 5.5,0 11,6 11,6 11,6 11,18 11,18 11,18 0,18 0,18 0,18 0,6 0,6z" Fill="#FFF0F0F0" Stretch="Fill" SnapsToDevicePixels="True" Stroke="#FFACACAC" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center"/>
-                                        </Grid>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Fill" TargetName="grip" Value="#FFDCECFC"/>
-                                                <Setter Property="Stroke" TargetName="grip" Value="#FF7EB4EA"/>
-                                            </Trigger>
-                                            <Trigger Property="IsDragging" Value="True">
-                                                <Setter Property="Fill" TargetName="grip" Value="#FFDAECFC"/>
-                                                <Setter Property="Stroke" TargetName="grip" Value="#FF569DE5"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Fill" TargetName="grip" Value="#FFF0F0F0"/>
-                                                <Setter Property="Stroke" TargetName="grip" Value="#FFD9D9D9"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter Property="Margin" TargetName="TrackBackground" Value="5,2,5,0"/>
-                        </Trigger>
-                        <Trigger Property="TickPlacement" Value="BottomRight">
-                            <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
-                            <Setter Property="Template" TargetName="Thumb">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type Thumb}">
-                                        <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                            <Path x:Name="grip" Data="M0,12C0,12 5.5,18 5.5,18 5.5,18 11,12 11,12 11,12 11,0 11,0 11,0 0,0 0,0 0,0 0,12 0,12z" Fill="#FFF0F0F0" Stretch="Fill" SnapsToDevicePixels="True" Stroke="#FFACACAC" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center"/>
-                                        </Grid>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Fill" TargetName="grip" Value="#FFDCECFC"/>
-                                                <Setter Property="Stroke" TargetName="grip" Value="#FF7EB4EA"/>
-                                            </Trigger>
-                                            <Trigger Property="IsDragging" Value="True">
-                                                <Setter Property="Fill" TargetName="grip" Value="#FFDAECFC"/>
-                                                <Setter Property="Stroke" TargetName="grip" Value="#FF569DE5"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Fill" TargetName="grip" Value="#FFF0F0F0"/>
-                                                <Setter Property="Stroke" TargetName="grip" Value="#FFD9D9D9"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter Property="Margin" TargetName="TrackBackground" Value="5,0,5,2"/>
-                        </Trigger>
-                        <Trigger Property="TickPlacement" Value="Both">
-                            <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
-                            <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
-                        </Trigger>
-                        <Trigger Property="TickPlacement" Value="TopLeft">
-                            <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
-                        </Trigger>
-                        <Trigger Property="TickPlacement" Value="BottomRight">
-                            <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
-                        </Trigger>
                         <Trigger Property="IsSelectionRangeEnabled" Value="True">
                             <Setter Property="Visibility" TargetName="PART_SelectionRange" Value="Visible"/>
                         </Trigger>
@@ -1109,10 +869,9 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RadioButton}">
-                    <BulletDecorator Background="Transparent">
+                    <BulletDecorator Background="Transparent" VerticalAlignment="Center">
                         <BulletDecorator.Bullet>
                             <Grid Width="20" Height="20" >
-                                <!--<Ellipse x:Name="Border" StrokeThickness="1" Stroke="{StaticResource BorderColor}" Fill="{StaticResource BackgroundColor}" />-->
                                 <Grid.OpacityMask>
                                     <VisualBrush Visual="{Binding ElementName=Border5}" />
                                 </Grid.OpacityMask>
@@ -1127,7 +886,7 @@
                                 <Ellipse x:Name="CheckMark" Margin="5" Visibility="Collapsed" Fill="{StaticResource ButtonBackgroundColor}"/>
                             </Grid>
                         </BulletDecorator.Bullet>
-                        <TextBlock Text="{TemplateBinding Content}" Margin="4,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{TemplateBinding Foreground}" FontSize="{StaticResource FontSize}" FontWeight="{StaticResource FontWeight}"/>
+                        <TextBlock Text="{TemplateBinding Content}" Margin="6,0,0,3" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{TemplateBinding Foreground}" FontSize="{StaticResource FontSize}" FontWeight="{StaticResource FontWeight}"/>
                     </BulletDecorator>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -1346,6 +1105,64 @@
                             </Track.Thumb>
                         </Track>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style  TargetType="{x:Type TabControl}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabControl}">
+                    <Grid KeyboardNavigation.TabNavigation="Local">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Margin="0,0,0,0" CornerRadius="5" Panel.ZIndex="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border.OpacityMask>
+                                <VisualBrush>
+                                    <VisualBrush.Visual>
+                                        <Border Background="Black" SnapsToDevicePixels="True" CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Border}}}" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type Border}}}" Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType={x:Type Border}}}" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Border.OpacityMask>
+                            <TabPanel x:Name="HeaderPanel" IsItemsHost="True" KeyboardNavigation.TabIndex="1" Background="{x:Null}" HorizontalAlignment="Center" />
+                        </Border>
+                        <Border x:Name="Border" Grid.Row="1" BorderThickness="1" CornerRadius="7" KeyboardNavigation.TabNavigation="Local" KeyboardNavigation.DirectionalNavigation="Contained" KeyboardNavigation.TabIndex="2" BorderBrush="#FF252525" Background="#992E2E2E" Margin="0,-15,0,0">
+                            <ContentPresenter x:Name="PART_SelectedContentHost" Margin="4,20,4,4" ContentSource="SelectedContent" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type TabItem}">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize}"/>
+        <Setter Property="FontWeight" Value="{StaticResource FontWeight}" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Width" Value="110" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabItem}">
+                    <Grid x:Name="Root">
+                        <Border x:Name="Border" Margin="0,0,0,0" CornerRadius="0,0,0,0" BorderThickness="0.5, 0, 0, 0" SnapsToDevicePixels="True" Background="{StaticResource ButtonBackgroundColor}" BorderBrush="{StaticResource BorderColor}">
+                            <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="12,2,12,2" RecognizesAccessKey="True" />
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Panel.ZIndex" Value="100" />
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource MouseOverColor}" />
+                        </Trigger>
+                        <Trigger Property="Header" Value="Encoding"> <!-- So horrible -->
+                            <Setter TargetName="Border" Property="BorderThickness" Value="0" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

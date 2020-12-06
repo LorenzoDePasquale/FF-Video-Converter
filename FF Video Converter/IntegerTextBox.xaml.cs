@@ -96,17 +96,5 @@ namespace FFVideoConverter
                 e.Handled = true;
             }
         }
-
-        private void ButtonIncrease_Loaded(object sender, RoutedEventArgs e)
-        {
-            Border border = (Border)buttonIncrease.Template.FindName("border", buttonIncrease);
-            border.CornerRadius = new CornerRadius(0, 5, 0, 0);
-        }
-
-        private void ButtonDecrease_Loaded(object sender, RoutedEventArgs e)
-        {
-            Border border = (Border)buttonDecrease.Template.FindName("border", buttonDecrease);
-            border.CornerRadius = new CornerRadius(0, 0, 5, 0);
-        }
     }
 }

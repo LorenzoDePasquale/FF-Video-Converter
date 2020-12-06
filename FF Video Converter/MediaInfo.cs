@@ -18,6 +18,9 @@ namespace FFVideoConverter
         public string Codec { get; private set; }
         public string ExternalAudioCodec { get; private set; }
         public double Framerate { get; private set; }
+        /// <summary>
+        /// Total bitrate (in bits)
+        /// </summary>
         public double Bitrate { get; private set; }
         public string Source { get; private set; }
         public string ExternalAudioSource { get; private set; }
@@ -130,8 +133,12 @@ namespace FFVideoConverter
                         double totalSeconds = Double.Parse(formatElement.GetProperty("duration").GetString(), CultureInfo.InvariantCulture);
                         Duration = TimeSpan.FromSeconds(totalSeconds);
                         Size = Int64.Parse(formatElement.GetProperty("size").GetString());
-                        Bitrate = Double.Parse(formatElement.GetProperty("bit_rate").GetString(), CultureInfo.InvariantCulture) / 1000;
-                        Bitrate = Math.Round(Bitrate);
+                        if (Bitrate == 0) //Sometimes the bitrate is missing from the video stream, so it's necessary to get it from here, and subtract the bitrate of all audio streams
+                        {
+                            Bitrate = Double.Parse(formatElement.GetProperty("bit_rate").GetString(), CultureInfo.InvariantCulture) / 1000;
+                            Bitrate = Math.Round(Bitrate);
+                            
+                        }
 
                         //Get audio properties
                         audioTracks = new AudioTrack[audioStreamElements.Count];
@@ -155,6 +162,7 @@ namespace FFVideoConverter
                             if (e2.TryGetProperty("default", out e))
                                 defaultTrack = Convert.ToBoolean(e.GetByte());
                             audioTracks[i] = new AudioTrack(codec, bitrate, sampleRate, totalSeconds, index, language, defaultTrack);
+                            Bitrate -= bitrate / 1000;
                         }
 
                     }

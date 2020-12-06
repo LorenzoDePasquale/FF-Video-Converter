@@ -29,6 +29,7 @@ namespace FFVideoConverter
         public JobState State { get; set; }
         public JobType JobType { get; }
         public List<ConversioResult> ConversionResults { get; }
+        public double SliderTargetSizeValue { get; set; }
 
         public Job(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
         {

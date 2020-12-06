@@ -29,11 +29,7 @@
             <TextBlock x:Name="textBlockSize" Margin="5,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">
-            <RadioButton x:Name="radioButtonDefaultTrack" Content="Default track" Margin="20,0,0,0" IsEnabled="{Binding ElementName=checkBoxTrackEnabled, Path=IsChecked}" VerticalAlignment="Center" GroupName="defaultTrack" Checked="RadioButtonDefaultTrack_CheckedChanged" Unchecked="RadioButtonDefaultTrack_CheckedChanged" ToolTip="The track marked as default will be the track automatically selected by the player"/>
-            <!--<TextBlock Text="Encoder" Margin="10,0,0,0" VerticalAlignment="Center"/>
-            <ComboBox x:Name="comboBoxEncoder" Margin="10,0,0,0" IsEnabled="{Binding ElementName=checkBoxTrackEnabled, Path=IsChecked}" Width="150" Height="24" SelectionChanged="ComboBoxEncoder_SelectionChanged"/>
-            <TextBlock Text="Bitrate" Margin="20,0,0,0" VerticalAlignment="Center"/>
-            <ComboBox x:Name="comboBoxBitrate" Margin="10,0,0,0" IsEnabled="{Binding ElementName=checkBoxTrackEnabled, Path=IsChecked}" Width="150" Height="24"/>-->
+            <RadioButton x:Name="radioButtonDefaultTrack" Content="Default track" Margin="20,2,0,6" IsEnabled="{Binding ElementName=checkBoxTrackEnabled, Path=IsChecked}" VerticalAlignment="Center" GroupName="defaultTrack" Checked="RadioButtonDefaultTrack_CheckedChanged" Unchecked="RadioButtonDefaultTrack_CheckedChanged" ToolTip="The track marked as default will be the track automatically selected by the player"/>
         </StackPanel>
         <Button x:Name="buttonExport" Content="Export" Grid.Column="2" Grid.RowSpan="2" Height="30" VerticalAlignment="Center" HorizontalAlignment="Right" Width="90" Margin="0,14,10,14" Click="ButtonExport_Click"/>
     </Grid>

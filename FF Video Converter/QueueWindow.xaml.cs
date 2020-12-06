@@ -112,7 +112,7 @@ namespace FFVideoConverter
                 buttonEdit.Visibility = Visibility.Visible;
                 buttonRemove.Visibility = Visibility.Visible;
 
-                ConversionOptions conversionOptions = ((Job)listViewQueuedJobs.SelectedItem).ConversionOptions;
+                ConversionOptions conversionOptions = selectedJob.ConversionOptions;
 
                 textBlockEncoder.Text = conversionOptions.Encoder.ToString();
                 if (conversionOptions.Encoder is NativeEncoder)
@@ -120,7 +120,9 @@ namespace FFVideoConverter
                     textBlockProfile.Visibility = Visibility.Collapsed;
                     textBlockProfileLabel.Visibility = Visibility.Collapsed;
                     textBlockQuality.Visibility = Visibility.Collapsed;
+                    textBlockTargetSize.Visibility = Visibility.Collapsed;
                     textBlockQualityLabel.Visibility = Visibility.Collapsed;
+                    textBlockTargetSizeLabel.Visibility = Visibility.Collapsed;
                     textBlockFramerate.Visibility = Visibility.Collapsed;
                     textBlockFramerateLabel.Visibility = Visibility.Collapsed;
                     textBlockResolution.Visibility = Visibility.Collapsed;
@@ -134,8 +136,6 @@ namespace FFVideoConverter
                 {
                     textBlockProfile.Visibility = Visibility.Visible;
                     textBlockProfileLabel.Visibility = Visibility.Visible;
-                    textBlockQuality.Visibility = Visibility.Visible;
-                    textBlockQualityLabel.Visibility = Visibility.Visible;
                     textBlockFramerate.Visibility = Visibility.Visible;
                     textBlockFramerateLabel.Visibility = Visibility.Visible;
                     textBlockCrop.Visibility = Visibility.Visible;
@@ -145,7 +145,22 @@ namespace FFVideoConverter
                     textBlockRotation.Visibility = Visibility.Visible;
                     textBlockRotationLabel.Visibility = Visibility.Visible;
                     textBlockProfile.Text = conversionOptions.Encoder.Preset.GetName();
-                    textBlockQuality.Text = conversionOptions.Encoder.Quality.GetName();
+                    if (conversionOptions.EncodingMode == EncodingMode.ConstantQuality)
+                    {
+                        textBlockQuality.Visibility = Visibility.Visible;
+                        textBlockTargetSize.Visibility = Visibility.Collapsed;
+                        textBlockQualityLabel.Visibility = Visibility.Visible;
+                        textBlockTargetSizeLabel.Visibility = Visibility.Collapsed;
+                        textBlockQuality.Text = conversionOptions.Encoder.Quality.GetName();
+                    }
+                    else
+                    {
+                        textBlockQuality.Visibility = Visibility.Collapsed;
+                        textBlockTargetSize.Visibility = Visibility.Visible;
+                        textBlockQualityLabel.Visibility = Visibility.Collapsed;
+                        textBlockTargetSizeLabel.Visibility = Visibility.Visible;
+                        textBlockTargetSize.Text = (selectedJob.SourceInfo.Size * (long)selectedJob.SliderTargetSizeValue / 100).ToBytesString();
+                    }
                     if (conversionOptions.Framerate > 0)
                     {
                         textBlockFramerate.Text = conversionOptions.Framerate.ToString() + " fps";

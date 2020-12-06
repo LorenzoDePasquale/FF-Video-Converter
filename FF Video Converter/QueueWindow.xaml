@@ -70,6 +70,7 @@
             <TextBlock x:Name="textBlockEncoderLabel" Text="Encoder:" HorizontalAlignment="Left" Width="53" Height="20" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockProfileLabel" Text="Profile:" HorizontalAlignment="Left" Width="47" Height="20" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockQualityLabel" Text="Quality:" HorizontalAlignment="Left" Width="47" Height="20" Foreground="{StaticResource TextColorBlue}"/>
+            <TextBlock x:Name="textBlockTargetSizeLabel" Text="Target size:" HorizontalAlignment="Left" Width="68" Height="20" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockFramerateLabel" Text="Framerate:" HorizontalAlignment="Left" Width="64" Height="20" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockResolutionLabel" Text="Resolution:" HorizontalAlignment="Left" Width="68" Height="20" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockRotationLabel" Text="Rotation:" HorizontalAlignment="Left" Height="20" Width="55" Foreground="{StaticResource TextColorBlue}"/>
@@ -81,6 +82,7 @@
             <TextBlock x:Name="textBlockEncoder" HorizontalAlignment="Left" Height="20" Margin="-13,0,0,0" />
             <TextBlock x:Name="textBlockProfile" HorizontalAlignment="Left" Height="20" Margin="-23,0,-6,0" />
             <TextBlock x:Name="textBlockQuality" HorizontalAlignment="Left" Height="20" Margin="-19,0,-6,0" />
+            <TextBlock x:Name="textBlockTargetSize" HorizontalAlignment="Left" Height="20" Margin="2,0,0,0" />
             <TextBlock x:Name="textBlockFramerate" HorizontalAlignment="Left" Height="20" />
             <TextBlock x:Name="textBlockResolution" HorizontalAlignment="Left" Height="20" Margin="2,0,0,0" />
             <TextBlock x:Name="textBlockRotation" HorizontalAlignment="Left" Height="20" Margin="-10, 0, 0, 0"/>

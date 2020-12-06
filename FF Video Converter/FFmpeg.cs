@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,13 +16,22 @@ namespace FFVideoConverter
         public event ConversionEventHandler ProgressChanged;
         public event ConversionEventHandler ConversionCompleted;
 
+        public long PrivateWorkingSet
+        {
+            get
+            {
+                return (long)memoryCounter.NextValue();
+            }
+        }
+
         private readonly Process convertProcess = new Process();
+        private readonly PerformanceCounter memoryCounter = new PerformanceCounter();
         private ProgressData progressData;
         private int i = 0;
         private string outputLine;
         private bool stopped = false;
         private SynchronizationContext synchronizationContext;
-
+        private TimeSpan startTime;
 
         public FFmpegEngine()
         {
@@ -29,13 +40,17 @@ namespace FFVideoConverter
             convertProcess.StartInfo.UseShellExecute = false;
             convertProcess.StartInfo.CreateNoWindow = true;
             convertProcess.ErrorDataReceived += ConvertProcess_ErrorDataReceived;
+
+            memoryCounter.CategoryName = "Process";
+            memoryCounter.CounterName = "Working Set - Private";
+            memoryCounter.InstanceName = "ffmpeg";
         }
 
         public async void Convert(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
         {
             progressData = new ProgressData();
 
-            //Captures the Synchronization Context of the caller, in order to invoke the events on its original thread
+            //Capture the Synchronization Context of the caller, in order to invoke the events on its original thread
             synchronizationContext = SynchronizationContext.Current;
 
             //Duration
@@ -48,53 +63,39 @@ namespace FFVideoConverter
                 progressData.TotalTime = sourceInfo.Duration - conversionOptions.Start;
             }
 
-            //Filters
-            string filters = "";
-            if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue())
+            //Get nearest before keyframe (so that source file gets decoded only from here)
+            startTime = TimeSpan.Zero;
+            if (conversionOptions.Start != TimeSpan.Zero)
             {
-                filters = " -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString);
+                var (before, _, _) = await sourceInfo.GetNearestBeforeAndAfterKeyFrames(conversionOptions.Start.TotalSeconds).ConfigureAwait(false);
+                startTime = TimeSpan.FromSeconds(before);
             }
 
-            //Get nearest before keyframe
-            var keyframes = await sourceInfo.GetNearestBeforeAndAfterKeyFrames(conversionOptions.Start.TotalSeconds).ConfigureAwait(false);
-            TimeSpan startTime = TimeSpan.FromSeconds(keyframes.before);
-
-            //FFMpeg command string
-            StringBuilder sb = new StringBuilder("-y");
-            sb.Append($" -ss {startTime}");
-            sb.Append($" -i \"{sourceInfo.Source}\"");
-            if (sourceInfo.HasExternalAudio)
+            progressData.EncodingMode = conversionOptions.EncodingMode;
+            if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
             {
-                sb.Append($" -ss {startTime}");
-                sb.Append($" -i \"{sourceInfo.ExternalAudioSource}\"");
-            }
-            if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
-            sb.Append($" -map 0:v:0");
-            if (!conversionOptions.SkipAudio)
-            {
-                foreach (var audioTrack in sourceInfo.AudioTracks)
+                await StartConversionProcess(BuildArgumentsString(sourceInfo, destination, conversionOptions), false).ConfigureAwait(false);
+                if (!stopped)
                 {
-                    if (audioTrack.Enabled)
-                    {
-                        sb.Append($" -map {(sourceInfo.HasExternalAudio ? "1" : "0")}:{audioTrack.StreamIndex}");
-                        sb.Append($" -disposition:{audioTrack.StreamIndex} {(audioTrack.Default ? "default" : "none")}");
-                    }
+                    progressData.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
+                    conversionOptions.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
+                    await StartConversionProcess(BuildArgumentsString(sourceInfo, destination, conversionOptions)).ConfigureAwait(false);
+                }
+                //Remove 2pass log files
+                foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
+                {
+                    File.Delete(file);
                 }
             }
-            sb.Append(" -map 0:s?");
-            sb.Append(" -movflags faststart -c:v " + conversionOptions.Encoder.GetFFMpegCommand());
-            if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
-            sb.Append(filters);
-            sb.Append(conversionOptions.SkipAudio ? " -an" : " -c:a copy");
-            sb.Append($" -ss {conversionOptions.Start - startTime}");
-            sb.Append($" -avoid_negative_ts 1 \"{destination}\" -hide_banner");
-
-            StartConversionProcess(sb.ToString());
+            else
+            {
+                await StartConversionProcess(BuildArgumentsString(sourceInfo, destination, conversionOptions)).ConfigureAwait(false);
+            }
         }
 
         public void ExtractAudioTrack(MediaInfo sourceInfo, int streamIndex, string destination, TimeSpan start, TimeSpan end)
         {
-            progressData = new ProgressData();
+            progressData = new ProgressData() { EncodingMode = EncodingMode.NoEncoding };
 
             //Captures the Synchronization Context of the caller, in order to invoke the events on its original thread
             synchronizationContext = SynchronizationContext.Current;
@@ -121,7 +122,78 @@ namespace FFVideoConverter
             StartConversionProcess(sb.ToString());
         }
 
-        private async void StartConversionProcess(string arguments)
+        public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
+        {
+            StringBuilder sb = new StringBuilder("-y");
+
+            //Decoding start time
+            if (conversionOptions.Start != TimeSpan.Zero) sb.Append($" -ss {startTime}");
+
+            //Input path
+            sb.Append($" -i \"{sourceInfo.Source}\"");
+
+            //External audio source
+            if (sourceInfo.HasExternalAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
+            {
+                if (conversionOptions.Start != TimeSpan.Zero) sb.Append($" -ss {startTime}");
+                sb.Append($" -i \"{sourceInfo.ExternalAudioSource}\"");
+            }
+
+            //Duration
+            if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
+
+            //Main video track
+            sb.Append($" -map 0:v:0");
+
+            //Add or skip audio tracks
+            if (!conversionOptions.SkipAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
+            {
+                foreach (var audioTrack in sourceInfo.AudioTracks)
+                {
+                    if (audioTrack.Enabled)
+                    {
+                        sb.Append($" -map {(sourceInfo.HasExternalAudio ? "1" : "0")}:{audioTrack.StreamIndex}");
+                        sb.Append($" -disposition:{audioTrack.StreamIndex} {(audioTrack.Default ? "default" : "none")}");
+                    }
+                }
+            }
+
+            //Subtitles
+            sb.Append(" -map 0:s?");
+
+            //Encoder command line
+            sb.Append(" -movflags faststart -c:v " + conversionOptions.Encoder.GetFFMpegCommand(conversionOptions.EncodingMode));
+
+            //Framerate and filters
+            if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
+            {
+                if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
+                if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue())
+                {
+                    sb.Append(" -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString));
+                }
+            }
+
+            //Audio encoder
+            sb.Append(conversionOptions.SkipAudio || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass ? " -an" : " -c:a copy");
+
+            //Encoding start time
+            if (conversionOptions.Start != TimeSpan.Zero) sb.Append($" -ss {conversionOptions.Start - startTime}");
+
+            //Output path
+            if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
+            {
+                sb.Append($" -avoid_negative_ts 1 \"{destination}\" -hide_banner");
+            }
+            else
+            {
+                sb.Append($" -f null NUL -hide_banner");
+            }
+
+            return sb.ToString();
+        }
+
+        private async Task StartConversionProcess(string arguments, bool reportCompletition = true)
         {
             convertProcess.StartInfo.Arguments = arguments;
             convertProcess.Start();
@@ -140,7 +212,8 @@ namespace FFVideoConverter
             {
                 if (exitCode != -1 && exitCode != 1) //Sometimes ffmpegs exits with weird numbers even if there were no errors
                 {
-                    ConversionCompleted?.Invoke(progressData);
+                    if (reportCompletition)
+                        ConversionCompleted?.Invoke(progressData);
                 }
                 else if (!stopped)
                 {
@@ -176,11 +249,12 @@ namespace FFVideoConverter
 
             if (e.Data != null)
             {
+                //Conversion
                 if (outputLine.StartsWith("frame")) //frame=   47 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x    
                 {
                     progressData.CurrentFrame = System.Convert.ToUInt32(outputLine.Remove(outputLine.IndexOf(" fps")).Remove(0, 6));
                     progressData.EncodingSpeedFps = System.Convert.ToInt16(outputLine.Remove(outputLine.IndexOf(" q")).Remove(0, outputLine.IndexOf("fps") + 4).Replace(".", ""));
-                    progressData.CurrentByteSize = System.Convert.ToInt32(outputLine.Remove(outputLine.IndexOf(" time") - 2).Remove(0, outputLine.IndexOf("size") + 5)) * 1000L;
+                    progressData.CurrentByteSize = outputLine.Contains("size=N/A") ? 0 : System.Convert.ToInt32(outputLine.Remove(outputLine.IndexOf(" time") - 2).Remove(0, outputLine.IndexOf("size") + 5)) * 1000L;
                     progressData.CurrentTime = TimeSpan.Parse(outputLine.Remove(outputLine.IndexOf(" bit")).Remove(0, outputLine.IndexOf("time") + 5));
                     float currentBitrate = outputLine.Contains("bitrate=N/A") ? 0 : System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf("kbits")).Remove(0, outputLine.IndexOf("bitrate") + 8), CultureInfo.InvariantCulture);
                     if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
@@ -196,6 +270,7 @@ namespace FFVideoConverter
                         ProgressChanged?.Invoke(progressData);
                     }), null);
                 }
+                //Download
                 else if (outputLine.StartsWith("size")) //size=    9943kB time=00:10:02.26 bitrate= 135.2kbits/s speed= 340x
                 {
                     progressData.CurrentByteSize = System.Convert.ToInt32(outputLine.Remove(outputLine.IndexOf(" time") - 2).Remove(0, 5)) * 1000L;

@@ -15,6 +15,7 @@ namespace FFVideoConverter
         public TimeSpan TotalTime { get; set; }
         public uint CurrentFrame { get; set; }
         public string ErrorMessage { get; set; }
+        public EncodingMode EncodingMode { get; set; }
     }
 
     public struct CropData
@@ -215,6 +216,7 @@ namespace FFVideoConverter
         public TimeSpan Start { get; set; }
         public TimeSpan End { get; set; }
         public bool SkipAudio { get; set; }
+        public EncodingMode EncodingMode { get; set; }
 
 
         public ConversionOptions(Encoder encoder)
@@ -227,12 +229,7 @@ namespace FFVideoConverter
             Start = TimeSpan.Zero;
             End = TimeSpan.Zero;
             SkipAudio = false;
+            EncodingMode = 0;
         }
-
-        /*public T GetFilter<T>() where T : IFilter
-        {
-            //Returns the first IFilter object of type T, or a default instance of T if there is no such object
-            return (T)(Filters.Find(x => x is T) ?? default(T));
-        }*/
     }
 }
