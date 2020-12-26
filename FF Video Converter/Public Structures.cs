@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace FFVideoConverter
 {
+    //TODO: convert to record in C# 9
     [StructLayout(LayoutKind.Auto)]
     public struct ProgressData
     {
@@ -13,7 +14,6 @@ namespace FFVideoConverter
         public float EncodingSpeed { get; set; }
         public TimeSpan CurrentTime { get; set; }
         public TimeSpan TotalTime { get; set; }
-        public uint CurrentFrame { get; set; }
         public string ErrorMessage { get; set; }
         public EncodingMode EncodingMode { get; set; }
     }
@@ -206,17 +206,17 @@ namespace FFVideoConverter
         }
     }
 
-    public struct ConversionOptions
+    //TODO: convert to record in C# 9
+    public class ConversionOptions
     {
         public Encoder Encoder { get; set; }
         public byte Framerate { get; set; }
         public Resolution Resolution { get; set; }
         public CropData CropData { get; set; }
         public Rotation Rotation { get; set; }
-        public TimeSpan Start { get; set; }
-        public TimeSpan End { get; set; }
         public bool SkipAudio { get; set; }
         public EncodingMode EncodingMode { get; set; }
+        public TimeIntervalCollection EncodeSections { get; set; }
 
 
         public ConversionOptions(Encoder encoder)
@@ -226,10 +226,9 @@ namespace FFVideoConverter
             Resolution = Resolution.SameAsSource;
             Rotation = Rotation.NoRotation;
             Framerate = 0;
-            Start = TimeSpan.Zero;
-            End = TimeSpan.Zero;
             SkipAudio = false;
             EncodingMode = 0;
+            EncodeSections = new TimeIntervalCollection(TimeSpan.Zero);
         }
     }
 }

@@ -39,7 +39,7 @@ namespace FFVideoConverter
             State = JobState.Queued;
             if (conversionOptions.Encoder is NativeEncoder)
             {
-                if (conversionOptions.Start != TimeSpan.Zero || conversionOptions.End != TimeSpan.Zero)
+                if (conversionOptions.EncodeSections?.Count > 0)
                 {
                     JobType = JobType.FastCut;
                 }

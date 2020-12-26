@@ -87,6 +87,16 @@
     <Compile Include="CompletedWindow.xaml.cs">
       <DependentUpon>CompletedWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EncodeSegmentControl.xaml.cs">
+      <DependentUpon>EncodeSegmentControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MultiRangeControl.xaml.cs">
+      <DependentUpon>MultiRangeControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="RangeSelector.xaml.cs">
+      <DependentUpon>RangeSelector.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TImeIntervalCollection.cs" />
     <Compile Include="Public Structures.cs" />
     <Compile Include="DragAdorner.cs" />
     <Compile Include="Encoders.cs" />
@@ -107,8 +117,8 @@
     <Compile Include="QueueWindow.xaml.cs">
       <DependentUpon>QueueWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RangeSlider.xaml.cs">
-      <DependentUpon>RangeSlider.xaml</DependentUpon>
+    <Compile Include="PlayerSlider.xaml.cs">
+      <DependentUpon>PlayerSlider.xaml</DependentUpon>
     </Compile>
     <Compile Include="TimespanTextbox.cs" />
     <Compile Include="ShadowBorder.xaml.cs">
@@ -128,6 +138,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="CompletedWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EncodeSegmentControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MultiRangeControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -171,7 +189,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="RangeSlider.xaml">
+    <Page Include="RangeSelector.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PlayerSlider.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

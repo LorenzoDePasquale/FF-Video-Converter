@@ -44,11 +44,25 @@ namespace FFVideoConverter
 
     class YouTubeParser : VideoUrlParser
     {
+        YoutubeClient youtubeClient;
+        YoutubeExplode.Videos.Video video;
+        YoutubeExplode.Videos.Streams.StreamManifest streamManifest;
+        string currentUrl = "";
+
+        public YouTubeParser()
+        {
+            youtubeClient = new YoutubeClient();
+        }
+
         public override async Task<List<StreamInfo>> GetVideoList(string url)
         {
-            YoutubeClient youtubeClient = new YoutubeClient();
-            var video = await youtubeClient.Videos.GetAsync(url).ConfigureAwait(false);
-            var streamManifest = await youtubeClient.Videos.Streams.GetManifestAsync(video.Id).ConfigureAwait(false);
+            if (url != currentUrl)
+            {
+                video = await youtubeClient.Videos.GetAsync(url).ConfigureAwait(false);
+                streamManifest = await youtubeClient.Videos.Streams.GetManifestAsync(video.Id).ConfigureAwait(false);
+                currentUrl = url;
+            }
+
             List<StreamInfo> videoList = new List<StreamInfo>();
             string displayValue;
             foreach (var videoStreamInfo in streamManifest.GetVideoOnly())
@@ -77,6 +91,22 @@ namespace FFVideoConverter
             }
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
             return videoList;
+        }
+
+        public async Task<string> GetMuxedSource(string url)
+        {
+            if (url != currentUrl)
+            {
+                video = await youtubeClient.Videos.GetAsync(url).ConfigureAwait(false);
+                streamManifest = await youtubeClient.Videos.Streams.GetManifestAsync(video.Id).ConfigureAwait(false);
+                currentUrl = url;
+            }
+
+            foreach (var videoStreamInfo in streamManifest.GetMuxed())
+            {
+                if (videoStreamInfo.Resolution.Height == 720) return videoStreamInfo.Url;
+            }
+            return null;
         }
     }
 

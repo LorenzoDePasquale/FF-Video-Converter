@@ -20,25 +20,33 @@ namespace FFVideoConverter
         {
             get
             {
-                return (long)memoryCounter.NextValue();
+                try
+                {
+                    return (long)memoryCounter.NextValue();
+                }
+                catch (Exception)
+                {
+                    return 0;
+                }
             }
         }
 
         private readonly Process convertProcess = new Process();
         private readonly PerformanceCounter memoryCounter = new PerformanceCounter();
-        private ProgressData progressData;
+        private ProgressData progressData, previousProgressData;
         private int i = 0;
-        private string outputLine;
-        private bool stopped = false;
+        private bool stopped = false, partialProgress = false;
         private SynchronizationContext synchronizationContext;
-        private TimeSpan startTime;
+        private string errorLine;
 
         public FFmpegEngine()
         {
             convertProcess.StartInfo.FileName = "ffmpeg";
+            convertProcess.StartInfo.RedirectStandardOutput = true;
             convertProcess.StartInfo.RedirectStandardError = true;
             convertProcess.StartInfo.UseShellExecute = false;
             convertProcess.StartInfo.CreateNoWindow = true;
+            convertProcess.OutputDataReceived += ConvertProcess_OutputDataReceived;
             convertProcess.ErrorDataReceived += ConvertProcess_ErrorDataReceived;
 
             memoryCounter.CategoryName = "Process";
@@ -46,7 +54,7 @@ namespace FFVideoConverter
             memoryCounter.InstanceName = "ffmpeg";
         }
 
-        public async void Convert(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
+        public async void Convert(MediaInfo sourceInfo, string outputPath, ConversionOptions conversionOptions)
         {
             progressData = new ProgressData();
 
@@ -54,32 +62,27 @@ namespace FFVideoConverter
             synchronizationContext = SynchronizationContext.Current;
 
             //Duration
-            if (conversionOptions.End != TimeSpan.Zero)
+            if (conversionOptions.EncodeSections.Count > 0)
             {
-                progressData.TotalTime = conversionOptions.End - conversionOptions.Start;
+                progressData.TotalTime = conversionOptions.EncodeSections.TotalDuration;
             }
             else
             {
-                progressData.TotalTime = sourceInfo.Duration - conversionOptions.Start;
-            }
-
-            //Get nearest before keyframe (so that source file gets decoded only from here)
-            startTime = TimeSpan.Zero;
-            if (conversionOptions.Start != TimeSpan.Zero)
-            {
-                var (before, _, _) = await sourceInfo.GetNearestBeforeAndAfterKeyFrames(conversionOptions.Start.TotalSeconds).ConfigureAwait(false);
-                startTime = TimeSpan.FromSeconds(before);
+                progressData.TotalTime = sourceInfo.Duration;
             }
 
             progressData.EncodingMode = conversionOptions.EncodingMode;
+            partialProgress = false;
+
+            //2-pass mode
             if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
             {
-                await StartConversionProcess(BuildArgumentsString(sourceInfo, destination, conversionOptions), false).ConfigureAwait(false);
+                await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions), false).ConfigureAwait(false);
                 if (!stopped)
                 {
                     progressData.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
                     conversionOptions.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
-                    await StartConversionProcess(BuildArgumentsString(sourceInfo, destination, conversionOptions)).ConfigureAwait(false);
+                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions)).ConfigureAwait(false);
                 }
                 //Remove 2pass log files
                 foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
@@ -87,9 +90,43 @@ namespace FFVideoConverter
                     File.Delete(file);
                 }
             }
+            //Single pass mode
             else
             {
-                await StartConversionProcess(BuildArgumentsString(sourceInfo, destination, conversionOptions)).ConfigureAwait(false);
+                if (conversionOptions.EncodeSections.Count == 0)
+                {
+                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions)).ConfigureAwait(false);
+                }
+                else if (conversionOptions.EncodeSections.Count == 1)
+                {
+                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.Start, conversionOptions.EncodeSections.End)).ConfigureAwait(false);
+                }
+                else
+                {
+                    partialProgress = true;
+                    string outputDirectory = Path.GetDirectoryName(outputPath);
+                    string outputFileName = Path.GetFileNameWithoutExtension(outputPath);
+                    for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
+                    {
+                        await RunConversionProcess(BuildArgumentsString(sourceInfo, $"{outputDirectory}\\{outputFileName}_part_{i}.mp4", conversionOptions, conversionOptions.EncodeSections[i].Start, conversionOptions.EncodeSections[i].End), false).ConfigureAwait(false);
+                        if (stopped) break;
+                        previousProgressData = progressData;
+                        File.AppendAllText("concat.txt", $"file '{outputDirectory}\\{outputFileName}_part_{i}.mp4'\n");
+                    }
+                    if (!stopped) await RunConversionProcess($"-y -f concat -safe 0 -i concat.txt -c copy \"{outputPath}\"", false).ConfigureAwait(false);
+                    File.Delete("concat.txt");
+                    for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
+                    {
+                        File.Delete($"{outputDirectory}\\{outputFileName}_part_{i}.mp4");
+                    }
+                    if (!stopped)
+                    {
+                        synchronizationContext.Post(new SendOrPostCallback((o) =>
+                        {
+                            ConversionCompleted?.Invoke(progressData);
+                        }), null);
+                    }
+                }
             }
         }
 
@@ -119,15 +156,21 @@ namespace FFVideoConverter
             sb.Append(" -vn -c:a copy");
             sb.Append($" \"{destination}\" -hide_banner");
 
-            StartConversionProcess(sb.ToString());
+            _ = RunConversionProcess(sb.ToString());
         }
 
         public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
         {
-            StringBuilder sb = new StringBuilder("-y");
+            return BuildArgumentsString(sourceInfo, destination, conversionOptions, TimeSpan.Zero, TimeSpan.Zero);
+        }
 
-            //Decoding start time
-            if (conversionOptions.Start != TimeSpan.Zero) sb.Append($" -ss {startTime}");
+        public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions, TimeSpan start, TimeSpan end)
+        {
+            StringBuilder sb = new StringBuilder("-y -progress -");
+            bool changeVolume = false;
+
+            //Start time
+            if (start != TimeSpan.Zero) sb.Append($" -ss {start}");
 
             //Input path
             sb.Append($" -i \"{sourceInfo.Source}\"");
@@ -135,12 +178,12 @@ namespace FFVideoConverter
             //External audio source
             if (sourceInfo.HasExternalAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
-                if (conversionOptions.Start != TimeSpan.Zero) sb.Append($" -ss {startTime}");
+                if (start != TimeSpan.Zero) sb.Append($" -ss {start}");
                 sb.Append($" -i \"{sourceInfo.ExternalAudioSource}\"");
             }
 
             //Duration
-            if (conversionOptions.End != TimeSpan.Zero) sb.Append($" -t {conversionOptions.End - conversionOptions.Start}");
+            if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
 
             //Main video track
             sb.Append($" -map 0:v:0");
@@ -155,6 +198,7 @@ namespace FFVideoConverter
                         sb.Append($" -map {(sourceInfo.HasExternalAudio ? "1" : "0")}:{audioTrack.StreamIndex}");
                         sb.Append($" -disposition:{audioTrack.StreamIndex} {(audioTrack.Default ? "default" : "none")}");
                     }
+                    if (audioTrack.Volume != 100) changeVolume = true;
                 }
             }
 
@@ -168,17 +212,32 @@ namespace FFVideoConverter
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
                 if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
+                //Video filters
                 if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue())
                 {
                     sb.Append(" -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString));
                 }
+                //Audio filters
+                if (changeVolume)
+                {
+                    var volumeFilters = sourceInfo.AudioTracks.Where(x => x.Volume != 100).Select(x => "volume=" + (x.Volume / 100).ToString("0.##", CultureInfo.InvariantCulture));
+                    sb.Append(" -af " + ConcatFilters(volumeFilters.ToArray()));
+                }
             }
 
             //Audio encoder
-            sb.Append(conversionOptions.SkipAudio || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass ? " -an" : " -c:a copy");
-
-            //Encoding start time
-            if (conversionOptions.Start != TimeSpan.Zero) sb.Append($" -ss {conversionOptions.Start - startTime}");
+            if (conversionOptions.SkipAudio || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
+            {
+                sb.Append(" -an");
+            }
+            else if (changeVolume)
+            {
+                sb.Append($" -c:a aac -b:a 192k");
+            }
+            else
+            {
+                sb.Append(" -c:a copy");
+            }
 
             //Output path
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
@@ -193,18 +252,21 @@ namespace FFVideoConverter
             return sb.ToString();
         }
 
-        private async Task StartConversionProcess(string arguments, bool reportCompletition = true)
+        private async Task RunConversionProcess(string arguments, bool reportCompletition = true)
         {
             convertProcess.StartInfo.Arguments = arguments;
             convertProcess.Start();
+            convertProcess.BeginOutputReadLine();
             convertProcess.BeginErrorReadLine();
             convertProcess.PriorityClass = ProcessPriorityClass.BelowNormal;
             stopped = false;
+            i = 0;
 
             await Task.Run(() =>
             {
                 convertProcess.WaitForExit();
             }).ConfigureAwait(false);
+            convertProcess.CancelOutputRead();
             convertProcess.CancelErrorRead();
 
             int exitCode = convertProcess.ExitCode; //0: success; -1: killed; 1: crashed
@@ -217,7 +279,7 @@ namespace FFVideoConverter
                 }
                 else if (!stopped)
                 {
-                    progressData.ErrorMessage = outputLine;
+                    progressData.ErrorMessage = errorLine;
                     ConversionCompleted?.Invoke(progressData);
                 }
             }), null);
@@ -243,61 +305,61 @@ namespace FFVideoConverter
             return sb.ToString();
         }
 
-        private void ConvertProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        private void ConvertProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            outputLine = e.Data ?? outputLine;
-
             if (e.Data != null)
             {
-                //Conversion
-                if (outputLine.StartsWith("frame")) //frame=   47 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=   0x    
+                (string key, string value) = e.Data.Split('=').ToCouple();
+                if (value != "N/A")
                 {
-                    progressData.CurrentFrame = System.Convert.ToUInt32(outputLine.Remove(outputLine.IndexOf(" fps")).Remove(0, 6));
-                    progressData.EncodingSpeedFps = System.Convert.ToInt16(outputLine.Remove(outputLine.IndexOf(" q")).Remove(0, outputLine.IndexOf("fps") + 4).Replace(".", ""));
-                    progressData.CurrentByteSize = outputLine.Contains("size=N/A") ? 0 : System.Convert.ToInt32(outputLine.Remove(outputLine.IndexOf(" time") - 2).Remove(0, outputLine.IndexOf("size") + 5)) * 1000L;
-                    progressData.CurrentTime = TimeSpan.Parse(outputLine.Remove(outputLine.IndexOf(" bit")).Remove(0, outputLine.IndexOf("time") + 5));
-                    float currentBitrate = outputLine.Contains("bitrate=N/A") ? 0 : System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf("kbits")).Remove(0, outputLine.IndexOf("bitrate") + 8), CultureInfo.InvariantCulture);
-                    if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
+                    /* stdout from ffmpeg:
+                    * frame=50
+                    * fps=74.74
+                    * bitrate=5180.1kbits/s
+                    * total_size=1310768
+                    * out_time=00:00:02.024313
+                    * speed=0.989x
+                    * progress=continue
+                    */
+                    switch (key)
                     {
-                        progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
+                        case "fps":
+                            progressData.EncodingSpeedFps = System.Convert.ToInt16(System.Convert.ToSingle(value, CultureInfo.InvariantCulture));
+                            break;
+                        case "bitrate":
+                            float currentBitrate = System.Convert.ToSingle(value.Replace("kbits/s", ""), CultureInfo.InvariantCulture);
+                            if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
+                            {
+                                progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
+                            }
+                            break;
+                        case "total_size":
+                            progressData.CurrentByteSize = System.Convert.ToInt64(value);
+                            if (partialProgress) progressData.CurrentByteSize += previousProgressData.CurrentByteSize;
+                            break;
+                        case "out_time":
+                            progressData.CurrentTime = TimeSpan.Parse(value);
+                            if (partialProgress) progressData.CurrentTime += previousProgressData.CurrentTime;
+                            break;
+                        case "speed":
+                            progressData.EncodingSpeed = System.Convert.ToSingle(value.Substring(0, value.Length - 1), CultureInfo.InvariantCulture);
+                            break;
+                        case "progress":
+                            synchronizationContext.Post(new SendOrPostCallback((o) =>
+                            {
+                                ProgressChanged?.Invoke(progressData);
+                            }), null);
+                            break;
                     }
-
-                    if (outputLine.EndsWith("N/A    ") || outputLine.EndsWith("x")) progressData.EncodingSpeed = 0;
-                    else progressData.EncodingSpeed = System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf('x')).Remove(0, outputLine.IndexOf("speed") + 6), CultureInfo.InvariantCulture);
-
-                    synchronizationContext.Post(new SendOrPostCallback((o) =>
-                    {
-                        ProgressChanged?.Invoke(progressData);
-                    }), null);
                 }
-                //Download
-                else if (outputLine.StartsWith("size")) //size=    9943kB time=00:10:02.26 bitrate= 135.2kbits/s speed= 340x
-                {
-                    progressData.CurrentByteSize = System.Convert.ToInt32(outputLine.Remove(outputLine.IndexOf(" time") - 2).Remove(0, 5)) * 1000L;
-                    progressData.CurrentTime = TimeSpan.Parse(outputLine.Remove(outputLine.IndexOf(" bit")).Remove(0, outputLine.IndexOf("time") + 5));
-                    float currentBitrate = outputLine.Contains("bitrate=N/A") ? 0 : System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf("kbits")).Remove(0, outputLine.IndexOf("bitrate") + 8), CultureInfo.InvariantCulture);
-                    if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
-                    {
-                        progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
-                    }
+            }
+        }
 
-                    if (outputLine.EndsWith("N/A    ") || outputLine.EndsWith("x")) progressData.EncodingSpeed = 0;
-                    else progressData.EncodingSpeed = System.Convert.ToSingle(outputLine.Remove(outputLine.IndexOf('x')).Remove(0, outputLine.IndexOf("speed") + 6), CultureInfo.InvariantCulture);
-
-                    synchronizationContext.Post(new SendOrPostCallback((o) =>
-                    {
-                        ProgressChanged?.Invoke(progressData);
-                    }), null);
-                }
-                else if (outputLine.StartsWith("Error"))
-                {
-                    try
-                    {
-                        convertProcess.Kill();
-                    }
-                    catch (Exception)
-                    { }
-                }
+        private void ConvertProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (e.Data != null)
+            {
+                errorLine = e.Data;
             }
         }
 

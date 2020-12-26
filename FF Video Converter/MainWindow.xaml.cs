@@ -31,13 +31,12 @@ namespace FFVideoConverter
         readonly ObservableCollection<Job> completedJobs = new ObservableCollection<Job>();
         readonly PerformanceCounter avaiableMemoryCounter = new PerformanceCounter();
         readonly PerformanceCounter memoryCounter = new PerformanceCounter();
-        readonly long totalMemory;
+        long totalMemory;
         const int RECT_MIN_SIZE = 20;
         MediaInfo mediaInfo;
         Unosquare.FFME.Common.MediaOptions mediaOptions;
         bool isSeeking = false;
         bool sliderUserInput = true;
-        bool textBoxStartUserInput = true;
         bool wasPlaying = false;
         bool isPlayerExpanded = false;
         bool isMediaOpen = false;
@@ -45,8 +44,10 @@ namespace FFVideoConverter
         Point LastPoint;
         HitLocation MouseHitLocation = HitLocation.None;
         Job runningJob;
+        TimeIntervalCollection timeIntervalCollection;
 
 
+        //Initialization stuff that should be done before the main window is loaded
         public MainWindow()
         {
             InitializeComponent();
@@ -57,10 +58,6 @@ namespace FFVideoConverter
             memoryCounter.CategoryName = "Process";
             memoryCounter.CounterName = "Working Set - Private";
             memoryCounter.InstanceName = "FFVideoConverter";
-
-            //Get total memory
-            GetPhysicallyInstalledSystemMemory(out totalMemory);
-            totalMemory *= 1024;
 
             //UI stuff
             TaskbarItemInfo = new TaskbarItemInfo();
@@ -141,24 +138,11 @@ namespace FFVideoConverter
             ffmpegEngine = new FFmpegEngine();
             ffmpegEngine.ProgressChanged += UpdateProgress;
             ffmpegEngine.ConversionCompleted += ConversionCompleted;
-
-            //Remove old version, if it exists
-            if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "update"))
-            {
-                Directory.Delete(AppDomain.CurrentDomain.BaseDirectory + "update", true);
-            }
-            if (File.Exists("FFVideoConverterOld.exe"))
-            {
-                File.Delete("FFVideoConverterOld.exe");
-            }
-            if (File.Exists("Update.zip"))
-            {
-                File.Delete("Update.zip");
-            }
         }
 
         #region Load
 
+        //Initialization stuff that can be done after the main window is loaded
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             if (Environment.GetCommandLineArgs().Length > 1)
@@ -179,13 +163,33 @@ namespace FFVideoConverter
                 }
             }
 
+            //Get total memory
+            GetPhysicallyInstalledSystemMemory(out totalMemory);
+            totalMemory *= 1024;
+
+            //Remove old version, if it exists
+            if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "update"))
+            {
+                Directory.Delete(AppDomain.CurrentDomain.BaseDirectory + "update", true);
+            }
+            if (File.Exists("FFVideoConverterOld.exe"))
+            {
+                File.Delete("FFVideoConverterOld.exe");
+            }
+            if (File.Exists("Update.zip"))
+            {
+                File.Delete("Update.zip");
+            }
+
+#if !DEBUG
             if (await UpdaterWindow.UpdateAvaiable())
             {
                 buttonUpdate.Visibility = Visibility.Visible;
             }
+#endif
         }
 
-        private void OpenSource()
+        private void OpenSource(string playerSource = null)
         {
             isMediaOpen = false;
             string sourcePath = mediaInfo.Source;
@@ -220,7 +224,7 @@ namespace FFVideoConverter
                 comboBoxFormat.SelectedIndex = 0;
             }
 
-            mediaElement.Open(new Uri(sourcePath));
+            mediaElement.Open(new Uri(playerSource ?? sourcePath));
             mediaElement.Background = Brushes.Black;
             borderSource.BorderThickness = new Thickness(0);
 
@@ -243,14 +247,11 @@ namespace FFVideoConverter
 
             checkBoxCrop.IsEnabled = true;
             checkBoxCrop.IsChecked = false;
-            checkBoxCut.IsEnabled = true;
-            checkBoxCut.IsChecked = false;
-            textBoxStart.Text = "00:00:00.00";
-            textBoxEnd.Text = textBlockDuration.Text;
+
             rangeSliderCut.Maximum = mediaInfo.Duration.TotalSeconds;
-            rangeSliderCut.UpperValue = mediaInfo.Duration.TotalSeconds;
-            rangeSliderCut.LowerValue = 0;
-            rangeSliderCut.MiddleValue = 0;
+            rangeSliderCut.Value = 0;
+            OnDurationChanged();
+
             buttonPlayPause.Content = " ▶️";
             shadowEffect.Opacity = 1;
             gridSourceControls.Visibility = Visibility.Visible;
@@ -263,6 +264,8 @@ namespace FFVideoConverter
             buttonConvert.IsEnabled = true;
             buttonPreview.IsEnabled = true;
             buttonAddToQueue.IsEnabled = true;
+            buttonAddCutControl.IsEnabled = true;
+
             isMediaOpen = true;
         }
 
@@ -359,7 +362,7 @@ namespace FFVideoConverter
             if (osw.MediaStream != null)
             {
                 mediaInfo = osw.MediaStream;
-                OpenSource();
+                OpenSource(osw.PlayerSource);
             }
         }
 
@@ -480,14 +483,15 @@ namespace FFVideoConverter
                 checkBoxCrop.IsEnabled = false;
                 comboBoxResolution.IsEnabled = false;
                 comboBoxRotation.IsEnabled = false;
-                checkBoxCut.Content = "Fast cut";
-                checkBoxCut.ToolTip = "Cut the video without re-encoding it. Because no encoding is performed, every other option is ignored.\nAlthough the video can be cut anywhere, cutting at the suggested start positions will provide the most accurate result";
-                if (checkBoxCut.IsChecked == true)
+
+                foreach (var item in cutInsideControlsList.Items)
                 {
-                    textBlockStartBefore.Visibility = Visibility.Visible;
-                    textBlockStartAfter.Visibility = Visibility.Visible;
+                    if (item is EncodeSegmentControl c) //Could also be the "Add" button
+                    {
+                        c.ShowKeyframesSuggestions = true;
+                    }
                 }
-                TextBoxStart_TextChanged(null, null);
+
                 PlayStoryboard("PreviewButtonAnimationOut");
             }
             else
@@ -497,19 +501,19 @@ namespace FFVideoConverter
                 comboBoxResolution.IsEnabled = true;
                 comboBoxRotation.IsEnabled = true;
                 if (mediaInfo != null) checkBoxCrop.IsEnabled = true;
-                checkBoxCut.Content = "Cut";
-                checkBoxCut.ToolTip = "Cut the video and re-encode it with the selected encoder";
-                textBlockStartBefore.Visibility = Visibility.Hidden;
-                textBlockStartAfter.Visibility = Visibility.Hidden;
-                textBoxStart.ClearValue(TextBox.ForegroundProperty);
+
+                foreach (EncodeSegmentControl item in cutInsideControlsList.Items)
+                {
+                    item.ShowKeyframesSuggestions = false;
+                }
 
                 //Setting the IsEnabled property to false removes the binding, so when IsEnabled can be true, the binding is recreated
                 if (selectedEncoder is H264Encoder || selectedEncoder is H265Encoder)
                 {
-                    Binding b = new Binding();
-                    b.ElementName = "radioButtonBitrate";
-                    b.Path = new PropertyPath("IsEnabled");
-                    BindingOperations.SetBinding(checkBoxTwoPass, IsEnabledProperty, b);
+                    Binding binding = new Binding();
+                    binding.ElementName = "radioButtonBitrate";
+                    binding.Path = new PropertyPath("IsEnabled");
+                    BindingOperations.SetBinding(checkBoxTwoPass, IsEnabledProperty, binding);
                 }
                 else
                 {
@@ -554,112 +558,6 @@ namespace FFVideoConverter
             }
         }
 
-        private void TextBoxStart_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (isMediaOpen && TimeSpan.TryParse(textBoxStart.Text, out TimeSpan start) && TimeSpan.TryParse(textBoxEnd.Text, out TimeSpan end))
-            {
-                if ((end - start).TotalSeconds > 2)
-                {
-                    textBlockOutputDuration.Text = $"Duration: {(end - start).ToFormattedString()}";
-                    sliderUserInput = false;
-                    rangeSliderCut.LowerValue = start.TotalSeconds;
-                    sliderUserInput = true;
-                }
-                else
-                {
-                    Dispatcher.BeginInvoke(new Action(() => textBoxStart.Undo()));
-                }
-
-                if (comboBoxEncoder.SelectedIndex == 0 && checkBoxCut.IsChecked == true)
-                {
-                    textBoxStart.ClearValue(TextBox.ForegroundProperty);
-                    if (textBoxStartUserInput) UpdateKeyFrameSuggestions(start);
-                }
-            }            
-        }
-
-        private void TextBoxEnd_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (isMediaOpen && TimeSpan.TryParse(textBoxStart.Text, out TimeSpan start) && TimeSpan.TryParse(textBoxEnd.Text, out TimeSpan end))
-            {
-                if ((end - start).TotalSeconds > 2 && end <= mediaInfo.Duration)
-                {
-                    textBlockOutputDuration.Text = $"Duration: {(end - start).ToFormattedString()}";
-                    sliderUserInput = false;
-                    rangeSliderCut.UpperValue = end.TotalSeconds;
-                    sliderUserInput = true;
-                }
-                else
-                {
-                    Dispatcher.BeginInvoke(new Action(() => textBoxEnd.Undo()));
-                }
-            }
-        }
-
-        private void TextBlockStartBefore_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (textBlockStartBefore.Text != "...")
-            {
-                textBoxStart.Text = textBlockStartBefore.Text;
-                textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
-            }
-        }
-
-        private void TextBlockStartAfter_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (textBlockStartAfter.Text != "...")
-            {
-                textBoxStart.Text = textBlockStartAfter.Text;
-                textBoxStart.Foreground = new BrushConverter().ConvertFromString("#FF109320") as SolidColorBrush;
-            }
-        }
-
-        private async void UpdateKeyFrameSuggestions(TimeSpan t)
-        {
-            textBlockStartBefore.Text = "...";
-            textBlockStartAfter.Text = "...";
-            var (before, after, isKeyFrame) = await mediaInfo.GetNearestBeforeAndAfterKeyFrames(t.TotalSeconds);
-            t = TimeSpan.FromSeconds(before);
-            textBlockStartBefore.Text = t.ToFormattedString(true);
-            t = TimeSpan.FromSeconds(after);
-            textBlockStartAfter.Text = t.ToFormattedString(true);
-            textBoxStart.Foreground = new BrushConverter().ConvertFromString(isKeyFrame ? "#FF109320" : "#FFC12222") as SolidColorBrush;
-        }
-
-        private void CheckBoxCut_Click(object sender, RoutedEventArgs e)
-        {
-            if (checkBoxCut.IsChecked == true)
-            {
-                rangeSliderCut.RangeSelectorVisibility = Visibility.Visible;
-                TimeSpan start = TimeSpan.Parse(textBoxStart.Text);
-                TimeSpan end = TimeSpan.Parse(textBoxEnd.Text);
-                textBlockOutputDuration.Text = $"Duration: {(end - start).ToFormattedString()}";
-
-                if (comboBoxEncoder.SelectedIndex == 0)
-                {
-                    textBlockStartBefore.Visibility = Visibility.Visible;
-                    textBlockStartAfter.Visibility = Visibility.Visible;
-                    TextBoxStart_TextChanged(null, null);
-                }
-
-                radioButtonBitrate.IsEnabled = false;
-                radioButtonQuality.IsChecked = true;
-            }
-            else
-            {
-                rangeSliderCut.RangeSelectorVisibility = Visibility.Hidden;
-                textBlockStartBefore.Visibility = Visibility.Hidden;
-                textBlockStartAfter.Visibility = Visibility.Hidden;
-                textBoxStart.ClearValue(TextBox.ForegroundProperty);
-
-                if (checkBoxCrop.IsChecked == false && comboBoxResolution.SelectedIndex == 0)
-                {
-                    radioButtonBitrate.IsEnabled = true;
-                }
-            }
-            SetConvertButtonText();
-        }
-
         private void CheckBoxCrop_Click(object sender, RoutedEventArgs e)
         {
             if (checkBoxCrop.IsChecked == true)
@@ -682,7 +580,7 @@ namespace FFVideoConverter
             {
                 canvasCropVideo.Visibility = Visibility.Hidden;
 
-                if (checkBoxCut.IsChecked == false && comboBoxResolution.SelectedIndex == 0)
+                if (!IsCutEnabled() && comboBoxResolution.SelectedIndex == 0)
                 {
                     radioButtonBitrate.IsEnabled = true;
                 }
@@ -743,7 +641,7 @@ namespace FFVideoConverter
         {
             if (comboBoxResolution.SelectedIndex == 0)
             {
-                if (checkBoxCrop.IsChecked == false && checkBoxCut.IsChecked == false)
+                if (checkBoxCrop.IsChecked == false && !IsCutEnabled())
                 {
                     radioButtonBitrate.IsEnabled = true;
                 }
@@ -764,6 +662,17 @@ namespace FFVideoConverter
             }
         }
 
+        private void ButtonAddCutControl_Click(object sender, RoutedEventArgs e)
+        {
+            EncodeSegmentControl encodeSegmentControl = new EncodeSegmentControl(mediaInfo);
+            encodeSegmentControl.ShowKeyframesSuggestions = (Encoder)comboBoxEncoder.SelectedItem is NativeEncoder;
+            encodeSegmentControl.StartChanged += () => OnDurationChanged();
+            encodeSegmentControl.EndChanged += () => OnDurationChanged();
+            encodeSegmentControl.Removed += s => OnDurationChanged();
+            cutInsideControlsList.Items.Add(encodeSegmentControl);
+            OnDurationChanged();
+        }
+
         #endregion
 
         #region Conversion process
@@ -772,7 +681,6 @@ namespace FFVideoConverter
         {
             if (CheckForErrors()) return;
 
-            string senderName = ((Button)sender).Name;
             Encoder encoder = (Encoder)comboBoxEncoder.SelectedItem;
             encoder.Preset = (Preset)comboBoxPreset.SelectedIndex;
             if (radioButtonBitrate.IsChecked == true)
@@ -821,28 +729,13 @@ namespace FFVideoConverter
             else
             {
                 conversionOptions.EncodingMode = EncodingMode.NoEncoding;
-                textBlockProgress.Text = checkBoxCut.IsChecked == true ? "Starting cutting process..." : "Starting download...";
+                textBlockProgress.Text = IsCutEnabled() ? "Starting cutting process..." : "Starting download...";
             }
 
-            if (checkBoxCut.IsChecked == true)
-            {
-                if (!TimeSpan.TryParse(textBoxStart.Text, out TimeSpan start))
-                {
-                    new MessageBoxWindow("Enter a valid start time", "FF Video Converter").ShowDialog();
-                    return;
-                }
-                if (!TimeSpan.TryParse(textBoxEnd.Text, out TimeSpan end))
-                {
-                    new MessageBoxWindow("Enter a valid end time", "FF Video Converter").ShowDialog();
-                    return;
-                }
-
-                conversionOptions.Start = start;
-                conversionOptions.End = end;
-            }
+            conversionOptions.EncodeSections = timeIntervalCollection;
 
             Job job = new Job(mediaInfo, textBoxDestination.Text, conversionOptions);
-            if (senderName == "buttonConvert" || (queueWindow.QueueActive && runningJob == null)) //If the queue is started but there are no conversion running, run this one directly instead of adding it to the queue
+            if (((Button)sender).Name == "buttonConvert" || (queueWindow.QueueActive && runningJob == null)) //If the queue is started but there are no conversion running, run this one directly instead of adding it to the queue
             {
                 RunJob(job);
             }
@@ -1019,9 +912,9 @@ namespace FFVideoConverter
         {
             if (!String.IsNullOrEmpty(progressData.ErrorMessage))
             {
-                if (progressData.CurrentFrame == 0) //Error while starting encoding process
+                if (progressData.CurrentTime == TimeSpan.Zero) //Error while starting encoding process
                 {
-                    new MessageBoxWindow($"Error while starting the conversion process:\n\n\"{progressData.ErrorMessage}\"\n\nMake sure the selected encoder is compatible with your hardware configuration", "FF Video Converter").ShowDialog();
+                    new MessageBoxWindow($"Error while starting the conversion process:\n\n\"{progressData.ErrorMessage}\"", "FF Video Converter").ShowDialog();
                 }
                 else //Error during encoding process
                 {
@@ -1218,15 +1111,27 @@ namespace FFVideoConverter
             if (!isSeeking)
             {
                 sliderUserInput = false;
-                if (checkBoxCut.IsChecked == true && e.Position.TotalSeconds > rangeSliderCut.UpperValue && mediaElement.IsPlaying)
+                if (IsCutEnabled() && !timeIntervalCollection.Contains(e.Position) && mediaElement.IsPlaying)
                 {
+                    
                     await mediaElement.Pause();
-                    await mediaElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.LowerValue));
+                    if (e.Position > timeIntervalCollection.ActualEnd)
+                    {
+                        await mediaElement.Seek(timeIntervalCollection.ActualStart);
+                    }
+                    else if (e.Position < timeIntervalCollection.ActualStart)
+                    {
+                        await mediaElement.Seek(timeIntervalCollection.ActualStart);
+                    }
+                    else
+                    {
+                        await mediaElement.Seek(timeIntervalCollection.GetClosestTimeSpanAfter(e.Position));
+                    }
                     await mediaElement.Play();
                 }
                 else
                 {
-                    rangeSliderCut.MiddleValue = e.Position.TotalSeconds;
+                    rangeSliderCut.Value = e.Position.TotalSeconds;
                     textBlockPlayerPosition.Text = $"{e.Position.ToFormattedString()} / {mediaElement.PlaybackEndTime.Value.ToFormattedString()}";
                 }
                 sliderUserInput = true;
@@ -1276,7 +1181,7 @@ namespace FFVideoConverter
         {
             if (sliderUserInput)
             {
-                mediaElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.MiddleValue));
+                mediaElement.Seek(TimeSpan.FromSeconds(rangeSliderCut.Value));
             }
         }
 
@@ -1292,20 +1197,28 @@ namespace FFVideoConverter
             if (isPlayerExpanded)
             {
                 PlayStoryboard("ExpandMediaPlayerRev");
-                isPlayerExpanded = false;
-                if (comboBoxEncoder.SelectedIndex > 0) //If encoder is not native, animate preview button too
+                if (tabItemCut.IsSelected || tabItemResize.IsSelected)
                 {
-                    PlayStoryboard("PreviewButtonAnimationIn");
+                    PlayStoryboard("ShowBottomUI");
+                    if (comboBoxEncoder.SelectedIndex > 0) //If encoder is not native, animate preview button too
+                    {
+                        PlayStoryboard("PreviewButtonAnimationIn");
+                    }
                 }
+                isPlayerExpanded = false;
             }
             else
             {
                 PlayStoryboard("ExpandMediaPlayer");
-                isPlayerExpanded = true;
-                if (comboBoxEncoder.SelectedIndex > 0) //If encoder is not native, animate preview button too
+                if (tabItemCut.IsSelected || tabItemResize.IsSelected)
                 {
-                    PlayStoryboard("PreviewButtonAnimationOut");
+                    PlayStoryboard("HideBottomUI");
+                    if (comboBoxEncoder.SelectedIndex > 0) //If encoder is not native, animate preview button too
+                    {
+                        PlayStoryboard("PreviewButtonAnimationOut");
+                    }
                 }
+                isPlayerExpanded = true;
             }
         }
 
@@ -1467,27 +1380,6 @@ namespace FFVideoConverter
             }
         }
 
-        private void RangeSliderCut_UpperSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (sliderUserInput) textBoxEnd.Text = TimeSpan.FromSeconds(rangeSliderCut.UpperValue).ToFormattedString(true);
-        }
-
-        private void RangeSliderCut_LowerSliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (sliderUserInput)
-            {
-                textBoxStartUserInput = false;
-                textBoxStart.Text = TimeSpan.FromSeconds(rangeSliderCut.LowerValue).ToFormattedString(true);
-                textBoxStartUserInput = true;
-            }
-        }
-
-        private void RangeSliderCut_LowerSliderDragCompleted(object sender, DragCompletedEventArgs e)
-        {
-            if (comboBoxEncoder.SelectedIndex == 0)
-                UpdateKeyFrameSuggestions(TimeSpan.Parse(textBoxStart.Text));
-        }
-
         private void ButtonMute_Click(object sender, RoutedEventArgs e)
         {
             if (mediaElement.IsMuted)
@@ -1522,11 +1414,11 @@ namespace FFVideoConverter
         {
             mediaInfo = job.SourceInfo;
             OpenSource();
-            ConversionOptions options = job.ConversionOptions;
-            comboBoxEncoder.SelectedValue = options.Encoder;
-            comboBoxPreset.SelectedValue = options.Encoder.Preset.GetName();
-            comboBoxQuality.SelectedValue = options.Encoder.Quality.GetName();
-            switch (options.EncodingMode)
+            ConversionOptions conversionOptions = job.ConversionOptions;
+            comboBoxEncoder.SelectedValue = conversionOptions.Encoder;
+            comboBoxPreset.SelectedValue = conversionOptions.Encoder.Preset.GetName();
+            comboBoxQuality.SelectedValue = conversionOptions.Encoder.Quality.GetName();
+            switch (conversionOptions.EncodingMode)
             {
                 case EncodingMode.ConstantQuality:
                     radioButtonQuality.IsChecked = true;
@@ -1544,29 +1436,41 @@ namespace FFVideoConverter
                     sliderTargetSize.Value = job.SliderTargetSizeValue;
                     break;
             }
-            if (options.Framerate > 0)
-                comboBoxFramerate.SelectedValue = options.Framerate.ToString();
+            if (conversionOptions.Framerate > 0)
+                comboBoxFramerate.SelectedValue = conversionOptions.Framerate.ToString();
             else comboBoxFramerate.SelectedIndex = 0;
-            if (options.Resolution.HasValue())
-                comboBoxResolution.SelectedValue = options.Resolution.ToString();
+            if (conversionOptions.Resolution.HasValue())
+                comboBoxResolution.SelectedValue = conversionOptions.Resolution.ToString();
             else comboBoxResolution.SelectedIndex = 0;
-            comboBoxRotation.SelectedIndex = options.Rotation.RotationType;
-            if (options.Start != TimeSpan.Zero || (options.End != TimeSpan.Zero && options.End != mediaInfo.Duration))
+            comboBoxRotation.SelectedIndex = conversionOptions.Rotation.RotationType;
+
+            cutInsideControlsList.Items.Clear();
+            if (conversionOptions.EncodeSections?.Count > 0)
             {
-                checkBoxCut.IsChecked = true;
-                textBoxStart.Text = options.Start.ToFormattedString(true);
-                textBoxEnd.Text = options.End.ToFormattedString(true);
+                foreach (var item in conversionOptions.EncodeSections)
+                {
+                    EncodeSegmentControl encodeSegmentControl = new EncodeSegmentControl(job.SourceInfo);
+                    encodeSegmentControl.Start = item.Start;
+                    encodeSegmentControl.End = item.End;
+                    encodeSegmentControl.ShowKeyframesSuggestions = (Encoder)comboBoxEncoder.SelectedItem is NativeEncoder;
+                    encodeSegmentControl.StartChanged += () => OnDurationChanged();
+                    encodeSegmentControl.EndChanged += () => OnDurationChanged();
+                    encodeSegmentControl.Removed += s => OnDurationChanged();
+                    cutInsideControlsList.Items.Add(encodeSegmentControl);
+                }
             }
-            if (options.CropData.HasValue()) //Removing the ValueChanged event is necessary to avoid the controls checking for errors on the single values and refusing them
+            OnDurationChanged();
+
+            if (conversionOptions.CropData.HasValue()) //Removing the ValueChanged event is necessary to avoid the controls checking for errors on the single values and refusing them
             {
                 integerTextBoxCropBottom.ValueChanged -= IntegerTextBoxCrop_ValueChanged;
                 integerTextBoxCropLeft.ValueChanged -= IntegerTextBoxCrop_ValueChanged;
                 integerTextBoxCropRight.ValueChanged -= IntegerTextBoxCrop_ValueChanged;
                 integerTextBoxCropTop.ValueChanged -= IntegerTextBoxCrop_ValueChanged;
-                integerTextBoxCropBottom.Value = options.CropData.Bottom;
-                integerTextBoxCropLeft.Value = options.CropData.Left;
-                integerTextBoxCropRight.Value = options.CropData.Right;
-                integerTextBoxCropTop.Value = options.CropData.Top;
+                integerTextBoxCropBottom.Value = conversionOptions.CropData.Bottom;
+                integerTextBoxCropLeft.Value = conversionOptions.CropData.Left;
+                integerTextBoxCropRight.Value = conversionOptions.CropData.Right;
+                integerTextBoxCropTop.Value = conversionOptions.CropData.Top;
                 integerTextBoxCropBottom.ValueChanged += IntegerTextBoxCrop_ValueChanged;
                 integerTextBoxCropLeft.ValueChanged += IntegerTextBoxCrop_ValueChanged;
                 integerTextBoxCropRight.ValueChanged += IntegerTextBoxCrop_ValueChanged;
@@ -1660,7 +1564,7 @@ namespace FFVideoConverter
             Encoder selectedEncoder = (Encoder)comboBoxEncoder.SelectedItem;
             if (selectedEncoder is NativeEncoder)
             {
-                if (checkBoxCut.IsChecked == true)
+                if (IsCutEnabled())
                 {
                     buttonConvert.Content = "Fast cut";
                 }
@@ -1686,6 +1590,13 @@ namespace FFVideoConverter
             }
         }
 
+        private bool IsCutEnabled()
+        {
+            if (mediaInfo == null) return false;
+            TimeSpan duration = timeIntervalCollection.TotalDuration;
+            return duration > TimeSpan.Zero && Math.Abs(duration.TotalSeconds - mediaInfo.Duration.TotalSeconds) >= 0.01; //duration will be accurate up to 0.01 seconds, so the two timespan can't be compared directly
+        }
+
         private void BlockSleepMode()
         {
             SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
@@ -1694,6 +1605,47 @@ namespace FFVideoConverter
         private void AllowSleepMode()
         {
             SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+        }
+
+        //This should only be called by OnDurationChanged to update the collection
+        private TimeIntervalCollection GenerateEncodeSectionCollection()
+        {
+            TimeIntervalCollection encodeSectionCollection = new TimeIntervalCollection(mediaInfo.Duration);
+
+            if (cutInsideControlsList.Items.Count > 0)
+            {
+                foreach (EncodeSegmentControl item in cutInsideControlsList.Items)
+                {
+                    encodeSectionCollection.Add(item.Start, item.End);
+                }
+            }
+            else
+            {
+                encodeSectionCollection.Add(TimeSpan.Zero, mediaInfo.Duration);
+            }
+
+            return encodeSectionCollection;
+        }
+
+        private void OnDurationChanged()
+        {
+            timeIntervalCollection = GenerateEncodeSectionCollection();
+
+            if (IsCutEnabled())
+            {
+                radioButtonBitrate.IsEnabled = false;
+                radioButtonQuality.IsChecked = true;
+            }
+            else
+            {
+                if (checkBoxCrop.IsChecked == false && comboBoxResolution.SelectedIndex == 0)
+                {
+                    radioButtonBitrate.IsEnabled = true;
+                }
+            }
+            textBlockOutputDuration.Text = $"{timeIntervalCollection.TotalDuration.ToFormattedString(true)}";
+            cutPreviewControl.UpdateIntervalCollection(timeIntervalCollection, mediaInfo.Duration);
+            SetConvertButtonText();
         }
 
         #endregion
@@ -1720,73 +1672,12 @@ namespace FFVideoConverter
 
         #endregion
 
+        //CURRENTLY NOT USED
         private void ButtonUpdateCommanLine_Click(object sender, RoutedEventArgs e)
         {
-            /*Encoder encoder = (Encoder)comboBoxEncoder.SelectedItem;
-            encoder.Preset = (Preset)comboBoxPreset.SelectedIndex;
-            encoder.Quality = (Quality)comboBoxQuality.SelectedIndex;
-            if (radioButtonBitrate.IsChecked == true)
-            {
-                int audioBitrate = 0;
-                foreach (var audioTrack in mediaInfo.AudioTracks)
-                {
-                    if (audioTrack.Enabled) audioBitrate += audioTrack.Bitrate;
-                }
-                long desiredSize = (long)(mediaInfo.Size * sliderTargetSize.Value / 100);
-                int totalBitrate = (int)(desiredSize * 8 / mediaInfo.Duration.TotalSeconds);
-                encoder.Bitrate = (totalBitrate - audioBitrate) / 1000;
-            }
-            ConversionOptions conversionOptions = new ConversionOptions(encoder);
-
-            if (!(encoder is NativeEncoder))
-            {
-                if (checkBoxCrop.IsChecked == true)
-                {
-                    conversionOptions.CropData = new CropData((short)integerTextBoxCropLeft.Value, (short)integerTextBoxCropTop.Value, (short)integerTextBoxCropRight.Value, (short)integerTextBoxCropBottom.Value);
-                }
-                else if (comboBoxResolution.SelectedIndex != 0)
-                {
-                    conversionOptions.Resolution = Resolution.FromString(comboBoxResolution.Text);
-                }
-                if (comboBoxFramerate.SelectedIndex != 0)
-                {
-                    conversionOptions.Framerate = Convert.ToByte(comboBoxFramerate.SelectedItem);
-                }
-                conversionOptions.Rotation = new Rotation(comboBoxRotation.SelectedIndex);
-                if (radioButtonQuality.IsChecked == true)
-                {
-                    conversionOptions.EncodingMode = EncodingMode.ConstantQuality;
-                }
-                else
-                {
-                    conversionOptions.EncodingMode = checkBoxTwoPass.IsChecked == true ? EncodingMode.AverageBitrate_FirstPass : EncodingMode.AverageBitrate_SinglePass;
-                }
-            }
-            else
-            {
-                conversionOptions.EncodingMode = EncodingMode.NoEncoding;
-            }
-
-            if (checkBoxCut.IsChecked == true)
-            {
-                if (!TimeSpan.TryParse(textBoxStart.Text, out TimeSpan start))
-                {
-                    new MessageBoxWindow("Enter a valid start time", "FF Video Converter").ShowDialog();
-                    return;
-                }
-                if (!TimeSpan.TryParse(textBoxEnd.Text, out TimeSpan end))
-                {
-                    new MessageBoxWindow("Enter a valid end time", "FF Video Converter").ShowDialog();
-                    return;
-                }
-
-                conversionOptions.Start = start;
-                conversionOptions.End = end;
-            }
-
-            string arguments = ffmpegEngine.BuildArgumentsString(mediaInfo, textBoxDestination.Text, conversionOptions);
-            arguments = System.Text.RegularExpressions.Regex.Replace(arguments, " -(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", "\n-");
-            textBoxCommandLine.Text = arguments;*/
+            //string arguments = ffmpegEngine.BuildArgumentsString(mediaInfo, textBoxDestination.Text, conversionOptions);
+            //arguments = System.Text.RegularExpressions.Regex.Replace(arguments, " -(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", "\n-");
+            //textBoxCommandLine.Text = arguments;
         }
     }
 }

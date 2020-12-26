@@ -284,39 +284,51 @@ namespace FFVideoConverter
                 distance += increment++;
                 startSeekPosition = position > distance ? position - distance : 0;
                 endSeekPosition = position + distance;
-
-                process.StartInfo.Arguments = $"-read_intervals {startSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)}%{endSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)}" +
-                                              $" -select_streams v -skip_frame nokey -show_frames -show_entries frame=pkt_pts_time \"{Source}\" -hide_banner";
+                process.StartInfo.Arguments = $"-read_intervals {startSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)}%{endSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)} -select_streams v -skip_frame nokey -show_frames -show_entries frame=pkt_pts_time -print_format csv=p=0 \"{Source}\" -hide_banner";
                 process.Start();
+
                 await Task.Run(() =>
                 {
                     while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        if (line.StartsWith("pkt")) //pkt_pts_time=0.000000
+                        double keyFrame = Ceiling(Double.Parse(line, CultureInfo.InvariantCulture), 2);
+                        if (keyFrame < position)
                         {
-                            double keyFrame = Math.Round(Double.Parse(line.Remove(0, 13), CultureInfo.InvariantCulture), 2);
-                            if (keyFrame < position)
+                            if (keyFrame > nearestKeyFrameBefore)
                             {
                                 nearestKeyFrameBefore = keyFrame;
                                 foundBefore = true;
                             }
-                            else if (keyFrame > position)
+                        }
+                        else if (keyFrame > position)
+                        {
+                            if (keyFrame < nearestKeyFrameAfter)
                             {
                                 nearestKeyFrameAfter = keyFrame;
                                 foundAfter = true;
-                                return;
                             }
-                            else
-                            {
-                                isKeyFrame = true;
-                            }
+                        }
+                        else
+                        {
+                            isKeyFrame = true;
                         }
                     }
                 }).ConfigureAwait(false);
             } while ((!foundBefore || !foundAfter) && distance < MAX_DISTANCE);
 
             process.Dispose();
-            return (nearestKeyFrameBefore, nearestKeyFrameAfter, isKeyFrame);
+            return (nearestKeyFrameBefore, nearestKeyFrameAfter, position > 0 ? isKeyFrame : true);
+        }
+
+        private double Ceiling(double value, int digits)
+        {
+            //With digits = 2:
+            //5.123456 -> 5.13
+            //5.001000 -> 5.01
+            //5.110999 -> 5.12
+            int x = (int)(value * Math.Pow(10, digits));
+            x += 1;
+            return x / Math.Pow(10, digits);
         }
     }
 }

@@ -147,12 +147,10 @@ namespace FFVideoConverter
                 end = start.Add(TimeSpan.FromSeconds(4));
                 encoder.Preset = Preset.VeryFast;
                 encoder.Quality = Quality.Best;
-                conversionOptions = new ConversionOptions(encoder)
-                {
-                    Start = start,
-                    End = end,
-                    SkipAudio = true
-                }; 
+                conversionOptions = new ConversionOptions(encoder);
+                conversionOptions.SkipAudio = true;
+                conversionOptions.EncodeSections = new TimeIntervalCollection(mediaFile.Duration);
+                conversionOptions.EncodeSections.Add(start, end);
                 ffmpegEngine.Convert(mediaFile, Environment.CurrentDirectory + "\\temp\\preview_0.mkv", conversionOptions);
             }
             else

@@ -9,6 +9,7 @@ namespace FFVideoConverter
     public partial class OpenStreamWindow : Window
     {
         public MediaInfo MediaStream { get; private set; }
+        public string PlayerSource { get; private set; }
         private string host = "";
 
         public OpenStreamWindow()
@@ -113,6 +114,10 @@ namespace FFVideoConverter
                                 }
                                 labelTitle.Content = item.Title;
                             }
+                            if (videoUrlParser is YouTubeParser)
+                            {
+                                PlayerSource = await ((YouTubeParser)videoUrlParser).GetMuxedSource(url);
+                            }
                         }
                         catch (Exception)
                         {
@@ -160,10 +165,11 @@ namespace FFVideoConverter
                     {
                         StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
                         MediaStream = await MediaInfo.Open(selectedVideo.Url, selectedAudio.Url);
-                        new MessageBoxWindow("The audio stream relative to this video is separate, therefore the integrated player will play the video without audio.\nWhen converting or downloading this video however, audio and video will be muxed toghether", "Info").ShowDialog();
+                        //new MessageBoxWindow("The audio stream relative to this video is separate, therefore the integrated player will play the video without audio.\nWhen converting or downloading this video however, audio and video will be muxed toghether", "Info").ShowDialog();
                     }
                     else
                     {
+                        PlayerSource = null;
                         MediaStream = await MediaInfo.Open(selectedVideo.Url);
                     }
                 }

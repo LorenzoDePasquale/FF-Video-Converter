@@ -54,20 +54,22 @@
                     </EasingDoubleKeyFrame.EasingFunction>
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCut">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,200,0,-101">
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="scrollViewerEncodeSegments">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="5,185,7,-143">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCrop">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,184,328,-139">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="176,182,162,-137">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
+        </Storyboard>
+        <Storyboard x:Key="HideBottomUI">
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonConvert">
                 <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="277,675,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
@@ -116,8 +118,8 @@
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="StrokeThickness" Storyboard.TargetName="rectangleCropVideo">
                 <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="3" />
             </DoubleAnimationUsingKeyFrames>
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCut">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="15,15,0,0">
+            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="scrollViewerEncodeSegments">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="5,37,7,0">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>
@@ -130,6 +132,8 @@
                     </EasingThicknessKeyFrame.EasingFunction>
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
+        </Storyboard>
+        <Storyboard x:Key="ShowBottomUI">
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonConvert">
                 <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="277,535,0,0">
                     <EasingThicknessKeyFrame.EasingFunction>
@@ -263,7 +267,7 @@
                 <Canvas x:Name="canvasCropVideo" Visibility="Hidden" Background="Transparent" SizeChanged="CanvasCropVideo_SizeChanged" MouseLeave="CanvasCropVideo_MouseLeave" MouseDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove" MouseUp="Canvas_MouseUp">
                     <Rectangle x:Name="rectangleCropVideo" StrokeThickness="3" Stroke="{StaticResource TextColorBlue}" Height="45" Width="80" Canvas.Left="10" Canvas.Top="10" />
                 </Canvas>
-                <Grid x:Name="gridSourceControls" VerticalAlignment="Bottom" Height="72" >
+                <Grid x:Name="gridSourceControls" VerticalAlignment="Bottom" Height="78" >
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition Height="36"/>
@@ -274,13 +278,13 @@
                                 <LinearGradientBrush.GradientStops>
                                     <GradientStopCollection>
                                         <GradientStop Color="#00000000" Offset="0.0"/>
-                                        <GradientStop Color="#CC000000" Offset="1"/>
+                                        <GradientStop Color="#D8000000" Offset="1"/>
                                     </GradientStopCollection>
                                 </LinearGradientBrush.GradientStops>
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
-                    <local:RangeSlider x:Name="rangeSliderCut" RangeSelectorVisibility="Hidden" Margin="10,8,9,28" Minimum="0" MiddleSliderValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" UpperSliderValueChanged="RangeSliderCut_UpperSliderValueChanged" LowerSliderValueChanged="RangeSliderCut_LowerSliderValueChanged" LowerSliderDragCompleted="RangeSliderCut_LowerSliderDragCompleted" Grid.Row="0" Grid.RowSpan="2"/>
+                    <local:PlayerSlider x:Name="rangeSliderCut" Margin="10,10,9,28" Minimum="0" ValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" Grid.Row="0" Grid.RowSpan="2"/>
                     <Button x:Name="buttonPlayPause" Content=" ▶️" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonPlayPause_Click" Margin="10,6,0,0" FontSize="20" Grid.Row="1"/>
                     <Button x:Name="buttonMute" Content="🔊" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonMute_Click" Margin="46,6,0,0" FontSize="20" Grid.Row="1"/>
                     <TextBlock x:Name="textBlockPlayerPosition" Text="00:00:00 / 00:00:00"  HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Margin="85,8,0,0"/>
@@ -296,13 +300,13 @@
             <TextBlock HorizontalAlignment="Left" Text="Destination" VerticalAlignment="Top" Margin="10,4,0,0"/>
         </Grid>
 
-        <TabControl HorizontalAlignment="Left" Height="211" Margin="10,304,0,0" Grid.Row="1" VerticalAlignment="Top" Width="827">
+        <TabControl HorizontalAlignment="Left" Height="211" Margin="10,304,0,0" Grid.Row="1" VerticalAlignment="Top" Width="827" >
             <TabItem Header="Encode">
                 <Grid x:Name="gridVideoSettings">
                     <TextBlock HorizontalAlignment="Left" Text="Encoder" Margin="12,11,0,0" Foreground="{StaticResource TextColorBlue}" FontSize="14" Height="19" VerticalAlignment="Top" />
                     <TextBlock HorizontalAlignment="Left" Text="Encoding mode" VerticalAlignment="Top" Margin="351,11,0,0" Foreground="{StaticResource TextColorBlue}" FontSize="14" />
                     <TextBlock HorizontalAlignment="Left" Text="Name" VerticalAlignment="Top" Margin="27,46,0,0" Width="41" TextAlignment="Right"/>
-                    <ComboBox x:Name="comboBoxEncoder" DisplayMemberPath="Name" HorizontalAlignment="Left" Margin="73,43,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxEncoder_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Native means the file is not re-encoded, thus conversion options are not used; use this mode if you only want to download a web media&#xA;H264 provides maximum compatibility and is faster to encode&#xA;H265 is from 25% to 50% more efficient than H264, but requires more time to encode&#xA;Hardware encoders like QuickSync or Nvenc can encode much faster than software encoders, but at a lower quality per bitrate"/>
+                    <ComboBox x:Name="comboBoxEncoder" DisplayMemberPath="Name" HorizontalAlignment="Left" Margin="73,43,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxEncoder_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Copy means the video is not re-encoded, thus conversion options are not used;&#xA;H264 provides maximum compatibility and is faster to encode&#xA;H265 is from 25% to 50% more efficient than H264, but requires more time to encode&#xA;Hardware encoders like QuickSync or Nvenc can encode much faster than software encoders, but at a lower quality per bitrate"/>
                     <Grid x:Name="gridEncoding">
                         <TextBlock HorizontalAlignment="Left" Text="Framerate" VerticalAlignment="Top" Margin="-1,127,0,0" Width="68" TextAlignment="Right"/>
                         <TextBlock HorizontalAlignment="Left" Text="Profile" VerticalAlignment="Top" Margin="-1,87,0,0" Width="68" TextAlignment="Right"/>
@@ -317,19 +321,19 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Cut" >
-                <Grid x:Name="gridCut" Margin="15,15,0,0" Height="71" VerticalAlignment="Top" HorizontalAlignment="Left" Width="505" >
-                    <TextBlock x:Name="textBlockStartBefore" HorizontalAlignment="Left" Margin="124,3,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="Hidden" MouseLeftButtonDown="TextBlockStartBefore_MouseLeftButtonDown"/>
-                    <TextBlock x:Name="textBlockStartAfter" HorizontalAlignment="Left" Margin="124,48,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="80" TextAlignment="Center" Cursor="Hand" Visibility="Hidden" MouseLeftButtonDown="TextBlockStartAfter_MouseLeftButtonDown"/>
-                    <TextBox x:Name="textBoxStart" HorizontalAlignment="Left" Height="25" Margin="124,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxStart_TextChanged" />
-                    <CheckBox x:Name="checkBoxCut" IsEnabled="False" Content="Cut" HorizontalAlignment="Left" Margin="0,19,0,0" VerticalAlignment="Top" Height="30" Width="85" Checked="CheckBoxCut_Click" Unchecked="CheckBoxCut_Click" ToolTipService.ShowDuration="15000"/>
-                    <TextBlock HorizontalAlignment="Left" Margin="90,25,0,0" TextWrapping="Wrap" Text="Start" VerticalAlignment="Top"/>
-                    <TextBox x:Name="textBoxEnd" HorizontalAlignment="Left" Height="23" Margin="264,22,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="90" local:TimespanTextbox.MaxTime="10:00:00.00" TextChanged="TextBoxEnd_TextChanged"/>
-                    <TextBlock HorizontalAlignment="Left" Margin="238,25,0,0" TextWrapping="Wrap" Text="End" VerticalAlignment="Top"/>
-                    <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" Margin="380,24,-15,0" TextWrapping="Wrap" Text="Duration: 00:00:00" VerticalAlignment="Top" Width="110" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCut}"/>
+            <TabItem x:Name="tabItemCut" Header="Cut" >
+                <Grid>
+                    <local:MultiRangeControl x:Name="cutPreviewControl" Margin="8,8,92,0" Height="15" VerticalAlignment="Top" />
+                    <ScrollViewer x:Name="scrollViewerEncodeSegments" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top" Margin="5,37,7,0" Height="128">
+                        <StackPanel>
+                            <ItemsControl x:Name="cutInsideControlsList" />
+                            <Button x:Name="buttonAddCutControl" Content="Add segment" Width="126" Height="30" Click="ButtonAddCutControl_Click" HorizontalAlignment="Center" IsEnabled="False" ToolTip="Add a segment to encode. If there are no segments, all the video will be encoded" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" Margin="738,6,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="72" />
                 </Grid>
             </TabItem>
-            <TabItem Header="Resize">
+            <TabItem x:Name="tabItemResize" Header="Resize">
                 <Grid x:Name="gridCropResize">
                     <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Resolution" VerticalAlignment="Top" Margin="1,46,0,0" Width="68" TextAlignment="Right"/>
                     <TextBlock x:Name="textBlockRotation" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Rotation" VerticalAlignment="Top" Margin="1,87,0,0" Width="68" TextAlignment="Right"/>

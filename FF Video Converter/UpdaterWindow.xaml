@@ -19,7 +19,7 @@
         <TextBlock Text="Current version: " TextWrapping="Wrap" Grid.Row="2" Margin="10,12,0,0" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="98" Foreground="#FF2669DE"/>
         <TextBlock Text="Newest version: " Grid.Row="2" Margin="10,36,0,0" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="98" Foreground="#FF2669DE"/>
         <TextBlock x:Name="textBlockCurrentVersion" Text="" TextWrapping="Wrap" Grid.Row="2" Margin="113,12,0,0" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="195"/>
-        <TextBlock x:Name="textBlockNewVersion" Text="" Grid.Row="2" Margin="113,33,0,0" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="237"/>
+        <TextBlock x:Name="textBlockNewVersion" Text="" Grid.Row="2" Margin="113,35,0,0" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="237"/>
 
         <Grid x:Name="gridPatchNotes" Grid.Row="2" Margin="0,88,10,0" Height="207" VerticalAlignment="Top" HorizontalAlignment="Right" Width="550">
             <Grid x:Name="TopLabel" Margin="65,-26,65,0" Height="26" VerticalAlignment="Top">

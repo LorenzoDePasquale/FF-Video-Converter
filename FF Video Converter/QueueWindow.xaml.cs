@@ -183,25 +183,20 @@ namespace FFVideoConverter
                     }
                     textBlockRotation.Text = conversionOptions.Rotation.ToString();
                 }
-                if (conversionOptions.Start != TimeSpan.Zero)
+
+                if (conversionOptions.EncodeSections?.Count > 0)
                 {
                     textBlockStart.Visibility = Visibility.Visible;
                     textBlockStartLabel.Visibility = Visibility.Visible;
-                    textBlockStart.Text = conversionOptions.Start.ToFormattedString(true);
+                    textBlockStart.Text = conversionOptions.EncodeSections.ActualStart.ToFormattedString(true);
+                    textBlockEnd.Visibility = Visibility.Visible;
+                    textBlockEndLabel.Visibility = Visibility.Visible;
+                    textBlockEnd.Text = conversionOptions.EncodeSections.ActualEnd.ToFormattedString(true);
                 }
                 else
                 {
                     textBlockStart.Visibility = Visibility.Collapsed;
                     textBlockStartLabel.Visibility = Visibility.Collapsed;
-                }
-                if (conversionOptions.End != TimeSpan.Zero)
-                {
-                    textBlockEnd.Visibility = Visibility.Visible;
-                    textBlockEndLabel.Visibility = Visibility.Visible;
-                    textBlockEnd.Text = conversionOptions.End.ToFormattedString(true);
-                }
-                else
-                {
                     textBlockEnd.Visibility = Visibility.Collapsed;
                     textBlockEndLabel.Visibility = Visibility.Collapsed;
                 }

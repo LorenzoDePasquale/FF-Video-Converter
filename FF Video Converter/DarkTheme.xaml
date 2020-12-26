@@ -512,6 +512,7 @@
     <Style TargetType="{x:Type Slider}">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource ButtonBackgroundColor}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Slider}">
@@ -532,9 +533,6 @@
                                         <Border.Effect>
                                             <DropShadowEffect ShadowDepth="7" BlurRadius="10"/>
                                         </Border.Effect>
-                                        <Canvas Margin="-6,-1">
-                                            <Rectangle x:Name="PART_SelectionRange" Fill="{StaticResource BackgroundColor}" Height="6" Visibility="Hidden"/>
-                                        </Canvas>
                                     </Border>
                                 </Border>
                             </Grid>
@@ -549,7 +547,7 @@
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                            <Border x:Name="border" Background="{StaticResource ButtonBackgroundColor}" Height="10" Width="{TemplateBinding Width}" Margin="5, 0, -2, 0" CornerRadius="5, 0, 0, 5" BorderThickness="1" BorderBrush="{StaticResource BackgroundColor}"/>
+                                                            <Border x:Name="border" Background="{TemplateBinding Foreground}" Height="10" Width="{TemplateBinding Width}" Margin="5, 0, -2, 0" CornerRadius="5, 0, 0, 5" BorderThickness="1" BorderBrush="{StaticResource BackgroundColor}"/>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsEnabled" Value="False">
                                                                     <Setter TargetName="border" Property="Background" Value="{StaticResource DisabledColor}" />
@@ -611,14 +609,6 @@
                             </Track>
                         </Grid>
                     </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelectionRangeEnabled" Value="True">
-                            <Setter Property="Visibility" TargetName="PART_SelectionRange" Value="Visible"/>
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter Property="Foreground" TargetName="Thumb" Value="Blue"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -1063,7 +1053,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
                     <Border Background="{StaticResource BackgroundColor}" CornerRadius="{StaticResource CornerRadius}" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" Padding="5">
-                        <TextBlock Text="{TemplateBinding Content}" TextWrapping="Wrap"/>
+                        <TextBlock Text="{TemplateBinding Content}" TextWrapping="Wrap" TextAlignment="Left"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1159,7 +1149,8 @@
                             <Setter Property="Panel.ZIndex" Value="100" />
                             <Setter TargetName="Border" Property="Background" Value="{StaticResource MouseOverColor}" />
                         </Trigger>
-                        <Trigger Property="Header" Value="Encoding"> <!-- So horrible -->
+                        <Trigger Property="Header" Value="Encoding">
+                            <!-- So horrible -->
                             <Setter TargetName="Border" Property="BorderThickness" Value="0" />
                         </Trigger>
                     </ControlTemplate.Triggers>

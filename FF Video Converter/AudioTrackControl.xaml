@@ -30,6 +30,9 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2">
             <RadioButton x:Name="radioButtonDefaultTrack" Content="Default track" Margin="20,2,0,6" IsEnabled="{Binding ElementName=checkBoxTrackEnabled, Path=IsChecked}" VerticalAlignment="Center" GroupName="defaultTrack" Checked="RadioButtonDefaultTrack_CheckedChanged" Unchecked="RadioButtonDefaultTrack_CheckedChanged" ToolTip="The track marked as default will be the track automatically selected by the player"/>
+            <TextBlock Text="Volume" Margin="25,3,0,7" VerticalAlignment="Center" />
+            <Slider x:Name="sliderVolume" Margin="10,3,0,3" VerticalAlignment="Center" Width="161" Height="22" Maximum="200" SmallChange="1" Value="100" ToolTip="WARNING: volume changes will require the audio track to be re-encoded, with potential quality loss"/>
+            <TextBlock x:Name="textBlockVolumePercentage" Text="{Binding ElementName=sliderVolume, Path=Value, StringFormat=\{0:0\}%}" Margin="10,2,0,6" VerticalAlignment="Center" />
         </StackPanel>
         <Button x:Name="buttonExport" Content="Export" Grid.Column="2" Grid.RowSpan="2" Height="30" VerticalAlignment="Center" HorizontalAlignment="Right" Width="90" Margin="0,14,10,14" Click="ButtonExport_Click"/>
     </Grid>

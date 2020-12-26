@@ -55,7 +55,7 @@ namespace FFVideoConverter
 
     public class NativeEncoder : Encoder
     {
-        public override string Name => "Native";
+        public override string Name => "Copy";
 
         public NativeEncoder()
         {
