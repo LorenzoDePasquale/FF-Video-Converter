@@ -9,7 +9,7 @@ Simple video converter with cutting and cropping functionality, powered by the f
 - Experimental support for Nvidia H264 and H265 hardware accelerated encoders (only on RTX video cards, because  of lack of B-frame support on older gpus) 
 - Experimental support for Intel H264 and H265 hardware accelerated encoders; on computers with a dedicated GPU, Intel iGPU must be manually enabled for QuickSync to work
 - Change framerate and resolution
-- Trim or cut the video, with or without re-encoding it (with precise cutting at keyframe position) <p align="center"><img width="700" src="https://i.imgur.com/YvKT9Mb.png"></p>
+- Trim or cut the video, with or without re-encoding it (with precise cutting at keyframe positions) <p align="center"><img width="700" src="https://i.imgur.com/vXd16ef.png"></p>
 - Visually crop and rotate the video <p align="center"><img width="700" src="https://i.imgur.com/sb7YXSW.png"></p>
 - Preview encoding quality settings with before-after clips
 - Change default audio track, change volume per track, or remove them altogether <p align="center"><img width="700" src="https://i.imgur.com/uMWnNxM.png"></p>
