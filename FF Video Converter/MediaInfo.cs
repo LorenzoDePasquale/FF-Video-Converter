@@ -158,6 +158,11 @@ namespace FFVideoConverter
                             JsonElement e2 = audioStreamElements[i].GetProperty("tags");
                             if (e2.TryGetProperty("language", out e))
                                 language = e.GetString();
+                            if (bitrate == 0)
+                            {
+                                if (e2.TryGetProperty("BPS-eng", out e))
+                                    bitrate = Convert.ToInt32(e.GetString()); ;
+                            }
                             e2 = audioStreamElements[i].GetProperty("disposition");
                             if (e2.TryGetProperty("default", out e))
                                 defaultTrack = Convert.ToBoolean(e.GetByte());
@@ -267,8 +272,8 @@ namespace FFVideoConverter
             double nearestKeyFrameAfter = Duration.TotalSeconds;
             bool isKeyFrame = position == 0;
             const double MAX_DISTANCE = 30;
-            double distance = 1;
-            double increment = 1;
+            double distance = 2;
+            double increment = 2;
             double startSeekPosition, endSeekPosition;
             bool foundBefore = position == 0;
             bool foundAfter = false;
@@ -284,33 +289,37 @@ namespace FFVideoConverter
                 distance += increment++;
                 startSeekPosition = position > distance ? position - distance : 0;
                 endSeekPosition = position + distance;
-                process.StartInfo.Arguments = $"-read_intervals {startSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)}%{endSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)} -select_streams v -skip_frame nokey -show_frames -show_entries frame=pkt_pts_time -print_format csv=p=0 \"{Source}\" -hide_banner";
+                process.StartInfo.Arguments = $"-read_intervals {startSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)}%{endSeekPosition.ToString("0.00", CultureInfo.InvariantCulture)} -select_streams v -skip_frame nokey -show_entries frame=key_frame,pkt_pts_time -print_format csv=p=0 \"{Source}\" -hide_banner";
                 process.Start();
 
                 await Task.Run(() =>
                 {
                     while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        double keyFrame = Ceiling(Double.Parse(line, CultureInfo.InvariantCulture), 2);
-                        if (keyFrame < position)
+                        string[] values = line.Split(','); //for vp9 videos -skip_frame nokey doesn't work, so it's necessary to include and check the key_frame flag
+                        if (values[0] == "1")
                         {
-                            if (keyFrame > nearestKeyFrameBefore)
+                            double currentPosition = Ceiling(Double.Parse(values[1], CultureInfo.InvariantCulture), 2);
+                            if (currentPosition < position)
                             {
-                                nearestKeyFrameBefore = keyFrame;
-                                foundBefore = true;
+                                if (currentPosition > nearestKeyFrameBefore)
+                                {
+                                    nearestKeyFrameBefore = currentPosition;
+                                    foundBefore = true;
+                                }
                             }
-                        }
-                        else if (keyFrame > position)
-                        {
-                            if (keyFrame < nearestKeyFrameAfter)
+                            else if (currentPosition > position)
                             {
-                                nearestKeyFrameAfter = keyFrame;
-                                foundAfter = true;
+                                if (currentPosition < nearestKeyFrameAfter)
+                                {
+                                    nearestKeyFrameAfter = currentPosition;
+                                    foundAfter = true;
+                                }
                             }
-                        }
-                        else
-                        {
-                            isKeyFrame = true;
+                            else
+                            {
+                                isKeyFrame = true;
+                            }
                         }
                     }
                 }).ConfigureAwait(false);

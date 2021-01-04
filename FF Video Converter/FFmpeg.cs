@@ -57,6 +57,7 @@ namespace FFVideoConverter
         public async void Convert(MediaInfo sourceInfo, string outputPath, ConversionOptions conversionOptions)
         {
             progressData = new ProgressData();
+            previousProgressData = new ProgressData();
 
             //Capture the Synchronization Context of the caller, in order to invoke the events on its original thread
             synchronizationContext = SynchronizationContext.Current;
@@ -99,7 +100,7 @@ namespace FFVideoConverter
                 }
                 else if (conversionOptions.EncodeSections.Count == 1)
                 {
-                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.Start, conversionOptions.EncodeSections.End)).ConfigureAwait(false);
+                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.ActualStart, conversionOptions.EncodeSections.ActualEnd, true, true)).ConfigureAwait(false);
                 }
                 else
                 {
@@ -108,10 +109,14 @@ namespace FFVideoConverter
                     string outputFileName = Path.GetFileNameWithoutExtension(outputPath);
                     for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
                     {
-                        await RunConversionProcess(BuildArgumentsString(sourceInfo, $"{outputDirectory}\\{outputFileName}_part_{i}.mp4", conversionOptions, conversionOptions.EncodeSections[i].Start, conversionOptions.EncodeSections[i].End), false).ConfigureAwait(false);
+                        bool fadeStart = conversionOptions.FadeEffect && i != 0;
+                        bool fadeEnd = conversionOptions.FadeEffect && i < conversionOptions.EncodeSections.Count - 1;
+                        string destination = $"{outputDirectory}\\{outputFileName}_part_{i}.mp4";
+                        string arguments = BuildArgumentsString(sourceInfo, destination, conversionOptions, conversionOptions.EncodeSections[i].Start, conversionOptions.EncodeSections[i].End, fadeStart, fadeEnd);
+                        await RunConversionProcess(arguments, false).ConfigureAwait(false);
                         if (stopped) break;
                         previousProgressData = progressData;
-                        File.AppendAllText("concat.txt", $"file '{outputDirectory}\\{outputFileName}_part_{i}.mp4'\n");
+                        File.AppendAllText("concat.txt", $"file '{destination}'\n");
                     }
                     if (!stopped) await RunConversionProcess($"-y -f concat -safe 0 -i concat.txt -c copy \"{outputPath}\"", false).ConfigureAwait(false);
                     File.Delete("concat.txt");
@@ -164,7 +169,7 @@ namespace FFVideoConverter
             return BuildArgumentsString(sourceInfo, destination, conversionOptions, TimeSpan.Zero, TimeSpan.Zero);
         }
 
-        public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions, TimeSpan start, TimeSpan end)
+        public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions, TimeSpan start, TimeSpan end, bool fadeStart = false, bool fadeEnd = false)
         {
             StringBuilder sb = new StringBuilder("-y -progress -");
             bool changeVolume = false;
@@ -212,10 +217,13 @@ namespace FFVideoConverter
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
                 if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
+
                 //Video filters
-                if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue())
+                if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue() || fadeStart || fadeEnd)
                 {
-                    sb.Append(" -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString));
+                    string fadeStartFilter = fadeStart ? "fade=t=in:d=0.5" : "";
+                    string fadeEndFilter = fadeEnd ? $"fade=t=out:d=0.5:st={(end.TotalSeconds - start.TotalSeconds - 0.5).ToString(CultureInfo.InvariantCulture)}" : "";
+                    sb.Append(" -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString, fadeStartFilter, fadeEndFilter));
                 }
                 //Audio filters
                 if (changeVolume)
@@ -239,10 +247,16 @@ namespace FFVideoConverter
                 sb.Append(" -c:a copy");
             }
 
+            //When cutting without encoding, this flag allows to cut at the nearest keyframe before the start position; without this flag audio would be cut at the start position, but video would start playing only after the next keyframe 
+            if (conversionOptions.Encoder is NativeEncoder)
+            {
+                sb.Append($" -avoid_negative_ts make_zero");
+            }
+
             //Output path
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
-                sb.Append($" -avoid_negative_ts 1 \"{destination}\" -hide_banner");
+                sb.Append($" \"{destination}\" -hide_banner");
             }
             else
             {

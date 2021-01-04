@@ -7,8 +7,8 @@ namespace FFVideoConverter
 {
     public partial class RangeSelector : UserControl
     {
-        public static readonly DependencyProperty LowerValueProperty = DependencyProperty.Register("LowerValue", typeof(double), typeof(RangeSelector), new UIPropertyMetadata(0d));
-        public static readonly DependencyProperty UpperValueProperty = DependencyProperty.Register("UpperValue", typeof(double), typeof(RangeSelector), new UIPropertyMetadata(1d));
+        public static readonly DependencyProperty LowerValueProperty = DependencyProperty.Register("LowerValue", typeof(double), typeof(RangeSelector), new UIPropertyMetadata(0d, null, LowerValueCoerceValueCallback));
+        public static readonly DependencyProperty UpperValueProperty = DependencyProperty.Register("UpperValue", typeof(double), typeof(RangeSelector), new UIPropertyMetadata(1d, null, UpperValueCoerceValueCallback));
         public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register("Minimum", typeof(double), typeof(RangeSelector), new UIPropertyMetadata(0d));
         public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register("Maximum", typeof(double), typeof(RangeSelector), new UIPropertyMetadata(1d));
 
@@ -45,7 +45,6 @@ namespace FFVideoConverter
             InitializeComponent();
         }
 
-        //NOT USED
         //Forces LowerValue to be under UpperValue
         private static object LowerValueCoerceValueCallback(DependencyObject target, object valueObject)
         {
@@ -54,7 +53,6 @@ namespace FFVideoConverter
             return Math.Min(value, targetSlider.UpperValue);
         }
 
-        //NOT USED
         //Forces UpperValue to be above LowerValue
         private static object UpperValueCoerceValueCallback(DependencyObject target, object valueObject)
         {
@@ -65,14 +63,12 @@ namespace FFVideoConverter
 
         private void LowerSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            upperSlider.Value = Math.Max(upperSlider.Value, lowerSlider.Value);
             UpdateSelectionRangeMargin();
             LowerValueChanged?.Invoke(this, e);
         }
 
         private void UpperSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            lowerSlider.Value = Math.Min(upperSlider.Value, lowerSlider.Value);
             UpdateSelectionRangeMargin();
             UpperValueChanged?.Invoke(this, e);
         }

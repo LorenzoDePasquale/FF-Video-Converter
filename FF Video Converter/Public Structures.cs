@@ -217,6 +217,7 @@ namespace FFVideoConverter
         public bool SkipAudio { get; set; }
         public EncodingMode EncodingMode { get; set; }
         public TimeIntervalCollection EncodeSections { get; set; }
+        public bool FadeEffect { get; set; }
 
 
         public ConversionOptions(Encoder encoder)

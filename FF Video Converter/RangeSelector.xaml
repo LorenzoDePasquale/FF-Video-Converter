@@ -59,7 +59,7 @@
             </Border>
         </Grid>
         <Border x:Name="selectionRange" ClipToBounds="True" Height="10" IsHitTestVisible="False" BorderThickness="1" BorderBrush="{StaticResource BorderColor}" Background="{StaticResource ButtonBackgroundColor}"/>
-        <Slider x:Name="lowerSlider" Template="{StaticResource RangeSliderTemplate}" Margin="0, 0, 21, 0" ValueChanged="LowerSlider_ValueChanged" Minimum="{Binding Minimum, ElementName=userControl}" Maximum="{Binding Maximum, ElementName=userControl}" Value="{Binding LowerValue, ElementName=userControl, Mode=TwoWay}" />
-        <Slider x:Name="upperSlider" Template="{StaticResource RangeSliderTemplate}" Margin="21, 0, 0, 0" Minimum="{Binding Minimum, ElementName=userControl}" Maximum="{Binding Maximum, ElementName=userControl}" Value="{Binding UpperValue, ElementName=userControl, Mode=TwoWay}" ValueChanged="UpperSlider_ValueChanged" />
+        <Slider x:Name="lowerSlider" Template="{StaticResource RangeSliderTemplate}" ValueChanged="LowerSlider_ValueChanged" Minimum="{Binding Minimum, ElementName=userControl}" Maximum="{Binding Maximum, ElementName=userControl}" Value="{Binding LowerValue, ElementName=userControl, Mode=TwoWay}" />
+        <Slider x:Name="upperSlider" Template="{StaticResource RangeSliderTemplate}" Minimum="{Binding Minimum, ElementName=userControl}" Maximum="{Binding Maximum, ElementName=userControl}" Value="{Binding UpperValue, ElementName=userControl, Mode=TwoWay}" ValueChanged="UpperSlider_ValueChanged" />
     </Grid>
 </UserControl>

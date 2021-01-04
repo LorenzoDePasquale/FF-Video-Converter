@@ -4,7 +4,7 @@
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
         x:Name="window" x:Class="FFVideoConverter.MainWindow"
-        Title="FF Video Converter" Height="720" Width="853" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="FF Video Converter" Height="720" Width="853" Style="{StaticResource BlurWindowStyle}" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing">
     <!--Max height for 720p/1080p150% screens is 715-->
 
     <Window.Resources>
@@ -45,7 +45,7 @@
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="StrokeThickness" Storyboard.TargetName="rectangleCropVideo">
-                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="6" />
+                <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="5" />
             </DoubleAnimationUsingKeyFrames>
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="borderSource">
                 <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="472">
@@ -169,29 +169,28 @@
         </Storyboard>
 
         <Storyboard x:Key="PreviewButtonAnimationIn" >
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonPreview">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="10,535,0,0">
-                    <EasingThicknessKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseInOut"/>
-                    </EasingThicknessKeyFrame.EasingFunction>
-                </EasingThicknessKeyFrame>
-            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimation Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonPreview" To="10,535,0,0" Duration="0:0:0.4">
+                <ThicknessAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseInOut"/>
+                </ThicknessAnimation.EasingFunction>
+            </ThicknessAnimation>
         </Storyboard>
         <Storyboard x:Key="PreviewButtonAnimationOut" >
-            <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonPreview">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="-154,535,0,0">
-                    <EasingThicknessKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseInOut"/>
-                    </EasingThicknessKeyFrame.EasingFunction>
-                </EasingThicknessKeyFrame>
-            </ThicknessAnimationUsingKeyFrames>
+            <ThicknessAnimation Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonPreview" To="-154,535,0,0" Duration="0:0:0.4">
+                <ThicknessAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseInOut"/>
+                </ThicknessAnimation.EasingFunction>
+            </ThicknessAnimation>
+        </Storyboard>
+
+        <Storyboard x:Key="CheckBoxFadeAnimationIn">
+            <DoubleAnimation From="0" To="95" Duration="0:0:0.3" Storyboard.TargetName="checkBoxFade" Storyboard.TargetProperty="Width"/>
+        </Storyboard>
+        <Storyboard x:Key="CheckBoxFadeAnimationOut">
+            <DoubleAnimation From="95" To="0" Duration="0:0:0.3" Storyboard.TargetName="checkBoxFade" Storyboard.TargetProperty="Width"/>
         </Storyboard>
     </Window.Resources>
-
-    <Window.Style>
-        <StaticResource ResourceKey="BlurWindowStyle"/>
-    </Window.Style>
-
+ 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
@@ -266,6 +265,7 @@
                 <ffme:MediaElement x:Name="mediaElement" LoadedBehavior="Pause" Stretch="Uniform" LoopingBehavior="Play" Visibility="Visible" IsHitTestVisible="False" ScrubbingEnabled="False"/>
                 <Canvas x:Name="canvasCropVideo" Visibility="Hidden" Background="Transparent" SizeChanged="CanvasCropVideo_SizeChanged" MouseLeave="CanvasCropVideo_MouseLeave" MouseDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove" MouseUp="Canvas_MouseUp">
                     <Rectangle x:Name="rectangleCropVideo" StrokeThickness="3" Stroke="{StaticResource TextColorBlue}" Height="45" Width="80" Canvas.Left="10" Canvas.Top="10" />
+                    <Border x:Name="borderCropVideo" BorderThickness="3" BorderBrush="#D8000000" Canvas.Left="0" Canvas.Top="0" Width="{Binding ActualWidth, ElementName=canvasCropVideo}" Height="{Binding ActualHeight, ElementName=canvasCropVideo}"/>
                 </Canvas>
                 <Grid x:Name="gridSourceControls" VerticalAlignment="Bottom" Height="78" >
                     <Grid.RowDefinitions>
@@ -284,7 +284,7 @@
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>
-                    <local:PlayerSlider x:Name="rangeSliderCut" Margin="10,10,9,28" Minimum="0" ValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" Grid.Row="0" Grid.RowSpan="2"/>
+                    <local:PlayerSlider x:Name="playerSlider" Margin="10,10,9,28" Minimum="0" ValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" Grid.Row="0" Grid.RowSpan="2"/>
                     <Button x:Name="buttonPlayPause" Content=" ▶️" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonPlayPause_Click" Margin="10,6,0,0" FontSize="20" Grid.Row="1"/>
                     <Button x:Name="buttonMute" Content="🔊" HorizontalAlignment="Left" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource PlayPauseButton}" Click="ButtonMute_Click" Margin="46,6,0,0" FontSize="20" Grid.Row="1"/>
                     <TextBlock x:Name="textBlockPlayerPosition" Text="00:00:00 / 00:00:00"  HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Margin="85,8,0,0"/>
@@ -323,14 +323,17 @@
             </TabItem>
             <TabItem x:Name="tabItemCut" Header="Cut" >
                 <Grid>
-                    <local:MultiRangeControl x:Name="cutPreviewControl" Margin="8,8,92,0" Height="15" VerticalAlignment="Top" />
+                    <DockPanel Margin="0,0,0,144">
+                        <CheckBox x:Name="checkBoxFade" Content="Fade effect" DockPanel.Dock="Left" ToolTipService.ShowDuration="15000" ToolTip="Apply a fade effect when passing from one segment to the other" Margin="8,0,0,0"/>
+                        <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" DockPanel.Dock="Right" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Center" Width="72" />
+                        <local:MultiRangeControl x:Name="cutPreviewControl" Height="15" VerticalAlignment="Center" Margin="8,3,8,0" />
+                    </DockPanel>
                     <ScrollViewer x:Name="scrollViewerEncodeSegments" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top" Margin="5,37,7,0" Height="128">
                         <StackPanel>
                             <ItemsControl x:Name="cutInsideControlsList" />
                             <Button x:Name="buttonAddCutControl" Content="Add segment" Width="126" Height="30" Click="ButtonAddCutControl_Click" HorizontalAlignment="Center" IsEnabled="False" ToolTip="Add a segment to encode. If there are no segments, all the video will be encoded" Margin="0,2,0,0" />
                         </StackPanel>
                     </ScrollViewer>
-                    <TextBlock x:Name="textBlockOutputDuration" HorizontalAlignment="Left" Margin="738,6,0,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="72" />
                 </Grid>
             </TabItem>
             <TabItem x:Name="tabItemResize" Header="Resize">

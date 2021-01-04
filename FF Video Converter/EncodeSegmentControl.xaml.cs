@@ -57,7 +57,7 @@ namespace FFVideoConverter
                     textBoxStart.Text = value.ToFormattedString(true);
                     rangeSelector.LowerValue = value.TotalSeconds;
                     userInput = true;
-                    StartChanged?.Invoke();
+                    StartChanged?.Invoke(this);
                 }
             }
         }
@@ -76,15 +76,15 @@ namespace FFVideoConverter
                     textBoxEnd.Text = value.ToFormattedString(true);
                     rangeSelector.UpperValue = value.TotalSeconds;
                     userInput = true;
-                    EndChanged?.Invoke();
+                    EndChanged?.Invoke(this);
                 }
             }
         }
 
-        public delegate void RemovedEventHandler(EncodeSegmentControl sender);
-        public event RemovedEventHandler Removed;
-        public event Action StartChanged;
-        public event Action EndChanged;
+        public delegate void EncodeSegmentControlEventHandler(EncodeSegmentControl sender);
+        public event EncodeSegmentControlEventHandler Removed;
+        public event EncodeSegmentControlEventHandler StartChanged;
+        public event EncodeSegmentControlEventHandler EndChanged;
 
         private Task updateKeyFramesTask;
         private TimeSpan keyframeToCompute;
