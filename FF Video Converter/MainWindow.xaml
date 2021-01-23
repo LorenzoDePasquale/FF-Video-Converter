@@ -300,7 +300,7 @@
             <TextBlock HorizontalAlignment="Left" Text="Destination" VerticalAlignment="Top" Margin="10,4,0,0"/>
         </Grid>
 
-        <TabControl HorizontalAlignment="Left" Height="211" Margin="10,304,0,0" Grid.Row="1" VerticalAlignment="Top" Width="827" >
+        <TabControl HorizontalAlignment="Left" Height="211" Margin="10,304,0,0" Grid.Row="1" VerticalAlignment="Top" Width="827" SelectionChanged="TabControl_SelectionChanged">
             <TabItem Header="Encode">
                 <Grid x:Name="gridVideoSettings">
                     <TextBlock HorizontalAlignment="Left" Text="Encoder" Margin="12,11,0,0" Foreground="{StaticResource TextColorBlue}" FontSize="14" Height="19" VerticalAlignment="Top" />

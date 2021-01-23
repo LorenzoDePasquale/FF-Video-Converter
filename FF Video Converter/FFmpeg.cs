@@ -59,7 +59,7 @@ namespace FFVideoConverter
             progressData = new ProgressData();
             previousProgressData = new ProgressData();
 
-            //Capture the Synchronization Context of the caller, in order to invoke the events on its original thread
+            //Capture the Synchronization Context of the caller, in order to invoke the events in its original thread
             synchronizationContext = SynchronizationContext.Current;
 
             //Duration
@@ -100,7 +100,7 @@ namespace FFVideoConverter
                 }
                 else if (conversionOptions.EncodeSections.Count == 1)
                 {
-                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.ActualStart, conversionOptions.EncodeSections.ActualEnd, true, true)).ConfigureAwait(false);
+                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.ActualStart, conversionOptions.EncodeSections.ActualEnd, conversionOptions.FadeEffect, conversionOptions.FadeEffect)).ConfigureAwait(false);
                 }
                 else
                 {
@@ -391,11 +391,12 @@ namespace FFVideoConverter
         {
             try
             {
-                if (convertProcess != null && !convertProcess.HasExited)
+                if (convertProcess != null)
                 {
                     stopped = true;
-                    convertProcess.Kill(); 
+                    convertProcess.CancelOutputRead();
                     convertProcess.CancelErrorRead();
+                    convertProcess.Kill(); 
                 }
             }
             catch (Exception)

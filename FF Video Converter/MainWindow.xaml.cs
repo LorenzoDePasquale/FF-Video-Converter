@@ -23,7 +23,7 @@ namespace FFVideoConverter
             None, Body, UpperLeft, UpperRight, LowerRight, LowerLeft, Left, Right, Top, Bottom
         };
 
-        static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".m4v", ".avi", ".webm" };
+        static readonly string[] SUPPORTED_EXTENSIONS = { ".mkv", ".mp4", ".m4v", ".avi", ".webm", ".gif"};
         readonly FFmpegEngine ffmpegEngine;
         readonly QueueWindow queueWindow;
         readonly CompletedWindow completedWindow;
@@ -121,9 +121,10 @@ namespace FFVideoConverter
             queueWindow.QueueStarted += () =>
             {
                 //If there are no jobs running, start the next one
-                if ((runningJob == null || (runningJob.State != JobState.Running && runningJob.State == JobState.Paused)) && queuedJobs.Count > 0)
+                if ((runningJob == null || (runningJob.State != JobState.Running && runningJob.State != JobState.Paused)) && queuedJobs.Count > 0)
                 {
                     RunJob(queuedJobs[0]);
+                    queueWindow.RunningJob = queuedJobs[0];
                     queuedJobs.RemoveAt(0);
                 }
             };
@@ -197,15 +198,16 @@ namespace FFVideoConverter
             if (mediaInfo.IsLocal)
             {
                 string extension = Path.GetExtension(sourcePath);
-                textBoxDestination.Text = sourcePath.Remove(sourcePath.LastIndexOf('.')) + " converted" + extension;
                 if (extension == ".mkv")
                 {
                     comboBoxFormat.SelectedIndex = 1;
                 }
                 else
                 {
+                    extension = ".mp4";
                     comboBoxFormat.SelectedIndex = 0;
                 }
+                textBoxDestination.Text = sourcePath.Remove(sourcePath.LastIndexOf('.')) + " converted" + extension;
                 labelTitle.Content = Path.GetFileName(sourcePath);
             }
             else
@@ -707,6 +709,7 @@ namespace FFVideoConverter
             if (((Button)sender).Name == "buttonConvert" || (queueWindow.QueueActive && runningJob == null)) //If the queue is started but there are no conversion running, run this one directly instead of adding it to the queue
             {
                 RunJob(job);
+                queueWindow.RunningJob = job;
             }
             else
             {
@@ -761,7 +764,7 @@ namespace FFVideoConverter
                 {
                     conversionOptions.CropData = new CropData((short)integerTextBoxCropLeft.Value, (short)integerTextBoxCropTop.Value, (short)integerTextBoxCropRight.Value, (short)integerTextBoxCropBottom.Value);
                 }
-                else if (comboBoxResolution.SelectedIndex != 0)
+                if (comboBoxResolution.SelectedIndex != 0)
                 {
                     conversionOptions.Resolution = Resolution.FromString(comboBoxResolution.Text);
                 }
@@ -796,6 +799,7 @@ namespace FFVideoConverter
 
         private async void RunJob(Job job)
         {
+            job.State = JobState.Running;
             runningJob = job;
             ffmpegEngine.Convert(job.SourceInfo, job.Destination, job.ConversionOptions);
 
@@ -1053,20 +1057,24 @@ namespace FFVideoConverter
                 runningJob.ConversionResults.Add(new ConversioResult("Resolution", runningJob.SourceInfo.Resolution.ToString()));
                 runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", runningJob.SourceInfo.Resolution.AspectRatio.ToString()));
                 runningJob.ConversionResults.Add(new ConversioResult("Size", runningJob.SourceInfo.Size.ToBytesString()));
+                
                 completedJobs.Add(runningJob);
-
                 OnConversionEnded();
             }
         }
 
         private void OnConversionEnded()
         {
+            runningJob = null;
+            queueWindow.RunningJob = null;
+
             if (queueWindow.QueueActive)
             {
                 //Run next job, if present
                 if (queuedJobs.Count > 0)
                 {
                     RunJob(queuedJobs[0]);
+                    queueWindow.RunningJob = queuedJobs[0];
                     queuedJobs.RemoveAt(0);
                 }
                 else 
@@ -1701,11 +1709,33 @@ namespace FFVideoConverter
         #endregion
 
         //CURRENTLY NOT USED
-        private void ButtonUpdateCommanLine_Click(object sender, RoutedEventArgs e)
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //string arguments = ffmpegEngine.BuildArgumentsString(mediaInfo, textBoxDestination.Text, conversionOptions);
-            //arguments = System.Text.RegularExpressions.Regex.Replace(arguments, " -(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", "\n-");
-            //textBoxCommandLine.Text = arguments;
+            /*if (tabItemAdvanced.IsSelected && mediaInfo != null)
+            {
+                Encoder encoder = (Encoder)comboBoxEncoder.SelectedItem;
+                encoder.Preset = (Preset)comboBoxPreset.SelectedIndex;
+                if (radioButtonBitrate.IsChecked == true)
+                {
+                    int audioBitrate = 0;
+                    foreach (var audioTrack in mediaInfo.AudioTracks)
+                    {
+                        if (audioTrack.Enabled) audioBitrate += audioTrack.Bitrate;
+                    }
+                    long desiredSize = (long)(mediaInfo.Size * sliderTargetSize.Value / 100);
+                    int totalBitrate = (int)(desiredSize * 8 / mediaInfo.Duration.TotalSeconds);
+                    encoder.Bitrate = (totalBitrate - audioBitrate) / 1000;
+                }
+                else
+                {
+                    encoder.Quality = (Quality)comboBoxQuality.SelectedIndex;
+                }
+
+                ConversionOptions conversionOptions = GenerateConversionOptions(encoder);
+                string arguments = ffmpegEngine.BuildArgumentsString(mediaInfo, textBoxDestination.Text, conversionOptions);
+                arguments = System.Text.RegularExpressions.Regex.Replace(arguments, " -(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", "\n-");
+                textBoxCommandLine.Text = arguments;
+            }*/
         }
     }
 }

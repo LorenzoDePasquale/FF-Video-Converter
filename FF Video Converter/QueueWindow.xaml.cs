@@ -18,6 +18,15 @@ namespace FFVideoConverter
             get => buttonStartStopQueue.Content.ToString() == "Stop queue";
             set => buttonStartStopQueue.Content = value ? "Stop queue" : "Start queue";
         }
+        public Job RunningJob
+        {
+            get => (Job)listViewRunningJob.Items[0];
+            set
+            {
+                listViewRunningJob.Items.Clear();
+                if (value != null) listViewRunningJob.Items.Add(value);
+            }
+        }
         public QueueCompletedAction QueueCompletedAction { get => (QueueCompletedAction)comboBoxShutdown.SelectedIndex; }
         public event Action QueueStarted;
 
@@ -97,8 +106,9 @@ namespace FFVideoConverter
 
         private void ListViewJobs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            selectedJob = (Job)listViewQueuedJobs.SelectedItem;
-            if (listViewQueuedJobs.SelectedIndex == -1)
+            ListView listView = (ListView)sender;
+            selectedJob = (Job)listView.SelectedItem;
+            if (listView.SelectedIndex == -1)
             {
                 stackPanelContent.Visibility = Visibility.Hidden;
                 stackPanelLabel.Visibility = Visibility.Hidden;
@@ -199,6 +209,23 @@ namespace FFVideoConverter
                     textBlockStartLabel.Visibility = Visibility.Collapsed;
                     textBlockEnd.Visibility = Visibility.Collapsed;
                     textBlockEndLabel.Visibility = Visibility.Collapsed;
+                }
+
+                if (listView == listViewQueuedJobs)
+                {
+                    buttonEdit.IsEnabled = true;
+                    buttonRemove.IsEnabled = true;
+                    listViewRunningJob.SelectionChanged -= ListViewJobs_SelectionChanged;
+                    listViewRunningJob.SelectedIndex = -1;
+                    listViewRunningJob.SelectionChanged += ListViewJobs_SelectionChanged;
+                }
+                else
+                {
+                    buttonEdit.IsEnabled = false;
+                    buttonRemove.IsEnabled = false;
+                    listViewQueuedJobs.SelectionChanged -= ListViewJobs_SelectionChanged;
+                    listViewQueuedJobs.SelectedIndex = -1;
+                    listViewQueuedJobs.SelectionChanged += ListViewJobs_SelectionChanged;
                 }
             }
         }
@@ -303,7 +330,7 @@ namespace FFVideoConverter
             {
                 mousePosition = e.GetPosition(draggedOverItem);
                 dropAfter = mousePosition.Y > draggedOverItem.RenderSize.Height / 2;
-                Point draggedOverPosition = draggedOverItem.TransformToAncestor(listViewQueuedJobs).Transform(new Point(0, 0));
+                Point draggedOverPosition = draggedOverItem.TransformToAncestor(listViewQueuedJobs).Transform(new Point(0, listViewQueuedJobs.Margin.Top));
                 double verticalPosition = draggedOverPosition.Y - 5;
                 if (dropAfter) verticalPosition += draggedOverItem.RenderSize.Height;
                 insertionLine.Margin = new Thickness(0, verticalPosition, 0, 0);

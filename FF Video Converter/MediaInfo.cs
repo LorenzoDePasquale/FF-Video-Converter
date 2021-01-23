@@ -155,17 +155,21 @@ namespace FFVideoConverter
                             if (audioStreamElements[i].TryGetProperty("sample_rate", out e))
                                 sampleRate = Convert.ToInt32(e.GetString());
                             index = audioStreamElements[i].GetProperty("index").GetInt32();
-                            JsonElement e2 = audioStreamElements[i].GetProperty("tags");
-                            if (e2.TryGetProperty("language", out e))
-                                language = e.GetString();
-                            if (bitrate == 0)
+
+                            if (audioStreamElements[i].TryGetProperty("tags", out JsonElement e2))
                             {
-                                if (e2.TryGetProperty("BPS-eng", out e))
-                                    bitrate = Convert.ToInt32(e.GetString()); ;
+                                if (e2.TryGetProperty("language", out e))
+                                    language = e.GetString();
+                                if (bitrate == 0)
+                                {
+                                    if (e2.TryGetProperty("BPS-eng", out e))
+                                        bitrate = Convert.ToInt32(e.GetString()); ;
+                                }
+                                e2 = audioStreamElements[i].GetProperty("disposition");
+                                if (e2.TryGetProperty("default", out e))
+                                    defaultTrack = Convert.ToBoolean(e.GetByte());
                             }
-                            e2 = audioStreamElements[i].GetProperty("disposition");
-                            if (e2.TryGetProperty("default", out e))
-                                defaultTrack = Convert.ToBoolean(e.GetByte());
+                            
                             audioTracks[i] = new AudioTrack(codec, bitrate, sampleRate, totalSeconds, index, language, defaultTrack);
                             Bitrate -= bitrate / 1000;
                         }
