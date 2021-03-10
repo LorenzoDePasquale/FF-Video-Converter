@@ -20,9 +20,11 @@ Simple video converter with cutting and cropping functionality, powered by the f
 
 ## Current issues and limitations
 
-- Containers with multiple video streams are not supported (they will work but only the first video stream will be considered)
+- Containers with multiple video streams are not supported (they will be opened correctly but only the first video stream will be considered, the others will be discarded)
 - HDR movies are not supported (they can be opened, but hdr will be lost after conversion)
-- There's a bug with ffprobe where with some codecs (only vp9 confirmed for now, but could be more) it reports some i-frames as keyframes, although these frames can't be used as cut points. This means that when cutting on one of these fake keyframes the video will be cut at the previus real keyframe
+- [ffprobe bug] With some codecs (only vp9 confirmed for now, but could be more) ffprobe reports some i-frames as keyframes, although these frames can't be used as cut points. This means that when cutting on one of these fake keyframes the video will be cut at the previus real keyframe
+- [ffprobe bug] It's impossible to retreive the title of an audio stream inside a mp4 container (tag:title missing from ffprobe show_streams output)
+- [ffmpeg bug] ffmpeg matroska muxer doesn't write streams size and bitrate metadata in the output mkv container; this means that it's impossible to retreive these informations (by this program or any equivalent software) from .mkv files created by ffmpeg. [more info on this bug](https://trac.ffmpeg.org/ticket/7467)
 
 
 ## Compatibility
