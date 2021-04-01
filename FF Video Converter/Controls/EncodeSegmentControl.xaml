@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="FFVideoConverter.Controls.EncodeSegmentControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="clr-namespace:FFVideoConverter.Controls"
+             mc:Ignorable="d" d:DesignWidth="562.667" Height="32">
+
+
+    <DockPanel>
+        <TextBlock x:Name="textBlockStartBefore" HorizontalAlignment="Left" Margin="0,6,2,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="70" DockPanel.Dock="Left" TextAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="TextBlockStartBefore_MouseLeftButtonDown" ToolTip="Since no encoding is performed, the interval should start at one of the suggested keyframe,&#xA;otherwise it will be cut at the closest preceding keyframe" ToolTipService.ShowDuration="15000"/>
+        <Grid DockPanel.Dock="Left" Margin="0,2,0,0" VerticalAlignment="Top" >
+            <controls:TimeSpanTextBox x:Name="timeSpanTextBoxStart" ValueChanged="TextBoxStart_TextChanged" Width="96" />
+            <Button x:Name="buttonPlayerPosition_Start" Content="⚲" HorizontalAlignment="Left" Style="{StaticResource ClearButton}" Margin="73,1,0,1" Height="23" Width="22" FontSize="18" Click="ButtonPlayerPosition_Click" ToolTip="Copy the video player current position"/>
+        </Grid>
+        <TextBlock x:Name="textBlockStartAfter" HorizontalAlignment="Left" Margin="2,6,2,0" TextWrapping="Wrap" Text="00:00:00.00" VerticalAlignment="Top" Width="70" DockPanel.Dock="Left" TextAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="TextBlockStartAfter_MouseLeftButtonDown" ToolTip="Since no encoding is performed, the interval should start at one of the suggested keyframe,&#xA;otherwise it will be cut at the closest preceding keyframe" ToolTipService.ShowDuration="15000"/>
+        <Button x:Name="buttonRemove" DockPanel.Dock="Right" Margin="0,0,4,3" Content="X" Style="{DynamicResource RoundedButton}"  VerticalAlignment="Center" Width="24" Height="24" Click="ButtonRemove_Click" />
+        <Grid DockPanel.Dock="Right" VerticalAlignment="Top" Margin="6,2,6,0">
+            <controls:TimeSpanTextBox x:Name="timeSpanTextBoxEnd" Width="98" ValueChanged="TextBoxEnd_TextChanged"/>
+            <Button x:Name="buttonPlayerPosition_End" Content="⚲" HorizontalAlignment="Left" Style="{StaticResource ClearButton}" Margin="73,1,0,1" Height="23" Width="22" FontSize="18" Click="ButtonPlayerPosition_Click" ToolTip="Copy the video player current position"/>
+        </Grid>
+        <controls:RangeSelector x:Name="rangeSelector" LowerValueChanged="RangeSelector_LowerValueChanged" UpperValueChanged="RangeSelector_UpperValueChanged" Height="29" VerticalAlignment="Top" Margin="5,0,0,0"/>
+    </DockPanel>
+
+</UserControl>

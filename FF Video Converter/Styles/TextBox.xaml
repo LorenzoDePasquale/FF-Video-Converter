@@ -1,0 +1,38 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Background" Value="{StaticResource BackgroundColor}" />
+        <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SelectionBrush" Value="#FFB8B8B8" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TextBoxBase}">
+                    <Grid>
+                        <Grid.OpacityMask>
+                            <VisualBrush Visual="{Binding ElementName=Border1}" />
+                        </Grid.OpacityMask>
+                        <Border x:Name="Border1" CornerRadius="{StaticResource CornerRadius}" Background="{TemplateBinding Background}" />
+                        <Border Name="Border" CornerRadius="{StaticResource CornerRadius}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" ClipToBounds="True">
+                            <Border Padding="5" Background="Transparent" BorderBrush="Black" BorderThickness="0 3 2 1" Margin="-6">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Direction="240"/>
+                                </Border.Effect>
+                            </Border>
+                        </Border>
+                        <ScrollViewer Margin="4 0" x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource DisabledTextColor}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+</ResourceDictionary>

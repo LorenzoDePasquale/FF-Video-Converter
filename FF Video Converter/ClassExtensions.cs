@@ -4,6 +4,8 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media.Animation;
 
 
 namespace FFVideoConverter
@@ -18,13 +20,16 @@ namespace FFVideoConverter
         {
             IntPtr pOpenThread;
 
-            foreach (ProcessThread pT in process.Threads)
+            if (!process.HasExited)
             {
-                pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)pT.Id);
-                if (pOpenThread != IntPtr.Zero)
+                foreach (ProcessThread pT in process.Threads)
                 {
-                    SuspendThread(pOpenThread);
-                    CloseHandle(pOpenThread);
+                    pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)pT.Id);
+                    if (pOpenThread != IntPtr.Zero)
+                    {
+                        SuspendThread(pOpenThread);
+                        CloseHandle(pOpenThread);
+                    }
                 }
             }
         }
@@ -35,17 +40,20 @@ namespace FFVideoConverter
             IntPtr pOpenThread;
             int suspendCount;
 
-            foreach (ProcessThread pT in process.Threads)
+            if (!process.HasExited)
             {
-                pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)pT.Id);
-                if (pOpenThread != IntPtr.Zero)
+                foreach (ProcessThread pT in process.Threads)
                 {
-                    do
+                    pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)pT.Id);
+                    if (pOpenThread != IntPtr.Zero)
                     {
-                        suspendCount = ResumeThread(pOpenThread);
+                        do
+                        {
+                            suspendCount = ResumeThread(pOpenThread);
+                        }
+                        while (suspendCount > 0);
+                        CloseHandle(pOpenThread);
                     }
-                    while (suspendCount > 0);
-                    CloseHandle(pOpenThread);
                 }
             }
         }
@@ -156,7 +164,7 @@ namespace FFVideoConverter
                 return l.ToString("0 B"); // Byte
             }
             // Divide by 1024 to get fractional value
-            readable = (readable / 1024);
+            readable /= 1024;
             // Return formatted number with suffix
             return readable.ToString("0.## ") + suffix;
         }
@@ -205,12 +213,31 @@ namespace FFVideoConverter
 
         public static string ToFormattedString(this TimeSpan t, bool showMilliseconds = false)
         {
-            return showMilliseconds ? t.ToString(@"hh\:mm\:ss\.ff") : t.ToString(@"hh\:mm\:ss");
+            //return showMilliseconds ? t.ToString(@"hh\:mm\:ss\.ff") : t.ToString(@"hh\:mm\:ss");
+
+            if (showMilliseconds)
+                return t.ToString(@"hh\:mm\:ss\.ff");
+
+            double seconds = t.Seconds + (double)t.Milliseconds / 1000;
+            seconds = Math.Round(seconds, 0);
+            return $"{t.Hours:00}:{t.Minutes:00}:{seconds:00}";
         }
 
         public static (string, string) ToCouple(this string[] array)
         {
             return (array[0], array[1]);
+        }
+
+        public static void PlayStoryboard(this FrameworkElement fe, string storyboardName)
+        {
+            Storyboard storyboard = fe.FindResource(storyboardName) as Storyboard;
+            storyboard.Begin();
+        }
+
+        public static void StopStoryboard(this FrameworkElement fe, string storyboardName)
+        {
+            Storyboard storyboard = fe.FindResource(storyboardName) as Storyboard;
+            storyboard.Stop();
         }
     }
 }

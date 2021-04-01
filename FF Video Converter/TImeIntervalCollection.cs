@@ -122,6 +122,8 @@ namespace FFVideoConverter
         {
             get
             {
+                if (intervalList.Count == 0) return ActualEnd - ActualStart;
+
                 TimeSpan totalDuration = TimeSpan.Zero;
                 foreach (var item in intervalList)
                 {
@@ -276,7 +278,7 @@ namespace FFVideoConverter
                     complementary.Add(intervalList[i - 1].End, intervalList[i].Start);
                 }
                 if (intervalList[Count - 1].End != End)
-                    complementary.Add(intervalList[intervalList.Count - 1].End, End);
+                    complementary.Add(intervalList[^1].End, End);
 
             }
 

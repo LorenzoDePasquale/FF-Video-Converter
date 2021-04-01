@@ -1,0 +1,16 @@
+﻿<UserControl x:Class="FFVideoConverter.Controls.LabelledTextBlock"
+             x:Name="userControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:System="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d" 
+             d:DesignHeight="19.24" d:DesignWidth="184.586">
+
+    <StackPanel Orientation="Horizontal" >
+        <TextBlock Text="{Binding Label,ElementName=userControl, StringFormat={}{0}:, TargetNullValue={x:Static System:String.Empty}}" Foreground="{StaticResource TextColorBlue}" FontWeight="DemiBold"/>
+        <TextBlock Text="{Binding Text, ElementName=userControl}" Margin="7,0,0,0" />
+    </StackPanel>
+    
+</UserControl>

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,9 +12,9 @@ namespace FFVideoConverter
 {
     public class FFmpegEngine
     {
-        public delegate void ConversionEventHandler(ProgressData progressData);
-        public event ConversionEventHandler ProgressChanged;
-        public event ConversionEventHandler ConversionCompleted;
+        public event Action<ProgressData> ProgressChanged;
+        public event Action ConversionCompleted;
+        public event Action<string> ConversionAborted;
 
         public long PrivateWorkingSet
         {
@@ -31,17 +31,18 @@ namespace FFVideoConverter
             }
         }
 
-        private readonly Process convertProcess = new Process();
-        private readonly PerformanceCounter memoryCounter = new PerformanceCounter();
-        private ProgressData progressData, previousProgressData;
-        private int i = 0;
-        private bool stopped = false, partialProgress = false;
-        private SynchronizationContext synchronizationContext;
-        private string errorLine;
+        Process convertProcess = new Process();
+        PerformanceCounter memoryCounter = new PerformanceCounter();
+        ProgressData progressData, previousProgressData;
+        int i = 0;
+        bool stopped = false, partialProgress = false;
+        SynchronizationContext synchronizationContext;
+        string errorLine;
+
 
         public FFmpegEngine()
         {
-            convertProcess.StartInfo.FileName = "ffmpeg";
+            convertProcess.StartInfo.FileName = "ffmpeg.exe";
             convertProcess.StartInfo.RedirectStandardOutput = true;
             convertProcess.StartInfo.RedirectStandardError = true;
             convertProcess.StartInfo.UseShellExecute = false;
@@ -54,10 +55,11 @@ namespace FFVideoConverter
             memoryCounter.InstanceName = "ffmpeg";
         }
 
-        public async void Convert(MediaInfo sourceInfo, string outputPath, ConversionOptions conversionOptions)
+        public void Convert(MediaInfo sourceInfo, string outputPath, ConversionOptions conversionOptions)
         {
             progressData = new ProgressData();
             previousProgressData = new ProgressData();
+            errorLine = "";
 
             //Capture the Synchronization Context of the caller, in order to invoke the events in its original thread
             synchronizationContext = SynchronizationContext.Current;
@@ -72,74 +74,56 @@ namespace FFVideoConverter
                 progressData.TotalTime = sourceInfo.Duration;
             }
 
-            progressData.EncodingMode = conversionOptions.EncodingMode;
-            partialProgress = false;
+            //Gets the total number of output frames
+            Filters.FpsFilter fpsFilter = conversionOptions.Filters.FirstOrDefault(f => f is Filters.FpsFilter) as Filters.FpsFilter;
+            double outputFps = fpsFilter?.Framerate ?? sourceInfo.Framerate;
+            progressData.TotalFrames = System.Convert.ToInt32(progressData.TotalTime.TotalSeconds * outputFps);
 
-            //2-pass mode
-            if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
+            //Get the total output file size (if using constant bitrate)
+            if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_SinglePass)
             {
-                await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions), false).ConfigureAwait(false);
-                if (!stopped)
+                progressData.TotalByteSize = conversionOptions.Encoder.Bitrate.Bps / 8 * System.Convert.ToInt64(progressData.TotalTime.TotalSeconds);
+                foreach (var audioTrack in sourceInfo.AudioTracks)
                 {
-                    progressData.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
-                    conversionOptions.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
-                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions)).ConfigureAwait(false);
-                }
-                //Remove 2pass log files
-                foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
-                {
-                    File.Delete(file);
+                    if (conversionOptions.AudioConversionOptions.ContainsKey(audioTrack.StreamIndex))
+                    {
+                        progressData.TotalByteSize += conversionOptions.AudioConversionOptions[audioTrack.StreamIndex].Encoder.Bitrate.Bps / 8 * System.Convert.ToInt64(progressData.TotalTime.TotalSeconds);
+                    }
+                    else
+                    {
+                        progressData.TotalByteSize += audioTrack.Bitrate.Bps / 8 * System.Convert.ToInt64(progressData.TotalTime.TotalSeconds);
+                    }
                 }
             }
-            //Single pass mode
+
+            partialProgress = false;
+            progressData.EncodingMode = conversionOptions.EncodingMode;
+            stopped = false;
+
+            //Starts the conversion task
+            Task<bool> conversionTask;
+            if (conversionOptions.EncodeSections.Count == 0)
+            {
+                conversionTask = Convert_SingleSegment(sourceInfo, outputPath, conversionOptions, TimeSpan.Zero, TimeSpan.Zero);
+            }
+            else if (conversionOptions.EncodeSections.Count == 1)
+            {
+                conversionTask = Convert_SingleSegment(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.ActualStart, conversionOptions.EncodeSections.ActualEnd);
+            }
             else
             {
-                if (conversionOptions.EncodeSections.Count == 0)
-                {
-                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions)).ConfigureAwait(false);
-                }
-                else if (conversionOptions.EncodeSections.Count == 1)
-                {
-                    await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections.ActualStart, conversionOptions.EncodeSections.ActualEnd, conversionOptions.FadeEffect, conversionOptions.FadeEffect)).ConfigureAwait(false);
-                }
-                else
-                {
-                    partialProgress = true;
-                    string outputDirectory = Path.GetDirectoryName(outputPath);
-                    string outputFileName = Path.GetFileNameWithoutExtension(outputPath);
-                    for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
-                    {
-                        bool fadeStart = conversionOptions.FadeEffect && i != 0;
-                        bool fadeEnd = conversionOptions.FadeEffect && i < conversionOptions.EncodeSections.Count - 1;
-                        string destination = $"{outputDirectory}\\{outputFileName}_part_{i}.mp4";
-                        string arguments = BuildArgumentsString(sourceInfo, destination, conversionOptions, conversionOptions.EncodeSections[i].Start, conversionOptions.EncodeSections[i].End, fadeStart, fadeEnd);
-                        await RunConversionProcess(arguments, false).ConfigureAwait(false);
-                        if (stopped) break;
-                        previousProgressData = progressData;
-                        File.AppendAllText("concat.txt", $"file '{destination}'\n");
-                    }
-                    if (!stopped) await RunConversionProcess($"-y -f concat -safe 0 -i concat.txt -c copy \"{outputPath}\"", false).ConfigureAwait(false);
-                    File.Delete("concat.txt");
-                    for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
-                    {
-                        File.Delete($"{outputDirectory}\\{outputFileName}_part_{i}.mp4");
-                    }
-                    if (!stopped)
-                    {
-                        synchronizationContext.Post(new SendOrPostCallback((o) =>
-                        {
-                            ConversionCompleted?.Invoke(progressData);
-                        }), null);
-                    }
-                }
+                conversionTask = Convert_MultipleSegments(sourceInfo, outputPath, conversionOptions);
             }
+
+            //Reports the conversion result to the original caller
+            conversionTask.ContinueWith(result => ReportCompletition(result.Result));
         }
 
         public void ExtractAudioTrack(MediaInfo sourceInfo, int streamIndex, string destination, TimeSpan start, TimeSpan end)
         {
-            progressData = new ProgressData() { EncodingMode = EncodingMode.NoEncoding };
+            progressData = new ProgressData() { EncodingMode = EncodingMode.Copy };
 
-            //Captures the Synchronization Context of the caller, in order to invoke the events on its original thread
+            //Captures the Synchronization Context of the caller, in order to invoke the events in its original thread
             synchronizationContext = SynchronizationContext.Current;
 
             //Duration
@@ -153,26 +137,157 @@ namespace FFVideoConverter
             }
 
             //FFMpeg command string
-            StringBuilder sb = new StringBuilder("-y");
+            StringBuilder sb = new StringBuilder("-y -progress -");
             sb.Append($" -ss {start}");
             sb.Append($" -i \"{(sourceInfo.HasExternalAudio ? sourceInfo.ExternalAudioSource : sourceInfo.Source)}\"");
             if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
             sb.Append($" -map 0:{streamIndex}");
             sb.Append(" -vn -c:a copy");
-            sb.Append($" \"{destination}\" -hide_banner");
+            sb.Append($" \"{destination}\" -loglevel error -stats");
 
-            _ = RunConversionProcess(sb.ToString());
+            Task.Run(() => RunConversionProcess(sb.ToString())).ContinueWith(success => ReportCompletition(success.Result));
         }
 
-        public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions)
+        public void PauseConversion()
         {
-            return BuildArgumentsString(sourceInfo, destination, conversionOptions, TimeSpan.Zero, TimeSpan.Zero);
+            convertProcess.Suspend();
         }
 
-        public string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions, TimeSpan start, TimeSpan end, bool fadeStart = false, bool fadeEnd = false)
+        public void ResumeConversion()
+        {
+            convertProcess.Resume();
+        }
+
+        public async Task CancelConversion()
+        {
+            try
+            {
+                if (convertProcess != null)
+                {
+                    stopped = true;
+                    convertProcess.CancelOutputRead();
+                    convertProcess.CancelErrorRead();
+
+                    AttachConsole((uint)convertProcess.Id);
+                    SetConsoleCtrlHandler(null, true);
+                    try
+                    {
+                        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+                        await Task.Run(convertProcess.WaitForExit).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        SetConsoleCtrlHandler(null, false);
+                        FreeConsole();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        public void StopConversion()
+        {
+            try
+            {
+                if (convertProcess != null)
+                {
+                    stopped = true;
+                    convertProcess.CancelOutputRead();
+                    convertProcess.CancelErrorRead();
+                    convertProcess.Kill();
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private async Task<bool> Convert_SingleSegment(MediaInfo sourceInfo, string outputPath, ConversionOptions conversionOptions, TimeSpan start, TimeSpan end)
+        {
+            bool success = false;
+            if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
+            {
+                success = await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, start, end)).ConfigureAwait(false);
+                if (!stopped && success)
+                {
+                    progressData.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
+                    conversionOptions.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
+                }
+                else return success;
+            }
+
+            success = await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, start, end)).ConfigureAwait(false);
+
+            //Removes 2pass log files, if they exist
+            foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
+            {
+                File.Delete(file);
+            }
+
+            return success;
+        }
+
+        private async Task<bool> Convert_MultipleSegments(MediaInfo sourceInfo, string outputPath, ConversionOptions conversionOptions)
+        {
+            bool success = false;
+            partialProgress = true;
+            string outputDirectory = Path.GetDirectoryName(outputPath);
+            string outputFileName = Path.GetFileNameWithoutExtension(outputPath);
+
+            if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
+            {
+                for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
+                {
+                    string arguments = BuildArgumentsString(sourceInfo, outputPath, conversionOptions, conversionOptions.EncodeSections[i].Start, conversionOptions.EncodeSections[i].End, "segment" + i.ToString());
+                    success = await RunConversionProcess(arguments).ConfigureAwait(false);
+                    if (stopped || !success) return success;
+                }
+
+                progressData.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
+                conversionOptions.EncodingMode = EncodingMode.AverageBitrate_SecondPass;
+                previousProgressData.CurrentTime = TimeSpan.Zero;
+                previousProgressData.CurrentFrames = 0;
+            }
+
+            for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
+            {
+                bool fadeStart = conversionOptions.FadeEffect && i != 0;
+                bool fadeEnd = conversionOptions.FadeEffect && i < conversionOptions.EncodeSections.Count - 1;
+                string destination = $"{outputDirectory}\\{outputFileName}_part_{i}.mp4";
+                string arguments = BuildArgumentsString(sourceInfo, destination, conversionOptions, conversionOptions.EncodeSections[i].Start, conversionOptions.EncodeSections[i].End, "segment" + i.ToString(), fadeStart, fadeEnd);
+                success = await RunConversionProcess(arguments).ConfigureAwait(false);
+                if (stopped || !success) break;
+                File.AppendAllText("concat.txt", $"file '{destination}'\n");
+            }
+
+            //Joins all segments toghether
+            if (!stopped && success)
+            {
+                success = await RunConversionProcess($"-y -f concat -safe 0 -i concat.txt -c copy \"{outputPath}\"").ConfigureAwait(false);
+                File.Delete("concat.txt");
+            }
+
+            //Removes segments
+            for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
+            {
+                string partName = $"{outputDirectory}\\{outputFileName}_part_{i}.mp4";
+                if (File.Exists(partName)) File.Delete(partName);
+            }
+
+            //Removes 2pass log files, if they exist
+            foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
+            {
+                File.Delete(file);
+            }
+
+            return success;
+        }
+
+        private string BuildArgumentsString(MediaInfo sourceInfo, string destination, ConversionOptions conversionOptions, TimeSpan start, TimeSpan end, string twopasslogfile = "", bool fadeStart = false, bool fadeEnd = false)
         {
             StringBuilder sb = new StringBuilder("-y -progress -");
-            bool changeVolume = false;
 
             //Start time
             if (start != TimeSpan.Zero) sb.Append($" -ss {start}");
@@ -180,93 +295,145 @@ namespace FFVideoConverter
             //Input path
             sb.Append($" -i \"{sourceInfo.Source}\"");
 
+            //Duration
+            if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
+
             //External audio source
-            if (sourceInfo.HasExternalAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
+            if (sourceInfo.HasExternalAudio && !conversionOptions.NoAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
                 if (start != TimeSpan.Zero) sb.Append($" -ss {start}");
                 sb.Append($" -i \"{sourceInfo.ExternalAudioSource}\"");
+                if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
             }
-
-            //Duration
-            if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
 
             //Main video track
             sb.Append($" -map 0:v:0");
 
             //Add or skip audio tracks
-            if (!conversionOptions.SkipAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
+            var audioTracks = sourceInfo.AudioTracks.Where(at => at.Enabled == true).ToList();
+            if (!conversionOptions.NoAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
-                foreach (var audioTrack in sourceInfo.AudioTracks)
+                foreach (var audioTrack in audioTracks)
                 {
-                    if (audioTrack.Enabled)
+                    sb.Append($" -map {(sourceInfo.HasExternalAudio ? "1" : $"0:{audioTrack.StreamIndex}")}");
+                    sb.Append($" -disposition:{(sourceInfo.HasExternalAudio ? "1" : audioTrack.StreamIndex)} {(audioTrack.Default ? "default" : "none")}");
+                    if (conversionOptions.AudioConversionOptions.ContainsKey(audioTrack.StreamIndex))
                     {
-                        sb.Append($" -map {(sourceInfo.HasExternalAudio ? "1" : "0")}:{audioTrack.StreamIndex}");
-                        sb.Append($" -disposition:{audioTrack.StreamIndex} {(audioTrack.Default ? "default" : "none")}");
+                        sb.Append($" -metadata:s:{(sourceInfo.HasExternalAudio ? "1" : audioTrack.StreamIndex)} title=\"{conversionOptions.AudioConversionOptions[audioTrack.StreamIndex].Title}\"");
+                        sb.Append($" -metadata:s:{(sourceInfo.HasExternalAudio ? "1" : audioTrack.StreamIndex)} handler_name=\"{conversionOptions.AudioConversionOptions[audioTrack.StreamIndex].Title}\"");
                     }
-                    if (audioTrack.Volume != 100) changeVolume = true;
                 }
             }
 
             //Subtitles
-            sb.Append(" -map 0:s?");
+            if (conversionOptions.EncodingMode != EncodingMode.NoEncoding)
+            {
+                sb.Append(" -map 0:s?");
+            }
 
-            //Encoder command line
-            sb.Append(" -movflags faststart -c:v " + conversionOptions.Encoder.GetFFMpegCommand(conversionOptions.EncodingMode));
-
-            //Framerate and filters
+            //Filters
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
-                if (conversionOptions.Framerate > 0) sb.Append(" -r " + conversionOptions.Framerate);
+                Filtergraph filtergraph = new Filtergraph();
 
                 //Video filters
-                if (conversionOptions.Resolution.HasValue() || conversionOptions.CropData.HasValue() || conversionOptions.Rotation.HasValue() || fadeStart || fadeEnd)
+                if (conversionOptions.Filters.Count > 0)
                 {
-                    string fadeStartFilter = fadeStart ? "fade=t=in:d=0.5" : "";
-                    string fadeEndFilter = fadeEnd ? $"fade=t=out:d=0.5:st={(end.TotalSeconds - start.TotalSeconds - 0.5).ToString(CultureInfo.InvariantCulture)}" : "";
-                    sb.Append(" -vf " + ConcatFilters(conversionOptions.Resolution.FilterString, conversionOptions.CropData.FilterString, conversionOptions.Rotation.FilterString, fadeStartFilter, fadeEndFilter));
+                    filtergraph.AddFilters(conversionOptions.Filters, 0, 0);
                 }
-                //Audio filters
-                if (changeVolume)
+                if (fadeStart)
                 {
-                    var volumeFilters = sourceInfo.AudioTracks.Where(x => x.Volume != 100).Select(x => "volume=" + (x.Volume / 100).ToString("0.##", CultureInfo.InvariantCulture));
-                    sb.Append(" -af " + ConcatFilters(volumeFilters.ToArray()));
+                    filtergraph.AddFilter(new Filters.FadeFilter(Filters.FadeMode.In, 0.2), 0, 0);
+                }
+                if (fadeEnd)
+                {
+                    TimeSpan actualEnd = end != TimeSpan.Zero ? end : sourceInfo.Duration;
+                    filtergraph.AddFilter(new Filters.FadeFilter(Filters.FadeMode.Out, 0.2, actualEnd.TotalSeconds - start.TotalSeconds - 0.2), 0, 0); 
+                }
+
+                //Audio filters
+                /* Currently disabled as it requires dedicated mapping which is not supported
+                foreach (var item in conversionOptions.AudioConversionOptions)
+                {
+                    if (item.Value.Filters.Count > 0)
+                    {
+                        filtergraph.AddFilters(item.Value.Filters, sourceInfo.HasExternalAudio ? 1 : 0, item.Key);
+                    }
+                }*/
+
+                if (filtergraph.Count > 0)
+                {
+                    sb.Append($" -filter_complex \"{filtergraph.GenerateFiltergraph()}\"");
                 }
             }
 
-            //Audio encoder
-            if (conversionOptions.SkipAudio || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
+            //Video encoder
+            if (conversionOptions.EncodingMode != EncodingMode.NoEncoding)
+            {
+                sb.Append("  -c:v " + conversionOptions.Encoder.GetFFMpegCommand(conversionOptions.EncodingMode));
+                if ((conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_SecondPass) && twopasslogfile != "")
+                {
+                    sb.Append(" -passlogfile " + twopasslogfile);
+                }
+                //When cutting without encoding, "-avoid_negative_ts make_zero" allows to cut at the nearest keyframe before the start position
+                //Without this flag audio would be cut at the start position, but video would start playing only after the next keyframe 
+                sb.Append(" -avoid_negative_ts make_zero");
+            }
+
+            //Audio encoders
+            if (conversionOptions.NoAudio || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
             {
                 sb.Append(" -an");
             }
-            else if (changeVolume)
-            {
-                sb.Append($" -c:a aac -b:a 192k");
-            }
             else
             {
-                sb.Append(" -c:a copy");
+                foreach (var audioTrack in audioTracks)
+                {
+                    if (conversionOptions.AudioConversionOptions.ContainsKey(audioTrack.StreamIndex))
+                    {
+                        AudioConversionOptions audioConversionOptions = conversionOptions.AudioConversionOptions[audioTrack.StreamIndex];
+                        sb.Append($" -c:{(sourceInfo.HasExternalAudio ? "1" : audioTrack.StreamIndex)} {audioConversionOptions.Encoder.GetFFMpegCommand(sourceInfo.HasExternalAudio ? 1 : audioTrack.StreamIndex)}");
+                        sb.Append($" -ac:{(sourceInfo.HasExternalAudio ? "1" : audioTrack.StreamIndex)} {audioConversionOptions.Channels}");
+                    }
+                    else
+                    {
+                        sb.Append($" -c:{(sourceInfo.HasExternalAudio ? "1" : audioTrack.StreamIndex)} copy");
+                    }
+                }
             }
 
-            //When cutting without encoding, this flag allows to cut at the nearest keyframe before the start position; without this flag audio would be cut at the start position, but video would start playing only after the next keyframe 
-            if (conversionOptions.Encoder is NativeEncoder)
+            //MP4 specific stuff
+            if (Path.GetExtension(destination) == "mp4")
             {
-                sb.Append($" -avoid_negative_ts make_zero");
+                //Subtitle encoder (necessary to convert mkv subtitles to mp4 format)
+                sb.Append(" -c:s mov_text");
+                //Moves moov atom to the beginning of the file; ignored by the mkv muxer (does it do the same thing automatically? No answer on the web...)
+                sb.Append(" -movflags +faststart");
             }
+
 
             //Output path
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
-                sb.Append($" \"{destination}\" -hide_banner");
+                //max_muxing_queue_size is necessary to allow ffmpeg to allocate more memory to muxing, so that it's enough for very big streams
+                sb.Append($" -max_muxing_queue_size 2048 \"{destination}\" -loglevel error -stats");
             }
             else
             {
-                sb.Append($" -f null NUL -hide_banner");
+                sb.Append($" -f null NUL -loglevel error -stats");
             }
+
+#if DEBUG
+            Thread thread = new Thread(() => System.Windows.Clipboard.SetText(sb.ToString()));
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+#endif
 
             return sb.ToString();
         }
 
-        private async Task RunConversionProcess(string arguments, bool reportCompletition = true)
+        private async Task<bool> RunConversionProcess(string arguments)
         {
             convertProcess.StartInfo.Arguments = arguments;
             convertProcess.Start();
@@ -276,47 +443,28 @@ namespace FFVideoConverter
             stopped = false;
             i = 0;
 
-            await Task.Run(() =>
-            {
-                convertProcess.WaitForExit();
-            }).ConfigureAwait(false);
+            await Task.Run(convertProcess.WaitForExit).ConfigureAwait(false);
             convertProcess.CancelOutputRead();
             convertProcess.CancelErrorRead();
+            previousProgressData = progressData;
 
-            int exitCode = convertProcess.ExitCode; //0: success; -1: killed; 1: crashed
-            synchronizationContext.Post(new SendOrPostCallback((o) =>
-            {
-                if (exitCode != -1 && exitCode != 1) //Sometimes ffmpegs exits with weird numbers even if there were no errors
-                {
-                    if (reportCompletition)
-                        ConversionCompleted?.Invoke(progressData);
-                }
-                else if (!stopped)
-                {
-                    progressData.ErrorMessage = errorLine;
-                    ConversionCompleted?.Invoke(progressData);
-                }
-            }), null);
+            int exitCode = convertProcess.ExitCode; //-1: killed; 1: crashed; everything else: success
+            if (exitCode == -1) stopped = true;
+            return exitCode != 1; 
         }
 
-        private string ConcatFilters(params string[] filters)
+        private void ReportCompletition(bool success)
         {
-            if (filters.Length == 0) return "";
-
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append('"');
-            foreach (var filter in filters)
+            if (!stopped)
             {
-                if (filter.Length != 0)
+                synchronizationContext.Post(new SendOrPostCallback((o) =>
                 {
-                    sb.Append(filter);
-                    sb.Append(',');
-                }    
+                    if (!success)
+                        ConversionAborted?.Invoke(errorLine);
+                    else
+                        ConversionCompleted?.Invoke();
+                }), null);
             }
-            sb.Remove(sb.Length - 1, 1);
-            sb.Append('"');
-            return sb.ToString();
         }
 
         private void ConvertProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
@@ -337,26 +485,38 @@ namespace FFVideoConverter
                     */
                     switch (key)
                     {
+                        case "frame":
+                            progressData.CurrentFrames = System.Convert.ToInt32(value);
+                            if (partialProgress) 
+                                progressData.CurrentFrames += previousProgressData.CurrentFrames;
+                            progressData.Percentage = progressData.TotalFrames != 0 ? progressData.CurrentFrames * 100 / progressData.TotalFrames : (float)(progressData.CurrentTime.TotalSeconds * 100 / progressData.TotalTime.TotalSeconds);
+                            if (progressData.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
+                                progressData.Percentage /= 2;
+                            else if (progressData.EncodingMode == EncodingMode.AverageBitrate_SecondPass)
+                                progressData.Percentage = progressData.Percentage / 2 + 50;
+                            break;
                         case "fps":
-                            progressData.EncodingSpeedFps = System.Convert.ToInt16(System.Convert.ToSingle(value, CultureInfo.InvariantCulture));
+                            progressData.EncodingSpeedFps = System.Convert.ToInt16(System.Convert.ToSingle(value));
                             break;
                         case "bitrate":
-                            float currentBitrate = System.Convert.ToSingle(value.Replace("kbits/s", ""), CultureInfo.InvariantCulture);
-                            if (progressData.CurrentTime.Seconds > 5) //Skips first 5 seconds to give the encoder time to adjust it's bitrate
+                            Bitrate currentBitrate = new Bitrate(System.Convert.ToSingle(value.Replace("kbits/s", "")));
+                            if (progressData.Percentage > 5) //Skips first seconds to give the encoder time to adjust it's bitrate
                             {
-                                progressData.AverageBitrate += (currentBitrate - progressData.AverageBitrate) / ++i;
+                                progressData.AverageBitrate = new Bitrate(progressData.AverageBitrate.Kbps + ((currentBitrate.Kbps - progressData.AverageBitrate.Kbps) / ++i));
                             }
                             break;
                         case "total_size":
                             progressData.CurrentByteSize = System.Convert.ToInt64(value);
-                            if (partialProgress) progressData.CurrentByteSize += previousProgressData.CurrentByteSize;
+                            if (partialProgress) 
+                                progressData.CurrentByteSize += previousProgressData.CurrentByteSize;
                             break;
                         case "out_time":
                             progressData.CurrentTime = TimeSpan.Parse(value);
-                            if (partialProgress) progressData.CurrentTime += previousProgressData.CurrentTime;
+                            if (partialProgress) 
+                                progressData.CurrentTime += previousProgressData.CurrentTime;
                             break;
                         case "speed":
-                            progressData.EncodingSpeed = System.Convert.ToSingle(value.Substring(0, value.Length - 1), CultureInfo.InvariantCulture);
+                            progressData.EncodingSpeed = System.Convert.ToSingle(value[0..^1]);
                             break;
                         case "progress":
                             synchronizationContext.Post(new SendOrPostCallback((o) =>
@@ -373,35 +533,24 @@ namespace FFVideoConverter
         {
             if (e.Data != null)
             {
-                errorLine = e.Data;
+                errorLine += e.Data + "\n";
             }
         }
 
-        public void PauseConversion()
-        {
-            convertProcess.Suspend();
-        }
 
-        public void ResumeConversion()
-        {
-            convertProcess.Resume();
-        }
+        #region Native methods
 
-        public void StopConversion()
-        {
-            try
-            {
-                if (convertProcess != null)
-                {
-                    stopped = true;
-                    convertProcess.CancelOutputRead();
-                    convertProcess.CancelErrorRead();
-                    convertProcess.Kill(); 
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
+        internal const int CTRL_C_EVENT = 0;
+        [DllImport("kernel32.dll")]
+        internal static extern bool GenerateConsoleCtrlEvent(uint dwCtrlEvent, uint dwProcessGroupId);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool AttachConsole(uint dwProcessId);
+        [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+        internal static extern bool FreeConsole();
+        [DllImport("kernel32.dll")]
+        static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
+        delegate Boolean ConsoleCtrlDelegate(uint CtrlType);
+
+        #endregion
     }
 }

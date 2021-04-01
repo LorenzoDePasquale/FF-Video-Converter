@@ -1,0 +1,55 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:FFVideoConverter"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+
+    <SolidColorBrush x:Key="TextColor">#FFD8D8D8</SolidColorBrush>
+    <SolidColorBrush x:Key="TextColorBlue">#FF1D6BF3</SolidColorBrush>
+    <SolidColorBrush x:Key="BackgroundColor">#FF252525</SolidColorBrush>
+    <LinearGradientBrush x:Key="ButtonBackgroundColor" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FF1859CB" Offset="1"/>
+        <GradientStop Color="#FF367BF3"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="MouseOverColor" EndPoint="0.5,1" StartPoint="0.5,0">
+        <GradientStop Color="#FF1570DC" Offset="1"/>
+        <GradientStop Color="#FF57A3FF"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PressedColor" StartPoint="0.5, 0" EndPoint="0.5, 1">
+        <GradientStop Color="#2F2F2F" Offset="0"/>
+        <GradientStop Color="#2F2F2F" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="DisabledColor" StartPoint="0.5, 0" EndPoint="0.5, 1">
+        <GradientStop Color="#FF3E3E3E" Offset="1"/>
+        <GradientStop Color="#FF686868"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="DisabledTextColor">#FF818181</SolidColorBrush>
+    <SolidColorBrush x:Key="SliderBackgroundBrush" Color="#55ffffff" />
+    <SolidColorBrush x:Key="SliderForegroundBrush" Color="#FF2669DE"/>
+    <SolidColorBrush x:Key="BorderColor">#FF292929</SolidColorBrush>
+    <system:Double x:Key="FontSize">13</system:Double>
+    <FontWeight x:Key="FontWeight">Normal</FontWeight>
+    <CornerRadius x:Key="CornerRadius">5</CornerRadius>
+    <LinearGradientBrush x:Key="ShadedBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStopCollection>
+            <GradientStop Offset="0.0" Color="#00000000" />
+            <GradientStop Offset="0.1" Color="#44000000" />
+            <GradientStop Offset="0.2" Color="#66000000" />
+            <GradientStop Offset="0.4" Color="#D6000000" />
+            <GradientStop Offset="0.4" Color="#D6000000" />
+        </GradientStopCollection>
+    </LinearGradientBrush>
+
+
+    <Style x:Key="BlurWindowStyle" TargetType="{x:Type Window}">
+        <Setter Property="WindowChrome.WindowChrome">
+            <Setter.Value>
+                <WindowChrome CaptionHeight="0" GlassFrameThickness="0,0,0,1" ResizeBorderThickness="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ResizeMode" Value="NoResize" />
+        <Setter Property="Background" Value="#ED343434" />
+        <Setter Property="local:WindowBlur.IsEnabled" Value="True" />
+    </Style>
+
+</ResourceDictionary>
