@@ -1,4 +1,4 @@
-﻿namespace FFVideoConverter
+﻿namespace FFVideoConverter.Encoders
 {
     public abstract class AudioEncoder
     {

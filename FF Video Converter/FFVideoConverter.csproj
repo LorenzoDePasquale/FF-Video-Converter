@@ -26,17 +26,19 @@
     </StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Windows\ColorTriangle.png" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="FFME.Windows">
       <Version>4.3.340</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Management" Version="5.0.0" />
-    <PackageReference Include="System.Text.Json">
-      <Version>5.0.1</Version>
-    </PackageReference>
     <PackageReference Include="YoutubeExplode">
-      <Version>5.1.9</Version>
+      <Version>6.0.0</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Controls\ColorTriangle.png" />
   </ItemGroup>
   <PropertyGroup>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>

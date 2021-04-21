@@ -39,7 +39,7 @@
         <Setter Property="Foreground" Value="White" />
         <Setter Property="FontSize" Value="{StaticResource FontSize}"/>
         <Setter Property="FontWeight" Value="{StaticResource FontWeight}" />
-        <Setter Property="Height" Value="30" />
+        <Setter Property="Height" Value="28" />
         <Setter Property="Width" Value="110" />
         <Setter Property="Template">
             <Setter.Value>

@@ -59,10 +59,10 @@
         <TextBlock Grid.Row="1" Text="Queued:" Foreground="{StaticResource TextColorBlue}" Margin="5,53,0,194" FontWeight="DemiBold" />
         <ListView x:Name="listViewQueuedJobs" Grid.Row="1" Background="Transparent" BorderBrush="Transparent" ScrollViewer.CanContentScroll="False" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="ListViewJobs_SelectionChanged" MouseMove="ListViewJobs_MouseMove" PreviewMouseLeftButtonDown="ListViewJobs_PreviewMouseLeftButtonDown" AllowDrop="True" DragEnter="ListViewJobs_DragEnter" DragOver="ListViewJobs_DragOver" Drop="ListViewJobs_Drop" Margin="0,72,0,0" />
 
-        <Button x:Name="buttonEdit" Content="Edit" Margin="10,10,0,0" HorizontalAlignment="Left" Width="105" Height="30" VerticalAlignment="Top" Click="ButtonEdit_Click" Grid.Column="1" Grid.Row="1" Visibility="Hidden"/>
-        <Button x:Name="buttonRemove" Content="Remove" Margin="124,10,0,0" HorizontalAlignment="Left" Width="105" Height="30" VerticalAlignment="Top" Click="ButtonRemove_Click" Grid.Column="1" Grid.Row="1" Visibility="Hidden"/>
+        <Button x:Name="buttonEdit" Content="Edit" Margin="10,10,0,0" HorizontalAlignment="Left" Width="105" VerticalAlignment="Top" Click="ButtonEdit_Click" Grid.Column="1" Grid.Row="1" Visibility="Hidden"/>
+        <Button x:Name="buttonRemove" Content="Remove" Margin="124,10,0,0" HorizontalAlignment="Left" Width="105" VerticalAlignment="Top" Click="ButtonRemove_Click" Grid.Column="1" Grid.Row="1" Visibility="Hidden"/>
 
-        <Button x:Name="buttonStartStopQueue" Content="Start queue" Margin="10,0,0,8" HorizontalAlignment="Left" Width="219" Height="30" VerticalAlignment="Bottom" Click="ButtonStartStopQueue_Click" Grid.Row="2" Style="{StaticResource GreenButton}" Grid.Column="1"/>
+        <Button x:Name="buttonStartStopQueue" Content="Start queue" Margin="0,0,10,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="ButtonStartStopQueue_Click" Grid.Row="2" Style="{StaticResource GreenButton}" Grid.Column="1"/>
         <TextBlock Text="When finished" Grid.Row="2" Margin="10,0,301,10" Height="21" VerticalAlignment="Bottom" />
         <ComboBox x:Name="comboBoxShutdown" Grid.Row="2" Margin="109,0,144,10" Height="24" VerticalAlignment="Bottom" />
 

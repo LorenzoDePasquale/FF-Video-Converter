@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="FFVideoConverter.Controls.PercentageSlider"
+             x:Name="userControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:controls="clr-namespace:FFVideoConverter.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="25.378" d:DesignWidth="341.333" Foreground="{DynamicResource SliderForegroundBrush}">
+
+    <DockPanel LastChildFill="True">
+        <TextBlock x:Name="textBlockPercentage" DockPanel.Dock="Right" Width="42" Height="20"/>
+        <controls:CenteredSlider x:Name="slider" Minimum="-1" Maximum="1" Center="0" ValueChanged="Slider_ValueChanged" Margin="0,0,5,0" Foreground="{Binding Foreground, ElementName=userControl}"/>
+    </DockPanel>
+</UserControl>

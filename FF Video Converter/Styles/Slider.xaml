@@ -2,33 +2,29 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Style TargetType="{x:Type Slider}">
-        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource ButtonBackgroundColor}" />
+        <Setter Property="Foreground" Value="{StaticResource SliderForegroundBrush}" />
+        <Setter Property="Height" Value="22" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Slider}">
-                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Grid Grid.Row="1" >
+                            <Grid >
                                 <Grid.OpacityMask>
                                     <VisualBrush Visual="{Binding ElementName=Border2}" />
                                 </Grid.OpacityMask>
-                                <Border x:Name="Border2" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="11" Margin="4,0" VerticalAlignment="Center" />
-                                <Border x:Name="TrackBackground" ClipToBounds="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="12" Margin="4,0" VerticalAlignment="Center">
+                                <Border x:Name="Border2" CornerRadius="{StaticResource CornerRadius}" Background="{TemplateBinding Background}" Height="11" Margin="4,0" VerticalAlignment="Center" />
+                                <Border x:Name="TrackBackground" ClipToBounds="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="{StaticResource CornerRadius}" Background="{TemplateBinding Background}" Height="12" Margin="4,0" VerticalAlignment="Center">
                                     <Border Background="Transparent" BorderBrush="Black" BorderThickness="0 2 3 1" Margin="-6">
                                         <Border.Effect>
-                                            <DropShadowEffect ShadowDepth="7" BlurRadius="10"/>
+                                            <DropShadowEffect ShadowDepth="6" BlurRadius="10"/>
                                         </Border.Effect>
                                     </Border>
                                 </Border>
                             </Grid>
-                            <Track x:Name="PART_Track" Grid.Row="1">
+                            <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="Slider.DecreaseLarge">
                                         <RepeatButton.Style>
@@ -76,7 +72,7 @@
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="{x:Type Thumb}">
                                                 <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                                    <Path x:Name="grip" Fill="{StaticResource ButtonBackgroundColor}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
+                                                    <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
                                                         <Path.Data>
                                                             <RectangleGeometry Rect="11 11 11 11" RadiusX="8" RadiusY="8" />
                                                         </Path.Data>
@@ -92,126 +88,6 @@
                                                     </Trigger>
                                                     <Trigger Property="IsEnabled" Value="False">
                                                         <Setter TargetName="grip" Property="Fill" Value="{StaticResource DisabledColor}" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </Grid>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="{x:Type Slider}" x:Key="VolumeSlider">
-        <Setter Property="Background" Value="{StaticResource SliderBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource TextColor}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Slider}">
-                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="Transparent" SnapsToDevicePixels="True">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Border x:Name="TrackBackground" Grid.Row="1" ClipToBounds="True" BorderThickness="0" CornerRadius="1" Background="{TemplateBinding Background}" Height="4" Margin="4,0" VerticalAlignment="Center" />
-                            <Track x:Name="PART_Track" Grid.Row="1">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="Slider.DecreaseLarge">
-                                        <RepeatButton.Style>
-                                            <Style TargetType="{x:Type RepeatButton}">
-                                                <Setter Property="OverridesDefaultStyle" Value="True"/>
-                                                <Setter Property="Focusable" Value="False"/>
-                                                <Setter Property="IsTabStop" Value="False"/>
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                            <Border x:Name="border" Background="{TemplateBinding Foreground}" Height="4" Width="{TemplateBinding Width}" Margin="5, 0, -2, 0" CornerRadius="1, 0, 0, 1" BorderThickness="0" />
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </RepeatButton.Style>
-                                    </RepeatButton>
-                                </Track.DecreaseRepeatButton>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Command="Slider.IncreaseLarge">
-                                        <RepeatButton.Style>
-                                            <Style TargetType="{x:Type RepeatButton}">
-                                                <Setter Property="OverridesDefaultStyle" Value="True"/>
-                                                <Setter Property="Background" Value="Transparent"/>
-                                                <Setter Property="Focusable" Value="False"/>
-                                                <Setter Property="IsTabStop" Value="False"/>
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                            <Rectangle Fill="{TemplateBinding Background}" Height="{TemplateBinding Height}" Width="{TemplateBinding Width}"/>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </RepeatButton.Style>
-                                    </RepeatButton>
-                                </Track.IncreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb x:Name="Thumb" Focusable="False" Height="15" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="15">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                                    <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" SnapsToDevicePixels="True" StrokeThickness="0" UseLayoutRounding="True" VerticalAlignment="Center">
-                                                        <Path.Data>
-                                                            <RectangleGeometry Rect="11 11 11 11" RadiusX="8" RadiusY="8" />
-                                                        </Path.Data>
-                                                    </Path>
-                                                </Grid>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </Grid>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="{x:Type Slider}" x:Key="ComparisonSlider">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Slider}">
-                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1, 0, 1, 0" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Track x:Name="PART_Track" Grid.Row="1">
-                                <Track.Thumb>
-                                    <Thumb x:Name="Thumb" Focusable="False" Height="{TemplateBinding Height}" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="10" Cursor="SizeWE">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                                    <Path x:Name="grip" Fill="{StaticResource BackgroundColor}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
-                                                        <Path.Data>
-                                                            <RectangleGeometry Rect="11 11 11 11" />
-                                                        </Path.Data>
-                                                    </Path>
-                                                </Grid>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Fill" TargetName="grip" Value="{StaticResource MouseOverColor}"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter Property="Fill" TargetName="grip" Value="{StaticResource PressedColor}"/>
-                                                        <Setter Property="Stroke" TargetName="grip" Value="{StaticResource BorderColor}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>

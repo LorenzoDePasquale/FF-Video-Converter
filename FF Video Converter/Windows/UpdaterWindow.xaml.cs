@@ -17,66 +17,7 @@ namespace FFVideoConverter
 {
     public partial class UpdaterWindow : Window
     {
-        private readonly struct Version
-        {
-            public int Major { get; }
-            public int Minor { get; }
-            public int Build { get; }
-
-            public Version(int major, int minor, int build = 0)
-            {
-                Major = major;
-                Minor = minor;
-                Build = build;
-            }
-
-            public static Version Parse(string version)  //format: v0.1-beta or v1.2 or v1.2.1
-            {
-                version = version.Substring(1);
-                if (version.Contains("-"))
-                {
-                    version = version.Split('-')[0];
-                }
-                string[] versionNumbers = version.Split('.');
-                return new Version(Convert.ToInt32(versionNumbers[0]), Convert.ToInt32(versionNumbers[1]), versionNumbers.Length > 2 ? Convert.ToInt32(versionNumbers[2]) : 0);
-            }
-
-            public static bool operator >(Version v1, Version v2)
-            {
-                if (v1.Major > v2.Major)
-                {
-                    return true;
-                }
-                else if (v1.Major == v2.Major && v1.Minor > v2.Minor)
-                {
-                    return true;
-                }
-                else if (v1.Minor == v2.Minor && v1.Build > v2.Build)
-                {
-                    return true;
-                }
-                return false;
-            }
-
-            public static bool operator <(Version v1, Version v2)
-            {
-                if (v1.Major < v2.Major)
-                {
-                    return true;
-                }
-                else if (v1.Major == v2.Major && v1.Minor < v2.Minor)
-                {
-                    return true;
-                }
-                else if (v1.Minor == v2.Minor && v1.Build < v2.Build)
-                {
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        private static readonly HttpClient httpClient = new HttpClient();
+        private static HttpClient httpClient = new HttpClient();
         private string downloadUrl;
 
         public UpdaterWindow()
@@ -163,7 +104,7 @@ namespace FFVideoConverter
             }
         }
 
-        private async void UpdateProgress((float percentage, long currentBytes, long totalBytes) progress)
+        private void UpdateProgress((float percentage, long currentBytes, long totalBytes) progress)
         {
             DoubleAnimation progressAnimation = new DoubleAnimation(progress.percentage * 100, TimeSpan.FromSeconds(0.5));
             progressBarUpdateProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
@@ -175,31 +116,36 @@ namespace FFVideoConverter
             {
                 progressBarUpdateProgress.Value = 99.4f; //To avoid progress bar turning green
                 textBlockUpdateProgress.Text = "Extracting update...";
-                try
+                InstallUpdate();
+            }
+        }
+
+        private async void InstallUpdate()
+        {
+            try
+            {
+                await Task.Run(() =>
                 {
-                    await Task.Run(() =>
+                    File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe");
+                    ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "update.zip", AppDomain.CurrentDomain.BaseDirectory + "update");
+                    foreach (string file in Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory + "update"))
                     {
-                        File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe");
-                        ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "update.zip", AppDomain.CurrentDomain.BaseDirectory + "update");
-                        foreach (string file in Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory + "update"))
-                        {
-                            File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
-                        }
-                    });
-                    //Restart the application
-                    Application.Current.Shutdown();
-                    Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
-                }
-                catch (Exception ex)
-                {
-                    new MessageBoxWindow("Couldn't install downloaded update; try updating manually.\n\nError message:\n" + ex.Message, "Error").ShowDialog();
-                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe"))
-                    {
-                        //Restores old file name in case of error
-                        File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
+                        File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
                     }
-                    Close();
+                });
+                //Restart the application
+                Application.Current.Shutdown();
+                Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
+            }
+            catch (Exception ex)
+            {
+                new MessageBoxWindow("Couldn't install downloaded update; try updating manually.\n\nError message:\n" + ex.Message, "Error").ShowDialog();
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe"))
+                {
+                    //Restores old file name in case of error
+                    File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
                 }
+                Close();
             }
         }
     }

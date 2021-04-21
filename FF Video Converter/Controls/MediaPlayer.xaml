@@ -45,6 +45,77 @@
             </Setter>
         </Style>
 
+        <Style TargetType="{x:Type Slider}" x:Key="VolumeSlider">
+            <Setter Property="Background" Value="{StaticResource SliderBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="Transparent" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Border x:Name="TrackBackground" ClipToBounds="True" BorderThickness="0" CornerRadius="1" Background="{TemplateBinding Background}" Height="4" Margin="4,0" VerticalAlignment="Center" />
+                                <Track x:Name="PART_Track" >
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="Slider.DecreaseLarge">
+                                            <RepeatButton.Style>
+                                                <Style TargetType="{x:Type RepeatButton}">
+                                                    <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                                    <Setter Property="Focusable" Value="False"/>
+                                                    <Setter Property="IsTabStop" Value="False"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                                <Border x:Name="border" Background="{TemplateBinding Foreground}" Height="4" Width="{TemplateBinding Width}" Margin="5, 0, -2, 0" CornerRadius="1, 0, 0, 1" BorderThickness="0" />
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </RepeatButton.Style>
+                                        </RepeatButton>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="Slider.IncreaseLarge">
+                                            <RepeatButton.Style>
+                                                <Style TargetType="{x:Type RepeatButton}">
+                                                    <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="Focusable" Value="False"/>
+                                                    <Setter Property="IsTabStop" Value="False"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                                <Rectangle Fill="{TemplateBinding Background}" Height="{TemplateBinding Height}" Width="{TemplateBinding Width}"/>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </RepeatButton.Style>
+                                        </RepeatButton>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb" Focusable="False" Height="15" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="15">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="{x:Type Thumb}">
+                                                    <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
+                                                        <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" SnapsToDevicePixels="True" StrokeThickness="0" UseLayoutRounding="True" VerticalAlignment="Center">
+                                                            <Path.Data>
+                                                                <RectangleGeometry Rect="11 11 11 11" RadiusX="8" RadiusY="8" />
+                                                            </Path.Data>
+                                                        </Path>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
 
         <Storyboard x:Key="mediaControlsAnimationIn" >
             <DoubleAnimation From="0" To="1" Duration="00:00:00.2" Storyboard.TargetProperty="Opacity" Storyboard.TargetName="gridMediaControls"/>
@@ -85,7 +156,7 @@
                 <RowDefinition/>
                 <RowDefinition Height="36"/>
             </Grid.RowDefinitions>
-            <Border Grid.RowSpan="2" >
+            <Border Grid.RowSpan="2" IsHitTestVisible="False">
                 <Border.Background>
                     <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
                         <LinearGradientBrush.GradientStops>
@@ -98,7 +169,7 @@
                 </Border.Background>
             </Border>
             <controls:PlayerSlider x:Name="playerSlider" Margin="10,8,9,26" Minimum="0" ValueChanged="SliderSourcePosition_ValueChanged" MiddleSliderDragStarted="SliderSourcePosition_DragStarted" MiddleSliderDragCompleted="SliderSourcePosition_DragCompleted" Grid.Row="0" Grid.RowSpan="2"/>
-            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5,4,0,0" MouseLeave="StackPanel_MouseLeave" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5,4,0,0" MouseLeave="StackPanel_MouseLeave">
                 <Button x:Name="buttonPreviousFrame" Content="ᐊ" VerticalAlignment="Top" Width="23" Height="23" Style="{StaticResource MediaPlayerButton}" Click="ButtonPreviousFrame_Click" FontSize="16" ToolTip="Previous frame"/>
                 <Button x:Name="buttonPlayPause" Content=" ▶️" VerticalAlignment="Top" Width="26" Height="23" Style="{StaticResource MediaPlayerButton}" Click="ButtonPlayPause_Click" FontSize="20" Margin="0,0,3,0"/>
                 <Button x:Name="buttonNextFrame" Content="ᐅ" HorizontalAlignment="Left" VerticalAlignment="Top" Width="23" Height="23" Style="{StaticResource MediaPlayerButton}" Click="ButtonNextFrame_Click" FontSize="16" ToolTip="Next frame"/>

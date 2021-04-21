@@ -12,7 +12,6 @@ namespace FFVideoConverter
 {
     public static class ClassExtensions
     {
-
         #region Process
 
         //Suspends all threads of the current process
@@ -113,7 +112,7 @@ namespace FFVideoConverter
         //Asynchroniously copies a stream into another, with progress reporting
         public static async Task CopyToAsync(this Stream source, Stream destination, IProgress<long> progress)
         {
-            var buffer = new byte[8192];
+            byte[] buffer = new byte[8192];
             long totalBytesRead = 0;
             int bytesRead;
             Stopwatch sw = new Stopwatch(); 
@@ -169,63 +168,14 @@ namespace FFVideoConverter
             return readable.ToString("0.## ") + suffix;
         }
 
-        public static string GetName(this Quality quality)
-        {
-            switch (quality)
-            {
-                case Quality.Best:
-                    return "Best";
-                case Quality.VeryGood:
-                    return "Very good";
-                case Quality.Good:
-                    return "Good";
-                case Quality.Medium:
-                    return "Medium";
-                case Quality.Low:
-                    return "Low";
-                case Quality.VeryLow:
-                    return "Very low";
-                default:
-                    return "";
-            }
-        }
-
-        public static string GetName(this Preset preset)
-        {
-            switch (preset)
-            {
-                case Preset.Slower:
-                    return "Slower";
-                case Preset.Slow:
-                    return "Slow";
-                case Preset.Medium:
-                    return "Medium";
-                case Preset.Fast:
-                    return "Fast";
-                case Preset.Faster:
-                    return "Faster";
-                case Preset.VeryFast:
-                    return "Very fast";
-                default:
-                    return "";
-            }
-        }
-
         public static string ToFormattedString(this TimeSpan t, bool showMilliseconds = false)
         {
-            //return showMilliseconds ? t.ToString(@"hh\:mm\:ss\.ff") : t.ToString(@"hh\:mm\:ss");
-
             if (showMilliseconds)
                 return t.ToString(@"hh\:mm\:ss\.ff");
 
             double seconds = t.Seconds + (double)t.Milliseconds / 1000;
             seconds = Math.Round(seconds, 0);
             return $"{t.Hours:00}:{t.Minutes:00}:{seconds:00}";
-        }
-
-        public static (string, string) ToCouple(this string[] array)
-        {
-            return (array[0], array[1]);
         }
 
         public static void PlayStoryboard(this FrameworkElement fe, string storyboardName)

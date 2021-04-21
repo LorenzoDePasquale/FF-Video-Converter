@@ -85,53 +85,7 @@ namespace FFVideoConverter
                             videoUrlParser = new InstagramParser();
                         }
 
-                        try
-                        {
-                            foreach (var item in await videoUrlParser.GetVideoList(url))
-                            {
-                                if (!item.IsAudio)
-                                {
-                                    comboBoxQuality.Items.Add(item);
-                                }
-                                else
-                                {
-                                    comboBoxAudioQuality.Items.Add(item);
-                                }
-                                titleBar.Text = item.Title;
-                            }
-                            if (videoUrlParser is YouTubeParser)
-                            {
-                                PlayerSource = await ((YouTubeParser)videoUrlParser).GetMuxedSource(url);
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            new MessageBoxWindow("Failed to retreive media info from the url\n" +url, "Error parsing url").ShowDialog();
-                            buttonOpen.IsEnabled = true;
-                            return;
-                        }
-
-                        comboBoxQuality.SelectedIndex = 0;
-                        if (comboBoxAudioQuality.Items.Count > 0)
-                        {
-                            comboBoxAudioQuality.SelectedIndex = 0;
-                            comboBoxAudioQuality.Visibility = Visibility.Visible;
-                        }
-                        else
-                        {
-                            comboBoxAudioQuality.Visibility = Visibility.Hidden;
-                        }
-                        buttonOpen.Content = "Open selected quality";
-                        if (comboBoxQuality.Items.Count == 1 && comboBoxAudioQuality.Items.Count == 1) //Only one option -> automatically select that option
-                        {
-                            ButtonOpen_Click(null, null);
-                        }
-                        else
-                        {
-                            buttonOpen.IsEnabled = true;
-                            Storyboard storyboard = FindResource("ChoseQualityAnimation") as Storyboard;
-                            storyboard.Begin();
-                        }
+                        GetVideoList(videoUrlParser, url);
                     }
                 }
                 else
@@ -141,31 +95,96 @@ namespace FFVideoConverter
             }
             else
             {
-                buttonOpen.IsEnabled = false;
-                titleBar.Text = $"Loading {host} video...";
-                StreamInfo selectedVideo = (StreamInfo)comboBoxQuality.SelectedItem;
-                try
+                OpenVideo((StreamInfo)comboBoxQuality.SelectedItem);
+            }
+        }
+
+        private async void GetVideoList(VideoUrlParser videoUrlParser, string url)
+        {
+            try
+            {
+                var videoList = await videoUrlParser.GetVideoList(url);
+                if (videoUrlParser is YouTubeParser youTubeParser)
                 {
-                    if (comboBoxAudioQuality.Items.Count > 0)
-                    {
-                        StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
-                        MediaStream = await MediaInfo.Open(selectedVideo.Url, selectedAudio.Url);
-                    }
-                    else
-                    {
-                        PlayerSource = null;
-                        MediaStream = await MediaInfo.Open(selectedVideo.Url);
-                    }
+                    PlayerSource = await youTubeParser.GetMuxedSource(url);
                 }
-                catch (Exception ex)
+                if (videoList.Count == 1)
                 {
-                    new MessageBoxWindow(ex.Message, "Error opening selected url").ShowDialog();
-                    Close();
+                    OpenVideo(videoList[0]);
                     return;
                 }
-                MediaStream.Title = selectedVideo.Title;
-                Close();
+                else
+                {
+                    for (int i = 0; i < videoList.Count; i++)
+                    {
+                        if (!videoList[i].IsAudio)
+                        {
+                            comboBoxQuality.Items.Add(videoList[i]);
+                        }
+                        else
+                        {
+                            comboBoxAudioQuality.Items.Add(videoList[i]);
+                        }
+                        titleBar.Text = videoList[i].Title;
+                    }
+                }
             }
+            catch (Exception)
+            {
+                new MessageBoxWindow("Failed to retreive media info from the url\n" + url, "Error parsing url").ShowDialog();
+                buttonOpen.IsEnabled = true;
+                return;
+            }
+
+            comboBoxQuality.SelectedIndex = 0;
+            if (comboBoxAudioQuality.Items.Count > 0)
+            {
+                comboBoxAudioQuality.SelectedIndex = 0;
+                comboBoxAudioQuality.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                comboBoxAudioQuality.Visibility = Visibility.Hidden;
+            }
+            buttonOpen.Content = "Open";
+            if (comboBoxQuality.Items.Count == 1 && comboBoxAudioQuality.Items.Count == 1) //Only one option -> automatically select that option
+            {
+                ButtonOpen_Click(null, null);
+            }
+            else
+            {
+                buttonOpen.IsEnabled = true;
+                Storyboard storyboard = FindResource("ChoseQualityAnimation") as Storyboard;
+                storyboard.Begin();
+            }
+        }
+
+        private async void OpenVideo(StreamInfo video)
+        {
+            buttonOpen.IsEnabled = false;
+            titleBar.Text = $"Loading {host} video...";
+            try
+            {
+                if (comboBoxAudioQuality.Items.Count > 0)
+                {
+                    StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
+                    MediaStream = await MediaInfo.Open(video.Url, selectedAudio.Url);
+                }
+                else
+                {
+                    PlayerSource = null;
+                    MediaStream = await MediaInfo.Open(video.Url);
+                }
+            }
+            catch (Exception ex)
+            {
+                new MessageBoxWindow(ex.Message, "Error opening selected url").ShowDialog();
+                Close();
+                return;
+            }
+
+            MediaStream.Title = video.Title;
+            Close();
         }
     }
 }

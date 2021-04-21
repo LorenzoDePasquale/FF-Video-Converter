@@ -57,7 +57,7 @@ namespace FFVideoConverter.Controls
             }
             set
             {
-                if (userInput && mediaInfo != null && value <= mediaInfo.Duration)
+                if (userInput && mediaInfo != null && value <= mediaInfo.Duration && value >= Start)
                 {
                     userInput = false;
                     timeSpanTextBoxEnd.Value = value;
@@ -112,7 +112,7 @@ namespace FFVideoConverter.Controls
                     }
                     else
                     {
-                        Dispatcher.BeginInvoke(new Action(timeSpanTextBoxStart.Undo));
+                        Dispatcher.Invoke(new Action(timeSpanTextBoxStart.Undo));
                     }
                 }
 

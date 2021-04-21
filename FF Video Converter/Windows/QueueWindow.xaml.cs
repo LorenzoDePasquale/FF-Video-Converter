@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-
+using FFVideoConverter.Encoders;
 
 namespace FFVideoConverter
 {
@@ -133,6 +133,10 @@ namespace FFVideoConverter
                             string content = conversionOptions.Encoder.Bitrate.Kbps + " Kbps";
                             if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass) content += " (2-pass)";
                             stackPanelDetails.Children.Add(new Controls.LabelledTextBlock("Target bitrate", content));
+                        }
+                        if (conversionOptions.Encoder.PixelFormat != Encoders.PixelFormat.copy)
+                        {
+                            stackPanelDetails.Children.Add(new Controls.LabelledTextBlock("Pixel format", conversionOptions.Encoder.PixelFormat.GetName()));
                         }
                     }
 

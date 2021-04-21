@@ -13,6 +13,8 @@ using System.Diagnostics;
 using System.Windows.Data;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FFVideoConverter.Encoders;
+using PixelFormat = FFVideoConverter.Encoders.PixelFormat;
 
 
 namespace FFVideoConverter
@@ -23,10 +25,10 @@ namespace FFVideoConverter
         FFmpegEngine ffmpegEngine;
         QueueWindow queueWindow;
         CompletedWindow completedWindow;
-        ObservableCollection<Job> queuedJobs = new ObservableCollection<Job>();
-        ObservableCollection<Job> completedJobs = new ObservableCollection<Job>();
-        PerformanceCounter avaiableMemoryCounter = new PerformanceCounter();
-        PerformanceCounter memoryCounter = new PerformanceCounter();
+        ObservableCollection<Job> queuedJobs = new();
+        ObservableCollection<Job> completedJobs = new();
+        PerformanceCounter avaiableMemoryCounter = new();
+        PerformanceCounter memoryCounter = new();
         long totalMemory;
         const int RECT_MIN_SIZE = 20;
         MediaInfo mediaInfo;
@@ -37,11 +39,15 @@ namespace FFVideoConverter
         TimeIntervalCollection timeIntervalCollection;
 
 
-        //Initialization stuff that should be done before the main window is loaded
         public MainWindow()
         {
-            InitializeComponent();SortedList<int, int> s = new();
+            InitializeComponent();
+        }
 
+        #region Load
+
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
             //Initialize counters (do not pass these arguments in the constructor because for some reason it is much slower)
             avaiableMemoryCounter.CategoryName = "Memory";
             avaiableMemoryCounter.CounterName = "Available MBytes";
@@ -53,7 +59,7 @@ namespace FFVideoConverter
             TaskbarItemInfo = new TaskbarItemInfo();
             Height -= 30; //To compensate for hiding the window chrome
             Width -= 5;
-            Version v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            System.Version v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             labelTitle.Text += $" v{v.Major}.{v.Minor}";
             if (v.Build != 0) labelTitle.Text += $".{v.Build}";
 
@@ -61,6 +67,18 @@ namespace FFVideoConverter
             mediaPlayer.Click += MediaPlayer_Click;
             mediaPlayer.CropChanged += MediaPlayer_CropChanged;
             mediaPlayer.ButtonExpandClick += ButtonExpand_Click;
+
+            //Create queue and completed windows
+            queueWindow = new QueueWindow(this, queuedJobs);
+            queueWindow.QueueStarted += QueueWindow_QueueStarted;
+            queueWindow.QueueStopped += () => buttonShowQueue.Content = "Queue";
+            completedWindow = new CompletedWindow(this, completedJobs);
+
+            //Setup ffmpeg
+            ffmpegEngine = new FFmpegEngine();
+            ffmpegEngine.ProgressChanged += UpdateProgress;
+            ffmpegEngine.ConversionCompleted += ConversionCompleted;
+            ffmpegEngine.ConversionAborted += ConversioAborted;
 
             //Setup comboboxes
             comboBoxFormat.Items.Add("MP4");
@@ -76,7 +94,6 @@ namespace FFVideoConverter
             comboBoxRotation.Items.Add("270° clockwise");
             comboBoxRotation.Items.Add("270° clockwise and flip");
             comboBoxRotation.SelectedIndex = 0;
-            checkBoxCrop.IsEnabled = false;
             comboBoxFramerate.Items.Add("Same as source");
             comboBoxFramerate.SelectedIndex = 0;
             foreach (Preset preset in Enum.GetValues(typeof(Preset)))
@@ -92,47 +109,19 @@ namespace FFVideoConverter
             comboBoxResolution.Items.Add("Same as source");
             comboBoxResolution.SelectedIndex = 0;
 
-            //Create queue and completed windows
-            queueWindow = new QueueWindow(this, queuedJobs);
-            queueWindow.QueueStarted += QueueWindow_QueueStarted;
-            queueWindow.QueueStopped += () => buttonShowQueue.Content = "Queue";
-            completedWindow = new CompletedWindow(this, completedJobs);
-
-            //Setup ffmpeg
-            Unosquare.FFME.Library.FFmpegDirectory = Environment.CurrentDirectory;
-            ffmpegEngine = new FFmpegEngine();
-            ffmpegEngine.ProgressChanged += UpdateProgress;
-            ffmpegEngine.ConversionCompleted += ConversionCompleted;
-            ffmpegEngine.ConversionAborted += ConversioAborted;
-        }
-
-        #region Load
-
-        //Initialization stuff that can be done after the main window is loaded
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (Environment.GetCommandLineArgs().Length > 1)
-            {
-                string sourcePath = Environment.GetCommandLineArgs()[1];
-                string extension = Path.GetExtension(sourcePath);
-                if (Array.IndexOf(SUPPORTED_EXTENSIONS, extension) > -1)
-                {
-                    try
-                    {
-                        mediaInfo = await MediaInfo.Open(sourcePath);
-                        _ = OpenSource();
-                    }
-                    catch (Exception ex)
-                    {
-                        new MessageBoxWindow(ex.Message, "Error opening file").ShowDialog();
-                    }
-                }
-            }
-
             //Get total memory
             GetPhysicallyInstalledSystemMemory(out totalMemory);
             totalMemory *= 1024;
 
+            //Clear old versions and checks for new updates
+            ManageUpdates();
+
+            //Open command line video if present
+            CheckCommandLine();
+        }
+
+        private async void ManageUpdates()
+        {
             //Remove old version, if it exists
             if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "update"))
             {
@@ -153,6 +142,28 @@ namespace FFVideoConverter
                 buttonUpdate.Visibility = Visibility.Visible;
             }
 #endif
+        }
+
+        private async void CheckCommandLine()
+        {
+            if (Environment.GetCommandLineArgs().Length > 1)
+            {
+                string sourcePath = Environment.GetCommandLineArgs()[1];
+                string extension = Path.GetExtension(sourcePath);
+                if (Array.IndexOf(SUPPORTED_EXTENSIONS, extension) > -1)
+                {
+                    try
+                    {
+                        labelTitle.Text = "Opening media...";
+                        mediaInfo = await MediaInfo.Open(sourcePath);
+                        _ = OpenSource();
+                    }
+                    catch (Exception ex)
+                    {
+                        new MessageBoxWindow(ex.Message, "Error opening video").ShowDialog();
+                    }
+                }
+            }
         }
 
         private async Task OpenSource(string playerSource = null)
@@ -205,12 +216,12 @@ namespace FFVideoConverter
             labelledTextBlockBitrate.Text = mediaInfo.Bitrate.Kbps.ToString("F0") + " Kbps";
             labelledTextBlockResolution.Text = mediaInfo.Resolution.HasValue() ? mediaInfo.Resolution.ToString() : "-";
             labelledTextBlockAspectRatio.Text = mediaInfo.Resolution.AspectRatio.ToString();
+            labelledTextBlockColorDepth.Text = mediaInfo.ColorInfo.ColorDepth + " bit";
             labelledTextBlockDynamicRange.Text = mediaInfo.DynamicRange;
             labelledTextBlockDynamicRange.ToolTip = mediaInfo.IsHDR ? mediaInfo.ColorInfo.ToString() : $"Color space: {mediaInfo.ColorInfo.ColorSpace}";
             labelledTextBlockPixelFormat.Text = mediaInfo.ColorInfo.PixelFormat;
             labelledTextBlockBitsPerPixel.Text = mediaInfo.BitsPerPixel.ToString("0.00");
 
-            checkBoxCrop.IsEnabled = true;
             checkBoxCrop.IsChecked = false;
 
             cutInsideControlsList.Items.Clear();
@@ -222,8 +233,12 @@ namespace FFVideoConverter
             SetComboBoxResolution();
             SetupAudioTracks();
 
+            //Since applying a filter to the player just after it opened a new video makes it crash the entire program, the only thing to do is to set all these controls to the default value so no filter needs to be applied
+            ResetColorSliders();
+            comboBoxRotation.SelectedIndex = 0;
+
             long size = (long)(numericUpDownBitrate.Value * 1000 / 8 * timeIntervalCollection.TotalDuration.TotalSeconds);
-            textBlockTargetSize.Text = $"Output size (video only): {size.ToBytesString()}";
+            textBlockTargetSize.Text = $"Video size: {size.ToBytesString()}";
 
             buttonStart.IsEnabled = true;
             buttonPreview.IsEnabled = true;
@@ -231,11 +246,135 @@ namespace FFVideoConverter
             buttonAddCutControl.IsEnabled = true;
 
             isMediaOpen = true;
+
+            UpdateVideoFilter();
+        }
+
+        public async void OpenJob(Job job)
+        {
+            //Open media (if it's different from the one currently open)
+            if (mediaInfo != job.SourceInfo)
+            {
+                mediaInfo = job.SourceInfo;
+                await OpenSource();
+            }
+            ConversionOptions conversionOptions = job.ConversionOptions;
+
+            //Load encoding settings
+            LoadEncoder(conversionOptions);
+
+            //Load filters
+            LoadFilters(conversionOptions.Filters);
+
+            //Load encoding segments
+            cutInsideControlsList.Items.Clear();
+            if (conversionOptions.EncodeSections?.Count > 0)
+            {
+                foreach (var item in conversionOptions.EncodeSections)
+                {
+                    AddEncodeSegment(item.Start, item.End);
+                }
+            }
+            OnDurationChanged();
+            checkBoxFade.IsChecked = conversionOptions.FadeEffect;
+
+            //Load audio tracks
+            foreach (var aco in conversionOptions.AudioConversionOptions)
+            {
+                foreach (Controls.AudioTrackControl atc in listViewAudioTracks.Items)
+                {
+                    if (atc.AudioTrack.StreamIndex == aco.Key)
+                    {
+                        atc.ConversionOptions = aco.Value;
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void LoadEncoder(ConversionOptions conversionOptions)
+        {
+            if (conversionOptions.Encoder != null)
+            {
+                comboBoxEncoder.SelectedValue = conversionOptions.Encoder;
+                comboBoxPreset.SelectedValue = conversionOptions.Encoder.Preset.GetName();
+                comboBoxQuality.SelectedValue = conversionOptions.Encoder.Quality.GetName();
+                comboBoxPixelFormat.SelectedValue = conversionOptions.Encoder.PixelFormat.GetName();
+            }
+            switch (conversionOptions.EncodingMode)
+            {
+                case EncodingMode.ConstantQuality:
+                    radioButtonQuality.IsChecked = true;
+                    checkBoxTwoPass.IsChecked = false;
+                    break;
+                case EncodingMode.AverageBitrate_SinglePass:
+                    radioButtonBitrate.IsChecked = true;
+                    checkBoxTwoPass.IsChecked = false;
+                    numericUpDownBitrate.Value = conversionOptions.Encoder.Bitrate.Bps / 1000;
+                    break;
+                case EncodingMode.AverageBitrate_FirstPass:
+                case EncodingMode.AverageBitrate_SecondPass:
+                    radioButtonBitrate.IsChecked = true;
+                    checkBoxTwoPass.IsChecked = true;
+                    numericUpDownBitrate.Value = conversionOptions.Encoder.Bitrate.Bps / 1000;
+                    break;
+                case EncodingMode.NoEncoding:
+                    comboBoxFormat.SelectedIndex = 2;
+                    comboBoxQuality.SelectedIndex = 0;
+                    foreach (var filter in conversionOptions.Filters)
+                    {
+                        if (filter is Filters.GifFilter gifFilter)
+                        {
+                            comboBoxPreset.SelectedIndex = gifFilter.UseMultiplePalette ? 2 : 1;
+                            comboBoxQuality.SelectedIndex = Array.IndexOf(new byte[] { 255, 200, 150, 100, 60, 30 }, gifFilter.MaxColors);
+                            break;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void LoadFilters(IEnumerable<IFilter> filters)
+        {
+            foreach (var filter in filters)
+            {
+                switch (filter)
+                {
+                    case Filters.CropFilter f:
+                        //Setting the flag isDragging stops the controls from checking for errors on the single values and refusing them
+                        isDragging = true;
+                        integerTextBoxCropBottom.Value = f.Bottom;
+                        integerTextBoxCropLeft.Value = f.Left;
+                        integerTextBoxCropRight.Value = f.Right;
+                        isDragging = false;
+                        //The flag is removed before editing the last control to allow the ValueChanged event to set the rectangle size
+                        integerTextBoxCropTop.Value = f.Top;
+                        checkBoxCrop.IsChecked = true;
+                        break;
+                    case Filters.FpsFilter f:
+                        comboBoxFramerate.SelectedValue = (int)f.Framerate;
+                        break;
+                    case Filters.RotationFilter f:
+                        comboBoxRotation.SelectedIndex = f.RotationType;
+                        break;
+                    case Filters.ScaleFilter f:
+                        comboBoxResolution.SelectedValue = f.OutputResolution.ToString();
+                        break;
+                    case Filters.EqFilter f:
+                        sliderBrightness.Value = f.Brightness;
+                        sliderContrast.Value = f.Contrast;
+                        sliderSaturation.Value = f.Saturation;
+                        sliderGamma.Value = f.Gamma;
+                        sliderRed.Value = f.GammaRed;
+                        sliderGreen.Value = f.GammaGreen;
+                        sliderBlue.Value = f.GammaBlue;
+                        break;
+                }
+            }
         }
 
         private void SetComboBoxEncoders()
         {
-            comboBoxEncoder.Items.Clear();
             comboBoxEncoder.Items.Add(new CopyEncoder());
             comboBoxEncoder.Items.Add(new H264Encoder());
             comboBoxEncoder.Items.Add(new H265Encoder());
@@ -338,6 +477,16 @@ namespace FFVideoConverter
             comboBoxResolution.SelectedIndex = 0;
         }
 
+        private void SetComboBoxPixelFormats(VideoEncoder encoder)
+        {
+            comboBoxPixelFormat.Items.Clear();
+            foreach (PixelFormat pixelFormat in encoder.SupportedPixelFormats)
+            {
+                comboBoxPixelFormat.Items.Add(pixelFormat.GetName());
+            }
+            comboBoxPixelFormat.SelectedIndex = 0;
+        }
+
         private void SetupAudioTracks()
         {
             listViewAudioTracks.Items.Clear();
@@ -354,6 +503,17 @@ namespace FFVideoConverter
                 if (audioTrack.Language != "")
                     trackLabel += $" [{audioTrack.Language}]";
             }
+        }
+
+        private void ResetColorSliders()
+        {
+            sliderContrast.Value = 0;
+            sliderBrightness.Value = 0;
+            sliderSaturation.Value = 0;
+            sliderGamma.Value = 0;
+            sliderRed.Value = 0;
+            sliderGreen.Value = 0;
+            sliderBlue.Value = 0;
         }
 
         private void ButtonOpenStream_Click(object sender, RoutedEventArgs e)
@@ -384,11 +544,11 @@ namespace FFVideoConverter
                 {
                     labelTitle.Text = "Opening media...";
                     mediaInfo = await MediaInfo.Open(ofd.FileName);
-                    _ = OpenSource();
+                    await OpenSource();
                 }
                 catch (Exception ex)
                 {
-                    new MessageBoxWindow(ex.Message, "Error opening file").ShowDialog();
+                    new MessageBoxWindow(ex.Message, "Error opening video").ShowDialog();
                 }
             }
         }
@@ -506,57 +666,55 @@ namespace FFVideoConverter
 
         private void ComboBoxEncoder_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (comboBoxEncoder.SelectedItem is not VideoEncoder selectedEncoder)
+            if (comboBoxEncoder.SelectedItem is VideoEncoder selectedEncoder)
             {
-                this.PlayStoryboard("PreviewButtonAnimationOut");
-            }
-            else if (selectedEncoder is CopyEncoder)
-            {
-                gridEncoding.IsEnabled = false;
-                checkBoxCrop.IsChecked = false;
-                checkBoxCrop.IsEnabled = false;
-                comboBoxResolution.IsEnabled = false;
-                comboBoxRotation.IsEnabled = false;
-
-                foreach (Controls.EncodeSegmentControl encodeSegmentControl in cutInsideControlsList.Items)
+                if (selectedEncoder is CopyEncoder)
                 {
-                    encodeSegmentControl.ShowKeyframesSuggestions = true;
-                }
+                    gridEncoding.IsEnabled = false;
+                    gridColor.IsEnabled = false;
+                    gridResize.IsEnabled = false;
 
-                this.PlayStoryboard("CheckBoxFadeAnimationOut");
-                this.PlayStoryboard("PreviewButtonAnimationOut");
-            }
-            else
-            {
-                gridEncoding.IsEnabled = true;
-                comboBoxPreset.IsEnabled = !(selectedEncoder is H264Nvenc || selectedEncoder is H265Nvenc);
-                comboBoxResolution.IsEnabled = true;
-                comboBoxRotation.IsEnabled = true;
-                if (mediaInfo != null) checkBoxCrop.IsEnabled = true;
+                    foreach (Controls.EncodeSegmentControl encodeSegmentControl in cutInsideControlsList.Items)
+                    {
+                        encodeSegmentControl.ShowKeyframesSuggestions = true;
+                    }
 
-                if (cutInsideControlsList.Items.Count > 1)
-                {
-                    this.PlayStoryboard("CheckBoxFadeAnimationIn");
-                }
-                foreach (Controls.EncodeSegmentControl item in cutInsideControlsList.Items)
-                {
-                    item.ShowKeyframesSuggestions = false;
-                }
-
-                //Setting the IsEnabled property to false removes the binding, so when IsEnabled can be true, the binding is recreated
-                if (selectedEncoder.IsDoublePassSupported)
-                {
-                    Binding binding = new Binding();
-                    binding.ElementName = "radioButtonBitrate";
-                    binding.Path = new PropertyPath("IsEnabled");
-                    BindingOperations.SetBinding(checkBoxTwoPass, IsEnabledProperty, binding);
+                    this.PlayStoryboard("CheckBoxFadeAnimationOut");
+                    this.PlayStoryboard("PreviewButtonAnimationOut");
                 }
                 else
                 {
-                    checkBoxTwoPass.IsEnabled = false;
+                    gridEncoding.IsEnabled = true;
+                    gridColor.IsEnabled = true;
+                    gridResize.IsEnabled = true;
+                    comboBoxPreset.IsEnabled = !(selectedEncoder is H264Nvenc || selectedEncoder is H265Nvenc);
+
+                    if (cutInsideControlsList.Items.Count > 1)
+                    {
+                        this.PlayStoryboard("CheckBoxFadeAnimationIn");
+                    }
+                    foreach (Controls.EncodeSegmentControl item in cutInsideControlsList.Items)
+                    {
+                        item.ShowKeyframesSuggestions = false;
+                    }
+
+                    //Setting the IsEnabled property to false removes the binding, so when IsEnabled can be true, the binding is recreated
+                    if (selectedEncoder.IsDoublePassSupported)
+                    {
+                        Binding binding = new Binding();
+                        binding.ElementName = "radioButtonBitrate";
+                        binding.Path = new PropertyPath("IsEnabled");
+                        BindingOperations.SetBinding(checkBoxTwoPass, IsEnabledProperty, binding);
+                    }
+                    else
+                    {
+                        checkBoxTwoPass.IsEnabled = false;
+                    }
+
+                    this.PlayStoryboard("PreviewButtonAnimationIn");
                 }
 
-                this.PlayStoryboard("PreviewButtonAnimationIn");
+                SetComboBoxPixelFormats(selectedEncoder);
             }
         }
 
@@ -570,7 +728,7 @@ namespace FFVideoConverter
 
         private void ButtonSave_Click(object sender, RoutedEventArgs e)
         {
-            if (mediaInfo != null)
+            if (isMediaOpen)
             {
                 SaveFileDialog sfd = new SaveFileDialog();
                 sfd.Title = "Select the destination file";
@@ -603,42 +761,45 @@ namespace FFVideoConverter
 
         private void CheckBoxCrop_Click(object sender, RoutedEventArgs e)
         {
-            if (checkBoxCrop.IsChecked == true)
+            if (isMediaOpen)
             {
-                mediaPlayer.CropActive = true;
-                if (comboBoxRotation.SelectedIndex != 0)
-                    textBlockRotationCropWarning.Visibility = Visibility.Visible;
-
-                //If it's the first time crop is enabled, sets initial values corresponding to initial rectangle size
-                if (integerTextBoxCropBottom.Value == 0 && integerTextBoxCropLeft.Value == 0 && integerTextBoxCropRight.Value == 0 && integerTextBoxCropTop.Value == 0)
+                if (checkBoxCrop.IsChecked == true)
                 {
-                    isDragging = true;
-                    Controls.MediaPlayer.CropData cropData = mediaPlayer.Crop;
-                    integerTextBoxCropTop.Value = cropData.Top;
-                    integerTextBoxCropLeft.Value = cropData.Left;
-                    integerTextBoxCropBottom.Value = cropData.Bottom;
-                    integerTextBoxCropRight.Value = cropData.Right;
-                    isDragging = false;
+                    mediaPlayer.CropActive = true;
+                    if (comboBoxRotation.SelectedIndex != 0)
+                        textBlockRotationCropWarning.Visibility = Visibility.Visible;
+
+                    //If it's the first time crop is enabled, sets initial values corresponding to initial rectangle size
+                    if (integerTextBoxCropBottom.Value == 0 && integerTextBoxCropLeft.Value == 0 && integerTextBoxCropRight.Value == 0 && integerTextBoxCropTop.Value == 0)
+                    {
+                        isDragging = true;
+                        Controls.MediaPlayer.CropData cropData = mediaPlayer.Crop;
+                        integerTextBoxCropTop.Value = cropData.Top;
+                        integerTextBoxCropLeft.Value = cropData.Left;
+                        integerTextBoxCropBottom.Value = cropData.Bottom;
+                        integerTextBoxCropRight.Value = cropData.Right;
+                        isDragging = false;
+                    }
+
+                    radioButtonBitrate.IsEnabled = false;
+                    radioButtonQuality.IsChecked = true;
                 }
-
-                radioButtonBitrate.IsEnabled = false;
-                radioButtonQuality.IsChecked = true;
-            }
-            else
-            {
-                mediaPlayer.CropActive = false;
-                textBlockRotationCropWarning.Visibility = Visibility.Hidden;
-
-                if (!IsCutEnabled() && comboBoxResolution.SelectedIndex == 0)
+                else
                 {
-                    radioButtonBitrate.IsEnabled = true;
+                    mediaPlayer.CropActive = false;
+                    textBlockRotationCropWarning.Visibility = Visibility.Hidden;
+
+                    if (!IsCutEnabled() && comboBoxResolution.SelectedIndex == 0)
+                    {
+                        radioButtonBitrate.IsEnabled = true;
+                    }
                 }
             }
         }
 
         private void IntegerTextBoxCrop_ValueChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (!isDragging)
+            if (!isDragging && isMediaOpen)
             {
                 double newLeft = integerTextBoxCropLeft.Value * mediaPlayer.Width / mediaInfo.Width;
                 double newTop = integerTextBoxCropTop.Value * mediaPlayer.Height / mediaInfo.Height;
@@ -669,42 +830,29 @@ namespace FFVideoConverter
             integerTextBoxCropLeft.Value = cropData.Left;
             integerTextBoxCropBottom.Value = cropData.Bottom;
             integerTextBoxCropRight.Value = cropData.Right;
-            textBlockOutputResolution.Text = $"{(mediaInfo.Width - cropData.Left - cropData.Right).ToString("0")}x{(mediaInfo.Height - cropData.Top - cropData.Bottom).ToString("0")}";
+            int horizontal = mediaInfo.Width - cropData.Left - cropData.Right;
+            int vertical = mediaInfo.Height - cropData.Top - cropData.Bottom;
+            textBlockOutputResolution.Text = $"{horizontal:0}x{vertical:0}";
             isDragging = false;
         }
 
         private void ComboBoxRotation_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (isMediaOpen)
-            {
-                mediaPlayer.VideoFilter = ((Filters.RotationFilter)comboBoxRotation.SelectedIndex).GetFilter();
-            }
+            UpdateVideoFilter();
 
             if (comboBoxRotation.SelectedIndex != 0 && checkBoxCrop.IsChecked == true)
+            {
                 textBlockRotationCropWarning.Visibility = Visibility.Visible;
+            }
             else
+            {
                 textBlockRotationCropWarning.Visibility = Visibility.Hidden;
-        }
-
-        private void ComboBoxResolution_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (comboBoxResolution.SelectedIndex == 0)
-            {
-                if (checkBoxCrop.IsChecked == false && !IsCutEnabled())
-                {
-                    radioButtonBitrate.IsEnabled = true;
-                }
-            }
-            else
-            {
-                radioButtonBitrate.IsEnabled = false;
-                radioButtonQuality.IsChecked = true;
             }
         }
 
-        private void NumericUpDownBitrate_ValueChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void NumericUpDownBitrate_ValueChanged(object _, DependencyPropertyChangedEventArgs _1)
         {
-            if (mediaInfo != null)
+            if (isMediaOpen)
             {
                 long size = (long)(numericUpDownBitrate.Value * 1000 / 8 * timeIntervalCollection.TotalDuration.TotalSeconds);
                 textBlockTargetSize.Text = $"Video size: {size.ToBytesString()}";
@@ -715,6 +863,11 @@ namespace FFVideoConverter
         {
             AddEncodeSegment(null, null);
             OnDurationChanged();
+        }
+
+        private void SliderColor_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            UpdateVideoFilter();
         }
 
         #endregion
@@ -732,27 +885,8 @@ namespace FFVideoConverter
             }
             else //mp4,mkv
             {
-                VideoEncoder encoder = (VideoEncoder)comboBoxEncoder.SelectedItem;
-                encoder.Preset = (Preset)comboBoxPreset.SelectedIndex;
-                if (mediaInfo.IsHDR)
-                {
-                    if (encoder is H265Encoder)
-                    {
-                        encoder.ColorInfo = mediaInfo.ColorInfo;
-                    }
-                    else if (encoder is not CopyEncoder)
-                    {
-                        if (new QuestionBoxWindow("Encoding with this encoder will lose HDR metadata, use x265 to preserve HDR it.\n\nProcede anyway?", "FF Video Converter").ShowDialog() == false)
-                        {
-                            return;
-                        }
-                    }
-                }
-                if (radioButtonBitrate.IsChecked == true)
-                    encoder.Bitrate = new Bitrate(numericUpDownBitrate.Value * 1000);
-                else
-                    encoder.Quality = (Quality)comboBoxQuality.SelectedIndex;
-
+                VideoEncoder encoder = GenerateVideoEncoder();
+                if (encoder == null) return; //it's null when user declined to encode
                 conversionOptions = GenerateConversionOptions(encoder);
             }
 
@@ -833,6 +967,40 @@ namespace FFVideoConverter
             return false;
         }
 
+        private VideoEncoder GenerateVideoEncoder()
+        {
+            VideoEncoder encoder = (VideoEncoder)comboBoxEncoder.SelectedItem;
+            encoder.Preset = (Preset)comboBoxPreset.SelectedIndex;
+            if (mediaInfo.IsHDR)
+            {
+                if (encoder is H265Encoder)
+                {
+                    encoder.ColorInfo = mediaInfo.ColorInfo;
+                }
+                else if (encoder is not CopyEncoder)
+                {
+                    if (new QuestionBoxWindow("Encoding with this encoder will lose HDR metadata, use x265 to preserve HDR it.\n\nProcede anyway?", "FF Video Converter").ShowDialog() == false)
+                    {
+                        return null;
+                    }
+                }
+            }
+            if (radioButtonBitrate.IsChecked == true)
+                encoder.Bitrate = new Bitrate(numericUpDownBitrate.Value * 1000);
+            else
+                encoder.Quality = (Quality)comboBoxQuality.SelectedIndex;
+            foreach (PixelFormat pixelFormat in Enum.GetValues<PixelFormat>())
+            {
+                if (pixelFormat.GetName() == comboBoxPixelFormat.SelectedItem.ToString())
+                {
+                    encoder.PixelFormat = pixelFormat;
+                    break;
+                }
+            }
+
+            return encoder;
+        }
+
         private ConversionOptions GenerateConversionOptions(VideoEncoder encoder)
         {
             ConversionOptions conversionOptions = new ConversionOptions(encoder);
@@ -858,6 +1026,19 @@ namespace FFVideoConverter
                 if (comboBoxRotation.SelectedIndex != 0)
                 {
                     conversionOptions.Filters.Add(new Filters.RotationFilter(comboBoxRotation.SelectedIndex));
+                }
+                if (sliderBrightness.Value != 0 || sliderContrast.Value != 0 || sliderSaturation.Value != 0 || sliderGamma.Value != 0 || sliderRed.Value != 0 || sliderGreen.Value != 0 || sliderBlue.Value != 0)
+                {
+                    conversionOptions.Filters.Add(new Filters.EqFilter
+                    {
+                        Brightness = sliderBrightness.Value,
+                        Contrast = sliderContrast.Value,
+                        Saturation = sliderSaturation.Value,
+                        Gamma = sliderGamma.Value,
+                        GammaRed = sliderRed.Value,
+                        GammaGreen = sliderGreen.Value,
+                        GammaBlue = sliderBlue.Value
+                    });
                 }
                 conversionOptions.FadeEffect = checkBoxFade.IsChecked.Value;
 
@@ -946,7 +1127,7 @@ namespace FFVideoConverter
                 case EncodingMode.Copy:
                     if (runningJob.JobType == JobType.Conversion)
                     {
-                        if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"        {progressData.EncodingSpeed:0.00}s per second ({progressData.EncodingSpeedFps} fps)";
+                        if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"       {progressData.EncodingSpeed:0.00}s per second ({progressData.EncodingSpeedFps} fps)";
                         labelledtextBlockOutputSize.Text += $" / {progressData.TotalByteSize.ToBytesString()}";
                     }
                     else if (runningJob.JobType == JobType.Download)
@@ -962,7 +1143,7 @@ namespace FFVideoConverter
                     }
                     break;
                 case EncodingMode.ConstantQuality:
-                    if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"        {progressData.EncodingSpeed:0.00}s per second ({progressData.EncodingSpeedFps} fps)";
+                    if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"       {progressData.EncodingSpeed:0.00}s per second ({progressData.EncodingSpeedFps} fps)";
                     if (progressData.AverageBitrate.Bps > 0)
                     {
                         long approximateOutputByteSize = progressData.CurrentByteSize + (long)(progressData.AverageBitrate.Bps * secondsToEncode / 8);
@@ -970,7 +1151,7 @@ namespace FFVideoConverter
                     }
                     break;
                 case EncodingMode.AverageBitrate_SinglePass or EncodingMode.AverageBitrate_SecondPass:
-                    if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"        {progressData.EncodingSpeed:0.00}s per second ({progressData.EncodingSpeedFps} fps)";
+                    if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"       {progressData.EncodingSpeed:0.00}s per second ({progressData.EncodingSpeedFps} fps)";
                     labelledtextBlockOutputSize.Text += $" / {progressData.TotalByteSize.ToBytesString()}";
                     break;
                 case EncodingMode.AverageBitrate_FirstPass:
@@ -978,7 +1159,7 @@ namespace FFVideoConverter
                     remainingTime = progressData.EncodingSpeed == 0 ? 0 : secondsToEncode / progressData.EncodingSpeed;
                     labelledtextBlockProgress.Label = "Analyzed";
                     labelledtextBlockProgress.Text = $"{progressData.CurrentTime.ToFormattedString()} / {progressData.TotalTime.ToFormattedString()}";
-                    if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"        {progressData.EncodingSpeed:0.00}s per second ( {progressData.EncodingSpeedFps}  fps)";
+                    if (mediaInfo.IsLocal) labelledtextBlockProgress.Text += $"       {progressData.EncodingSpeed:0.00}s per second ( {progressData.EncodingSpeedFps}  fps)";
                     labelledtextBlockOutputSize.Label = null;
                     labelledtextBlockOutputSize.Text = "";
                     break;
@@ -1060,6 +1241,7 @@ namespace FFVideoConverter
                     runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{outputFile.Bitrate.Kbps:F0} Kbps"));
                     runningJob.ConversionResults.Add(new ConversioResult("Resolution", outputFile.Resolution.ToString()));
                     runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", outputFile.Resolution.AspectRatio.ToString()));
+                    runningJob.ConversionResults.Add(new ConversioResult("Color depth", outputFile.ColorInfo.ColorDepth + " bit"));
                     runningJob.ConversionResults.Add(new ConversioResult("Dynamic range", outputFile.DynamicRange));
                     runningJob.ConversionResults.Add(new ConversioResult("Pixel format", outputFile.ColorInfo.PixelFormat));
                     runningJob.ConversionResults.Add(new ConversioResult("Bits per pixel", outputFile.BitsPerPixel.ToString("0.00")));
@@ -1073,6 +1255,7 @@ namespace FFVideoConverter
                     runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{runningJob.SourceInfo.Bitrate.Kbps:F0} Kbps   ⟶   {outputFile.Bitrate.Kbps:F0} Kbps"));
                     runningJob.ConversionResults.Add(new ConversioResult("Resolution", $"{runningJob.SourceInfo.Resolution}   ⟶   {outputFile.Resolution}"));
                     runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", $"{runningJob.SourceInfo.Resolution.AspectRatio}   ⟶   {outputFile.Resolution.AspectRatio}"));
+                    runningJob.ConversionResults.Add(new ConversioResult("Color depth", $"{runningJob.SourceInfo.ColorInfo.ColorDepth} bit   ⟶   {outputFile.ColorInfo.ColorDepth} bit")); 
                     runningJob.ConversionResults.Add(new ConversioResult("Dynamic range", $"{runningJob.SourceInfo.DynamicRange}   ⟶   {outputFile.DynamicRange}"));
                     runningJob.ConversionResults.Add(new ConversioResult("Pixel format", $"{runningJob.SourceInfo.ColorInfo.PixelFormat}   ⟶   {outputFile.ColorInfo.PixelFormat}"));
                     runningJob.ConversionResults.Add(new ConversioResult("Bits per pixel", $"{runningJob.SourceInfo.BitsPerPixel:0.00}   ⟶   {outputFile.BitsPerPixel:0.00}"));
@@ -1088,6 +1271,7 @@ namespace FFVideoConverter
                         labelledTextBlockBitrate.Text = $"{runningJob.SourceInfo.Bitrate.Kbps:F0} Kbps   ⟶   {outputFile.Bitrate.Kbps:F0} Kbps";
                         labelledTextBlockResolution.Text = $"{runningJob.SourceInfo.Resolution}   ⟶   {outputFile.Resolution}";
                         labelledTextBlockAspectRatio.Text = $"{runningJob.SourceInfo.Resolution.AspectRatio}   ⟶   {outputFile.Resolution.AspectRatio}";
+                        labelledTextBlockColorDepth.Text = $"{runningJob.SourceInfo.ColorInfo.ColorDepth} bit   ⟶   {outputFile.ColorInfo.ColorDepth} bit";
                         labelledTextBlockDynamicRange.Text = $"{runningJob.SourceInfo.DynamicRange}   ⟶   {outputFile.DynamicRange}";
                         labelledTextBlockPixelFormat.Text = $"{runningJob.SourceInfo.ColorInfo.PixelFormat}   ⟶   {outputFile.ColorInfo.PixelFormat}";
                         labelledTextBlockBitsPerPixel.Text = $"{runningJob.SourceInfo.BitsPerPixel:0.00}   ⟶   {outputFile.BitsPerPixel:0.00}";
@@ -1180,7 +1364,7 @@ namespace FFVideoConverter
 
         private void ButtonKill_Click(object sender, RoutedEventArgs e)
         {
-            if (new QuestionBoxWindow("Are you sure you want to cancel current process?\nOutput file will be deleted", "Confirm cancellation").ShowDialog() == true)
+            if (new QuestionBoxWindow("Are you sure you want to cancel current process?", "Confirm cancellation").ShowDialog() == true)
             {
                 ffmpegEngine.StopConversion();
                 progressBarConvertProgress.ClearValue(ForegroundProperty);
@@ -1198,8 +1382,6 @@ namespace FFVideoConverter
                 runningJob.ConversionResults.Add(new ConversioResult("Resolution", runningJob.SourceInfo.Resolution.ToString()));
                 runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", runningJob.SourceInfo.Resolution.AspectRatio.ToString()));
                 runningJob.ConversionResults.Add(new ConversioResult("Size", runningJob.SourceInfo.Size.ToBytesString()));
-
-                File.Delete(runningJob.Destination);
 
                 completedJobs.Add(runningJob);
                 OnConversionEnded();
@@ -1266,6 +1448,8 @@ namespace FFVideoConverter
 
         #endregion
 
+        #region Media Player
+
         private void MediaElement_DragEnter(object sender, DragEventArgs e)
         {
             this.PlayStoryboard("DragOverAnimation");
@@ -1319,6 +1503,8 @@ namespace FFVideoConverter
             }
         }
 
+        #endregion
+
         private void ButtonShowQueue_Click(object sender, RoutedEventArgs e)
         {
             queueWindow.Show();
@@ -1343,118 +1529,7 @@ namespace FFVideoConverter
             completedWindow.Activate();
         }
 
-        public async void OpenJob(Job job)
-        {
-            //Open media (if it's different from the one currently open)
-            if (mediaInfo != job.SourceInfo)
-            {
-                mediaInfo = job.SourceInfo;
-                await OpenSource();
-            }
-            ConversionOptions conversionOptions = job.ConversionOptions;
-
-            //Load encoding settings
-            LoadEncoder(conversionOptions);
-
-            //Load filters
-            LoadFilters(conversionOptions.Filters);
-
-            //Load encoding segments
-            cutInsideControlsList.Items.Clear();
-            if (conversionOptions.EncodeSections?.Count > 0)
-            {
-                foreach (var item in conversionOptions.EncodeSections)
-                {
-                    AddEncodeSegment(item.Start, item.End);
-                }
-            }
-            OnDurationChanged();
-            checkBoxFade.IsChecked = conversionOptions.FadeEffect;
-
-            //Load audio tracks
-            foreach (var aco in conversionOptions.AudioConversionOptions)
-            {
-                foreach (Controls.AudioTrackControl atc in listViewAudioTracks.Items)
-                {
-                    if (atc.AudioTrack.StreamIndex == aco.Key)
-                    {
-                        atc.ConversionOptions = aco.Value;
-                        break;
-                    }
-                }
-            }
-        }
-
-        private void LoadEncoder(ConversionOptions conversionOptions)
-        {
-            if (conversionOptions.Encoder != null)
-            {
-                comboBoxEncoder.SelectedValue = conversionOptions.Encoder;
-                comboBoxPreset.SelectedValue = conversionOptions.Encoder.Preset.GetName();
-                comboBoxQuality.SelectedValue = conversionOptions.Encoder.Quality.GetName();
-            }
-            switch (conversionOptions.EncodingMode)
-            {
-                case EncodingMode.ConstantQuality:
-                    radioButtonQuality.IsChecked = true;
-                    checkBoxTwoPass.IsChecked = false;
-                    break;
-                case EncodingMode.AverageBitrate_SinglePass:
-                    radioButtonBitrate.IsChecked = true;
-                    checkBoxTwoPass.IsChecked = false;
-                    numericUpDownBitrate.Value = conversionOptions.Encoder.Bitrate.Bps / 1000;
-                    break;
-                case EncodingMode.AverageBitrate_FirstPass:
-                case EncodingMode.AverageBitrate_SecondPass:
-                    radioButtonBitrate.IsChecked = true;
-                    checkBoxTwoPass.IsChecked = true;
-                    numericUpDownBitrate.Value = conversionOptions.Encoder.Bitrate.Bps / 1000;
-                    break;
-                case EncodingMode.NoEncoding:
-                    comboBoxFormat.SelectedIndex = 2;
-                    comboBoxQuality.SelectedIndex = 0;
-                    foreach (var filter in conversionOptions.Filters)
-                    {
-                        if (filter is Filters.GifFilter gifFilter)
-                        {
-                            comboBoxPreset.SelectedIndex = gifFilter.UseMultiplePalette ? 2 : 1;
-                            comboBoxQuality.SelectedIndex = Array.IndexOf(new byte[] { 255, 200, 150, 100, 60, 30 }, gifFilter.MaxColors);
-                            break;
-                        }
-                    }
-                    break;
-            }
-        }
-
-        private void LoadFilters(IEnumerable<IFilter> filters)
-        {
-            foreach (var filter in filters)
-            {
-                switch (filter)
-                {
-                    case Filters.CropFilter f:
-                        //Setting the flag isDragging stops the controls from checking for errors on the single values and refusing them
-                        isDragging = true;
-                        integerTextBoxCropBottom.Value = f.Bottom;
-                        integerTextBoxCropLeft.Value = f.Left;
-                        integerTextBoxCropRight.Value = f.Right;
-                        isDragging = false;
-                        //The flag is removed before editing the last control to allow the ValueChanged event to set the rectangle size
-                        integerTextBoxCropTop.Value = f.Top;
-                        checkBoxCrop.IsChecked = true;
-                        break;
-                    case Filters.FpsFilter f:
-                        comboBoxFramerate.SelectedValue = (int)f.Framerate;
-                        break;
-                    case Filters.RotationFilter f:
-                        comboBoxRotation.SelectedIndex = f.RotationType;
-                        break;
-                    case Filters.ScaleFilter f:
-                        comboBoxResolution.SelectedValue = f.OutputResolution.ToString();
-                        break;
-                }
-            }
-        }
+        #region Utility
 
         private bool IsCutEnabled()
         {
@@ -1524,6 +1599,46 @@ namespace FFVideoConverter
             long size = (long)(numericUpDownBitrate.Value * 1000 / 8 * timeIntervalCollection.TotalDuration.TotalSeconds);
             textBlockTargetSize.Text = $"Video encoded size: {size.ToBytesString()}";
         }
+
+        private void UpdateVideoFilter()
+        {
+            if (isMediaOpen)
+            {
+                string filter = "";
+
+                if (sliderBrightness.Value != 0 || sliderContrast.Value != 0 || sliderSaturation.Value != 0 || sliderGamma.Value != 0 || sliderRed.Value != 0 || sliderGreen.Value != 0 || sliderBlue.Value != 0)
+                {
+                    Filters.EqFilter eq = new Filters.EqFilter()
+                    {
+                        Brightness = sliderBrightness.Value,
+                        Contrast = sliderContrast.Value,
+                        Saturation = sliderSaturation.Value,
+                        Gamma = sliderGamma.Value,
+                        GammaRed = sliderRed.Value,
+                        GammaGreen = sliderGreen.Value,
+                        GammaBlue = sliderBlue.Value,
+                    };
+                    filter = eq.GetFilter();
+                }
+
+                if (comboBoxRotation.SelectedIndex != 0)
+                {
+                    Filters.RotationFilter rotation = new Filters.RotationFilter(comboBoxRotation.SelectedIndex);
+                    if (filter == "")
+                    {
+                        filter = rotation.GetFilter();
+                    }
+                    else
+                    {
+                        filter += $",{rotation.GetFilter()}";
+                    }
+                }
+
+                mediaPlayer.VideoFilter = filter;
+            }
+        }
+
+        #endregion
 
         #region Native methods
 

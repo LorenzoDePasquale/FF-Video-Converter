@@ -6,6 +6,45 @@
         Title="Quality comparison" Height="1005" Width="1600" WindowStartupLocation="CenterScreen" Style="{StaticResource BlurWindowStyle}" Loaded="Window_Loaded">
 
     <Window.Resources>
+        <Style TargetType="{x:Type Slider}" x:Key="ComparisonSlider">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1, 0, 1, 0" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Track x:Name="PART_Track">
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb" Focusable="False" Height="{TemplateBinding Height}" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="10" Cursor="SizeWE">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="{x:Type Thumb}">
+                                                    <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
+                                                        <Path x:Name="grip" Fill="{StaticResource BackgroundColor}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
+                                                            <Path.Data>
+                                                                <RectangleGeometry Rect="11 11 11 11" />
+                                                            </Path.Data>
+                                                        </Path>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Fill" TargetName="grip" Value="{StaticResource MouseOverColor}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter Property="Fill" TargetName="grip" Value="{StaticResource PressedColor}"/>
+                                                            <Setter Property="Stroke" TargetName="grip" Value="{StaticResource BorderColor}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Storyboard x:Key="ProgressAnimationIn">
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="labelLoading" BeginTime="00:00:00">
                 <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0, 0, 0, 0" />
@@ -23,7 +62,6 @@
                 <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0,0,150,-29" />
             </ThicknessAnimationUsingKeyFrames>
         </Storyboard>
-
         <Storyboard x:Key="ProgressAnimationOut">
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="labelLoading" BeginTime="00:00:00">
                 <SplineThicknessKeyFrame KeyTime="00:00:00.3" Value="0,25,0,-25" />
@@ -98,13 +136,13 @@
             <ComboBox MaxDropDownHeight="600" x:Name="comboBoxQuality" HorizontalAlignment="Left" Height="24" Margin="142,49,0,-28" VerticalAlignment="Top" Width="167" SelectionChanged="ComboBoxQuality_SelectionChanged" />
             <Slider x:Name="sliderPreview" Margin="54,0,388,7" Minimum="0" Height="25" VerticalAlignment="Bottom" IsMoveToPointEnabled="True" ValueChanged="SliderPreview_ValueChanged" Thumb.DragStarted="SliderPreview_DragStarted" Thumb.DragCompleted="SliderPreview_DragCompleted"/>
             <CheckBox x:Name="checkBoxZoom" Content="Fit to window" VerticalAlignment="Top" Margin="0,48,18,-29" Checked="CheckBoxZoom_Checked" Unchecked="CheckBoxZoom_Unchecked" IsChecked="True" HorizontalAlignment="Right" Width="110"/>
-            <Button x:Name="buttonCreatePreview" Content="Create preview" Height="30" Margin="0,0,10,8" VerticalAlignment="Bottom" Click="ButtonCreatePreview_Click" HorizontalAlignment="Right" Width="128"/>
+            <Button x:Name="buttonCreatePreview" Content="Create preview" Margin="0,0,10,8" VerticalAlignment="Bottom" Click="ButtonCreatePreview_Click" HorizontalAlignment="Right"/>
             <TextBlock x:Name="textBlockPreviewTimespan" HorizontalAlignment="Right" TextWrapping="Wrap" Text="Preview timespan: 00:00:00 - 00:00:00" VerticalAlignment="Bottom" Margin="0,0,151,14" Width="223" IsHitTestVisible="False"/>
             <TextBlock x:Name="textBlockPreviewBuildProgress" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Margin="76,0,0,-25" Width="223" IsHitTestVisible="False"/>
             <ProgressBar x:Name="progressBarPreview" Margin="225,49,150,-29" Height="25" VerticalAlignment="Top"/>
             <Button x:Name="buttonPlayPause" Content=" ▶️" FontSize="16" HorizontalAlignment="Left" Style="{StaticResource RoundedButton}" Margin="10,0,0,4" Width="34" Click="ButtonPlayPause_Click" Padding="0,0,2,1" Height="35" VerticalAlignment="Bottom"/>
-            <Button x:Name="buttonNextFrame" Content="Next frame" Height="30" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="128" Margin="0,0,646,-59" Click="ButtonNextFrame_Click"/>
-            <Button x:Name="buttonPreviousFrame" Content="Previous frame" Height="30" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="128" Margin="0,0,921,-59" Click="ButtonPreviousFrame_Click"/>
+            <Button x:Name="buttonNextFrame" Content="Next frame" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,646,-59" Click="ButtonNextFrame_Click"/>
+            <Button x:Name="buttonPreviousFrame" Content="Previous frame" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,921,-59" Click="ButtonPreviousFrame_Click"/>
         </Grid>
     </Grid>
 </Window>

@@ -34,7 +34,7 @@
 
         <TextBlock Grid.Row="2" Text="Video URL" Margin="10,21,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox x:Name="textBoxURL" Grid.Row="2" Margin="10,44,10,0" Height="25" VerticalAlignment="Top" />
-        <Button x:Name="buttonOpen" Content="Open URL" Grid.Row="2" Margin="312,87,312,-3" Height="30" VerticalAlignment="Top" Click="ButtonOpen_Click" />
+        <Button x:Name="buttonOpen" Content="Open URL" Grid.Row="2" Margin="312,87,312,-3" VerticalAlignment="Top" Click="ButtonOpen_Click" />
 
         <Grid x:Name="gridQuality" Grid.Row="2" Margin="10,160,266,-76" Height="30" VerticalAlignment="Top" >
             <TextBlock x:Name="textBlockQuality" Text="Video" Margin="0,8,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Visibility="Visible"/>

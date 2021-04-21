@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "FFVideoConverter": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\Lorenzo\\Videos\\A Plague Tale  Innocence\\A Plague Tale  Innocence 2019.10.14 - 16.38.22.01.mp4\"",
+      "nativeDebugging": false
+    }
+  }
+}

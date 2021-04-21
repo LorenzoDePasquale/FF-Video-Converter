@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+using FFVideoConverter.Encoders;
 
 namespace FFVideoConverter
 {
@@ -471,7 +471,7 @@ namespace FFVideoConverter
         {
             if (e.Data != null)
             {
-                (string key, string value) = e.Data.Split('=').ToCouple();
+                (string key, string value) = ToCouple(e.Data.Split('='));
                 if (value != "N/A")
                 {
                     /* stdout from ffmpeg:
@@ -527,6 +527,8 @@ namespace FFVideoConverter
                     }
                 }
             }
+
+            (string, string) ToCouple(string[] array) => (array[0], array[1]);
         }
 
         private void ConvertProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
@@ -549,7 +551,7 @@ namespace FFVideoConverter
         internal static extern bool FreeConsole();
         [DllImport("kernel32.dll")]
         static extern bool SetConsoleCtrlHandler(ConsoleCtrlDelegate HandlerRoutine, bool Add);
-        delegate Boolean ConsoleCtrlDelegate(uint CtrlType);
+        delegate bool ConsoleCtrlDelegate(uint CtrlType);
 
         #endregion
     }

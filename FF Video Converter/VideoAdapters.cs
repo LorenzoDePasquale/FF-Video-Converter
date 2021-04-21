@@ -10,7 +10,7 @@ namespace FFVideoConverter
 
         static VideoAdapters()
         {
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController");
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_VideoController");
             foreach (ManagementObject obj in searcher.Get())
             {
                 ADAPTERS.Add(obj["Name"].ToString().ToLower());

@@ -65,7 +65,7 @@ namespace FFVideoConverter
 
             List<StreamInfo> videoList = new List<StreamInfo>();
             string displayValue;
-            foreach (var videoStreamInfo in streamManifest.GetVideoOnly())
+            foreach (var videoStreamInfo in streamManifest.GetVideoOnlyStreams())
             {
                 string videoCodec;
                 if (videoStreamInfo.VideoCodec.Contains("avc"))
@@ -80,14 +80,14 @@ namespace FFVideoConverter
                 {
                     videoCodec = videoStreamInfo.VideoCodec;
                 }
-                displayValue = $"{videoStreamInfo.VideoQualityLabel} ({videoCodec}) - {videoStreamInfo.Size.TotalBytes.ToBytesString()}";
-                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.Size.TotalBytes));
+                displayValue = $"{videoStreamInfo.VideoQuality.Label} ({videoCodec}) - {videoStreamInfo.Size.Bytes.ToBytesString()}";
+                videoList.Add(new StreamInfo(videoStreamInfo.Url, false, video.Title, displayValue, videoStreamInfo.Size.Bytes));
             }
-            foreach (var audioStreamInfo in streamManifest.GetAudioOnly())
+            foreach (var audioStreamInfo in streamManifest.GetAudioOnlyStreams())
             {
                 string audioCodec = audioStreamInfo.AudioCodec.Replace("mp4a.40.2", "aac");
-                displayValue = $"{audioStreamInfo.Bitrate.BitsPerSecond / 1000} Kbps ({audioCodec}) - {audioStreamInfo.Size.TotalBytes.ToBytesString()}";
-                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.Size.TotalBytes));
+                displayValue = $"{audioStreamInfo.Bitrate.BitsPerSecond / 1000} Kbps ({audioCodec}) - {audioStreamInfo.Size.Bytes.ToBytesString()}";
+                videoList.Add(new StreamInfo(audioStreamInfo.Url, true, video.Title, displayValue, audioStreamInfo.Size.Bytes));
             }
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
             return videoList;
@@ -102,9 +102,17 @@ namespace FFVideoConverter
                 currentUrl = url;
             }
 
-            foreach (var videoStreamInfo in streamManifest.GetMuxed())
+            foreach (var videoStreamInfo in streamManifest.GetMuxedStreams())
             {
-                if (videoStreamInfo.Resolution.Height == 720) return videoStreamInfo.Url;
+                if (videoStreamInfo.VideoResolution.Height == 720) return videoStreamInfo.Url;
+            }
+            foreach (var videoStreamInfo in streamManifest.GetMuxedStreams())
+            {
+                if (videoStreamInfo.VideoResolution.Height == 480) return videoStreamInfo.Url;
+            }
+            foreach (var videoStreamInfo in streamManifest.GetMuxedStreams())
+            {
+                if (videoStreamInfo.VideoResolution.Height == 360) return videoStreamInfo.Url;
             }
             return null;
         }
@@ -118,20 +126,27 @@ namespace FFVideoConverter
             using HttpClient client = new HttpClient();
             using Stream stream = await client.GetStreamAsync(url + ".json").ConfigureAwait(false);
             using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
-
-            string title = document.RootElement[0].GetProperty("data").GetProperty("children")[0].GetProperty("data").GetProperty("title").GetString();
-            string dashDocumentUrl = document.RootElement[0].GetProperty("data").GetProperty("children")[0].GetProperty("data").GetProperty("media").GetProperty("reddit_video").GetProperty("dash_url").GetString();
-            string dashContent = await client.GetStringAsync(dashDocumentUrl).ConfigureAwait(false);
-            string baseVideoUrl = dashDocumentUrl.Substring(0, dashDocumentUrl.LastIndexOf('/') + 1);
             List<StreamInfo> videoList = new List<StreamInfo>();
-            string displayValue;
 
-            foreach (var (dash, label, size) in GetDashInfos(dashContent))
+            JsonElement dataElement = document.RootElement[0].GetProperty("data").GetProperty("children")[0].GetProperty("data");
+            string title = dataElement.GetProperty("title").GetString();
+            bool isVideo = dataElement.GetProperty("is_video").GetBoolean();
+            if (isVideo)
             {
-                displayValue = $"{label} - {size.ToBytesString()}";
-                videoList.Add(new StreamInfo(baseVideoUrl + dash, dash.Contains("audio"), title, displayValue, size));
+                string dashDocumentUrl = document.RootElement[0].GetProperty("data").GetProperty("children")[0].GetProperty("data").GetProperty("media").GetProperty("reddit_video").GetProperty("dash_url").GetString();
+                string dashContent = await client.GetStringAsync(dashDocumentUrl).ConfigureAwait(false);
+                string baseVideoUrl = dashDocumentUrl.Substring(0, dashDocumentUrl.LastIndexOf('/') + 1);
 
+                foreach (var (dash, label, size) in GetDashInfos(dashContent))
+                {
+                    videoList.Add(new StreamInfo(baseVideoUrl + dash, dash.Contains("audio"), title, $"{label} - {size.ToBytesString()}", size));
+                }
             }
+            else
+            {
+                videoList.Add(new StreamInfo(dataElement.GetProperty("url").GetString(), false, title, "Gif file", 0));
+            }
+
             videoList.Sort((x, y) => { return y.Size.CompareTo(x.Size); });
 
             return videoList;

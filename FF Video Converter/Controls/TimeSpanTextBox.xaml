@@ -4,7 +4,6 @@
              xmlns:controls="clr-namespace:FFVideoConverter.Controls"
              Height="25" Width="77">
 
-    <Grid>
-        <TextBox x:Name="textBox" Text="00:00:00.00" Foreground="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:TimeSpanTextBox}}}"/>
-    </Grid>
+    <TextBox x:Name="textBox" Text="00:00:00.00" Foreground="{Binding Foreground, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type controls:TimeSpanTextBox}}}"/>
+    
 </UserControl>

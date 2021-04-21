@@ -52,6 +52,7 @@ namespace FFVideoConverter.Controls
 		public void Undo()
         {
 			textBox.Undo();
+			Value = TimeSpanParse(textBox.Text);
         }
 
 		private static void OnValueChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
@@ -150,11 +151,18 @@ namespace FFVideoConverter.Controls
 		private void OnTextInput(object sender, TextCompositionEventArgs e)
 		{
 			if (char.IsDigit(e.Text[0]))
-				if (e.Text.Any(c => TestCaretAtEnd(c, textBox.SelectionStart)))
-					ReplaceDigit(textBox.SelectionStart, e.Text[0], true);
-				else if (textBox.Text.Substring(0, textBox.SelectionStart - 1).Replace(':', '0').All(i => i == '0'))
-					ChangeValueDependingOnLocaton(e.Text[0] - textBox.Text[textBox.SelectionStart]);
-			e.Handled = true;
+            {
+                if (e.Text.Any(c => TestCaretAtEnd(c, textBox.SelectionStart)))
+                {
+                    ReplaceDigit(textBox.SelectionStart, e.Text[0], true);
+                }
+                else if (textBox.Text.Substring(0, textBox.SelectionStart - 1).Replace(':', '0').All(i => i == '0'))
+                {
+                    ChangeValueDependingOnLocaton(e.Text[0] - textBox.Text[textBox.SelectionStart]);
+                }
+            }
+
+            e.Handled = true;
 		}
 
 		private bool TestCaretAtEnd(char value, int position)
@@ -164,7 +172,9 @@ namespace FFVideoConverter.Controls
 
 		private void ReplaceDigit(int position, char digit, bool normal)
 		{
-			if (position >= textBox.Text.Length || position < 0) return;
+			if (position >= textBox.Text.Length || position < 0)
+				return;
+
 			string firstPart, lastPart;
 			if (!":.".Contains(textBox.Text[position]))
 			{
@@ -225,8 +235,8 @@ namespace FFVideoConverter.Controls
 		private static TimeSpan TimeSpanParse(string value)
 		{
 			int hours = 0, minutes = 0;
-			var timePieces = value.Split(':');
-			double secondsWithFraction = double.Parse(timePieces.Last());
+            string[] timePieces = value.Split(':');
+			double secondsWithFraction = double.Parse(timePieces[^1]);
 			double seconds = Math.Floor(secondsWithFraction);
 			int milliseconds = (int)((secondsWithFraction - seconds) * 1000);
 			if (timePieces.Length > 1)

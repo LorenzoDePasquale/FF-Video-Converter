@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
         mc:Ignorable="d"
         x:Name="window" x:Class="FFVideoConverter.MainWindow"
-        Title="FF Video Converter" Height="720" Width="853" Style="{StaticResource BlurWindowStyle}" WindowStartupLocation="CenterScreen" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="FF Video Converter" Height="715" Width="853" Style="{StaticResource BlurWindowStyle}" WindowStartupLocation="CenterScreen" ContentRendered="Window_ContentRendered" Closing="Window_Closing">
     <!--Max height for 720p/1080p150% screens is 715-->
 
     <Window.Resources>
@@ -172,7 +172,7 @@
         </Storyboard>
 
         <Storyboard x:Key="OpenOutputButtonAnimationIn" >
-            <ThicknessAnimation Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonOpenOutput" To="0,44,13,-15" Duration="0:0:0.4">
+            <ThicknessAnimation Storyboard.TargetProperty="Margin" Storyboard.TargetName="buttonOpenOutput" To="0,45,13,0" Duration="0:0:0.4">
                 <ThicknessAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseInOut"/>
                 </ThicknessAnimation.EasingFunction>
@@ -260,19 +260,20 @@
                     <controls:LabelledTextBlock x:Name="labelledTextBlockBitrate" Label="Video bitrate" />
                     <controls:LabelledTextBlock x:Name="labelledTextBlockResolution" Label="Resolution" />
                     <controls:LabelledTextBlock x:Name="labelledTextBlockAspectRatio" Label="Aspect ratio" />
+                    <controls:LabelledTextBlock x:Name="labelledTextBlockColorDepth" Label="Color depth" />
                     <controls:LabelledTextBlock x:Name="labelledTextBlockDynamicRange" Label="Dynamic range" />
                     <controls:LabelledTextBlock x:Name="labelledTextBlockPixelFormat" Label="Pixel format" />
-                    <controls:LabelledTextBlock x:Name="labelledTextBlockBitsPerPixel" Label="Bits per pixel" ToolTip="Represents the average amount of bits used for each pixel&#xA;The higher it is, the less compressed the video is"/>
+                    <controls:LabelledTextBlock x:Name="labelledTextBlockBitsPerPixel" Label="Bits per pixel" ToolTip="Represents the average amount of bits used for each pixel&#xA;The higher it is, the less compressed the video is&#xA;Only useful when comparing videos with the same codec"/>
                 </StackPanel>
             </ScrollViewer>
         </Grid>
 
-        <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,218,216,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpen_Click"/>
-        <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,218,14,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpenStream_Click"/>
-        <Button x:Name="buttonShowQueue" Content="Queue" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,535,14,0" HorizontalAlignment="Right" Width="140" Click="ButtonShowQueue_Click"/>
-        <Button x:Name="buttonStart" Content="Start" VerticalAlignment="Top" IsEnabled="False" Margin="277,535,0,0" Click="ButtonStart_Click" Height="30" Grid.Row="1" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" Width="140" Style="{StaticResource GreenButton}"/>
-        <Button x:Name="buttonAddToQueue" Content="Add to queue" Grid.Row="1" VerticalAlignment="Top" Height="30" Margin="0,535,277,0" HorizontalAlignment="Right" Width="140" IsEnabled="False" Click="ButtonStart_Click" Style="{StaticResource GreenButton}"/>
-        <Button x:Name="buttonPreview" Content="Quality preview" Grid.Row="1" VerticalAlignment="Top" Margin="10,535,0,0" Click="ButtonPreview_Click" Height="30" HorizontalAlignment="Left" Width="140" ToolTipService.ShowDuration="15000" ToolTip="Compare a 4s clip of the video at every quality settings"/>
+        <Button x:Name="buttonOpenFile" Content="Open local file" Grid.Row="1" VerticalAlignment="Top" Margin="0,218,216,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpen_Click"/>
+        <Button x:Name="buttonOpenStream" Content="Open network resource" Grid.Row="1" VerticalAlignment="Top" Margin="0,218,14,0" HorizontalAlignment="Right" Width="190" Click="ButtonOpenStream_Click"/>
+        <Button x:Name="buttonShowQueue" Content="Queue" Grid.Row="1" VerticalAlignment="Top" Margin="0,534,14,0" HorizontalAlignment="Right" Click="ButtonShowQueue_Click"/>
+        <Button x:Name="buttonStart" Content="Start" VerticalAlignment="Top" IsEnabled="False" Margin="287,534,0,0" Click="ButtonStart_Click" Grid.Row="1" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" Style="{StaticResource GreenButton}"/>
+        <Button x:Name="buttonAddToQueue" Content="Add to queue" Grid.Row="1" VerticalAlignment="Top" Margin="0,534,287,0" HorizontalAlignment="Right" IsEnabled="False" Click="ButtonStart_Click" Style="{StaticResource GreenButton}"/>
+        <Button x:Name="buttonPreview" Content="Compare quality" Grid.Row="1" VerticalAlignment="Top" Margin="10,534,0,0" Click="ButtonPreview_Click" HorizontalAlignment="Left" ToolTipService.ShowDuration="15000" ToolTip="Compare a 4s clip of the video at every quality settings"/>
 
         <Border x:Name="borderSource" Grid.Row="1" Background="Transparent" CornerRadius="14" Margin="10,15,0,0" BorderThickness="3" Height="236" VerticalAlignment="Top" HorizontalAlignment="Left" Width="413" Panel.ZIndex="100">
             <Border.BorderBrush>
@@ -319,14 +320,35 @@
                         <ComboBox x:Name="comboBoxQuality" HorizontalAlignment="Left" Margin="473,43,0,0" VerticalAlignment="Top" Width="177" ToolTipService.ShowDuration="15000" ToolTip="Select the encoding quality to size ratio&#xA;A higher quality will provide a better looking video at the cost of file size" />
                         <ComboBox x:Name="comboBoxFramerate" HorizontalAlignment="Left" Margin="73,124,0,0" VerticalAlignment="Top" Width="177" />
                         <RadioButton x:Name="radioButtonQuality" Margin="358,43,349,0" Content="Target quality" IsChecked="True" ToolTip="Prioritize output quality over file size. This method yealds the best quality per bitrate, but output size is unknown" Height="24" VerticalAlignment="Top" />
-                        <RadioButton x:Name="radioButtonBitrate" Margin="358,81,349,0" Content="Target bitrate" ToolTip="Prioritize output bitrate over quality. This method allows to target a specific bitrate, but output quality is unknown" Height="25" VerticalAlignment="Top"/>
-                        <controls:NumericUpDown x:Name="numericUpDownBitrate" Minimum="100" Maximum="99999" Step="1000" Label="Kbps" Value="10000" IsEnabled="{Binding IsEnabled, ElementName=radioButtonBitrate}" Margin="477,78,242,0" Height="28" VerticalAlignment="Top" ValueChanged="NumericUpDownBitrate_ValueChanged" />
-                        <TextBlock x:Name="textBlockTargetSize" HorizontalAlignment="Left" d:Text="Video size: 4.70 GB" VerticalAlignment="Top" Margin="587,83,0,0" Width="215" IsEnabled="{Binding IsEnabled, ElementName=radioButtonBitrate}" />
-                        <CheckBox x:Name="checkBoxTwoPass" Content="Two-pass encoding" Height="30" Margin="477,114,190,0" IsEnabled="{Binding IsEnabled, ElementName=radioButtonBitrate}" ToolTip="Two-pass encoding provides much better quality with the same bitrate, but encoding times are almost doubled&#xA;Not supported by hardware encoders" VerticalAlignment="Top"/>
+                        <RadioButton x:Name="radioButtonBitrate" Margin="358,85,349,0" Content="Target bitrate" ToolTip="Prioritize output bitrate over quality. This method allows to target a specific bitrate, but output quality is unknown" Height="25" VerticalAlignment="Top"/>
+                        <controls:NumericUpDown x:Name="numericUpDownBitrate" Minimum="100" Maximum="99999" Step="1000" Label="Kbps" Value="10000" IsEnabled="{Binding IsEnabled, ElementName=radioButtonBitrate}" Margin="477,82,242,0" Height="28" VerticalAlignment="Top" ValueChanged="NumericUpDownBitrate_ValueChanged" />
+                        <TextBlock x:Name="textBlockTargetSize" HorizontalAlignment="Left" d:Text="Video size: 4.70 GB" VerticalAlignment="Top" Margin="587,87,0,0" Width="215" IsEnabled="{Binding IsEnabled, ElementName=radioButtonBitrate}" />
+                        <CheckBox x:Name="checkBoxTwoPass" Content="Two-pass encoding" Height="30" Margin="477,117,190,0" IsEnabled="{Binding IsEnabled, ElementName=radioButtonBitrate}" ToolTip="Two-pass encoding provides much better quality with the same bitrate, but encoding times are almost doubled&#xA;Not supported by hardware encoders" VerticalAlignment="Top"/>
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="tabItemCut" Header="✂   Cut" FontFamily="Segoe UI Symbol" >
+            <TabItem x:Name="tabItemColor" Header="🎨  Color" FontFamily="Segoe UI Symbol" >
+                <Grid x:Name="gridColor">
+                    <TextBlock Text="Contrast" Margin="1,18,745,135" TextAlignment="Right" />
+                    <controls:PercentageSlider x:Name="sliderContrast" Margin="77,17,420,0" VerticalAlignment="Top" ValueChanged="SliderColor_ValueChanged" />
+                    <TextBlock Text="Brightness" Margin="1,56,745,97" TextAlignment="Right"/>
+                    <controls:PercentageSlider x:Name="sliderBrightness" Margin="77,55,420,0" VerticalAlignment="Top" ValueChanged="SliderColor_ValueChanged" />
+                    <TextBlock Text="Saturation" Margin="1,94,745,59" TextAlignment="Right"/>
+                    <controls:PercentageSlider x:Name="sliderSaturation" Margin="77,93,420,0" VerticalAlignment="Top" ValueChanged="SliderColor_ValueChanged" />
+                    <TextBlock Text="Gamma" Margin="1,131,745,22" TextAlignment="Right"/>
+                    <controls:PercentageSlider x:Name="sliderGamma"  Margin="77,131,420,0" VerticalAlignment="Top" ValueChanged="SliderColor_ValueChanged" />
+                    <TextBlock Text="Red" Margin="411,18,335,135" TextAlignment="Right" />
+                    <controls:PercentageSlider x:Name="sliderRed" Margin="487,17,10,0" VerticalAlignment="Top" Foreground="#FFDE2626" ValueChanged="SliderColor_ValueChanged" />
+                    <TextBlock Text="Green" Margin="411,56,335,96" TextAlignment="Right"/>
+                    <controls:PercentageSlider x:Name="sliderGreen" Margin="487,55,10,0" VerticalAlignment="Top" Foreground="#FF30AE0A" ValueChanged="SliderColor_ValueChanged"  />
+                    <TextBlock Text="Blue" Margin="411,94,335,59" TextAlignment="Right"/>
+                    <controls:PercentageSlider x:Name="sliderBlue" Margin="487,93,10,0" VerticalAlignment="Top" Foreground="#FF254EBD" ValueChanged="SliderColor_ValueChanged" />
+                    <TextBlock Text="Pixel format" Margin="411,131,335,22" TextAlignment="Right"/>
+                    <ComboBox x:Name="comboBoxPixelFormat" HorizontalAlignment="Left" Width="179" VerticalAlignment="Top" Margin="492,129,0,0" />
+                    <!--<controls:TriangleColorPicker Margin="466,0,0,0" HorizontalAlignment="Left" Width="191" Height="152" VerticalAlignment="Center" />-->
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="tabItemCut" Header="✂  Cut" FontFamily="Segoe UI Symbol" >
                 <Grid>
                     <DockPanel Margin="0,0,0,144">
                         <CheckBox x:Name="checkBoxFade" Content="Fade effect" DockPanel.Dock="Left" ToolTipService.ShowDuration="15000" ToolTip="Apply a fade effect when passing from one segment to the other" Margin="8,0,0,0" Width="0" />
@@ -336,29 +358,29 @@
                     <ScrollViewer x:Name="scrollViewerEncodeSegments" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top" Margin="5,37,7,0" Height="128">
                         <StackPanel>
                             <ItemsControl x:Name="cutInsideControlsList" />
-                            <Button x:Name="buttonAddCutControl" Content="Add segment" Width="126" Height="30" Click="ButtonAddCutControl_Click" HorizontalAlignment="Center" IsEnabled="False" ToolTip="Add a segment to encode. If there are no segments, all the video will be encoded" Margin="0,2,0,0" />
+                            <Button x:Name="buttonAddCutControl" Content="Add segment" Width="126" Height="30" Click="ButtonAddCutControl_Click" HorizontalAlignment="Center" IsEnabled="False" ToolTip="Add a segment to encode. If there are no segments, all the video will be encoded" Margin="0,3,0,0" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </TabItem>
             <TabItem x:Name="tabItemResize" Header="⭿  Resize" FontFamily="Segoe UI Symbol">
-                <Grid x:Name="gridCropResize">
+                <Grid x:Name="gridResize">
                     <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Resolution" VerticalAlignment="Top" Margin="1,46,0,0" Width="68" TextAlignment="Right"/>
                     <TextBlock x:Name="textBlockRotation" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Rotation" VerticalAlignment="Top" Margin="1,87,0,0" Width="68" TextAlignment="Right"/>
-                    <ComboBox x:Name="comboBoxResolution" HorizontalAlignment="Left" Margin="73,43,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxResolution_SelectionChanged" />
+                    <ComboBox x:Name="comboBoxResolution" HorizontalAlignment="Left" Margin="73,43,0,0" VerticalAlignment="Top" Width="177" Height="24" />
                     <ComboBox x:Name="comboBoxRotation" HorizontalAlignment="Left" Margin="73,84,0,0" VerticalAlignment="Top" Width="177" Height="24" SelectionChanged="ComboBoxRotation_SelectionChanged" ToolTipService.ShowDuration="15000" ToolTip="Select the rotation to apply to every frame&#xA;This operation is performed after an eventual crop operation"/>
-                    <Grid x:Name="gridCrop" Margin="328,14,10,0" Height="125" VerticalAlignment="Top" >
-                        <controls:NumericUpDown x:Name="integerTextBoxCropTop" HorizontalAlignment="Left" Height="28" Margin="190,20,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
-                        <controls:NumericUpDown x:Name="integerTextBoxCropLeft" HorizontalAlignment="Left" Height="28" Margin="120,48,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
-                        <controls:NumericUpDown x:Name="integerTextBoxCropBottom" HorizontalAlignment="Left" Height="28" Margin="190,76,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged" />
-                        <controls:NumericUpDown x:Name="integerTextBoxCropRight" HorizontalAlignment="Left" Height="28" Margin="261,48,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsEnabled, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged" />
-                        <TextBlock HorizontalAlignment="Left" Margin="92,54,0,0" TextWrapping="Wrap" Text="Left" VerticalAlignment="Top"/>
-                        <TextBlock HorizontalAlignment="Left" Margin="215,-2,0,0" TextWrapping="Wrap" Text="Top" VerticalAlignment="Top"/>
-                        <TextBlock HorizontalAlignment="Left" Margin="337,54,0,0" TextWrapping="Wrap" Text="Right" VerticalAlignment="Top"/>
-                        <TextBlock HorizontalAlignment="Left" Margin="204,108,0,0" TextWrapping="Wrap" Text="Bottom" VerticalAlignment="Top"/>
-                        <TextBlock x:Name="textBlockOutputSize" HorizontalAlignment="Left" Margin="392,44,0,0" TextWrapping="Wrap" Text="Output size:" VerticalAlignment="Top" Height="17" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}" Width="73"/>
-                        <CheckBox x:Name="checkBoxCrop" IsEnabled="False" Content="Crop" HorizontalAlignment="Left" Margin="0,47,0,0" VerticalAlignment="Top" Height="30" Width="64" Checked="CheckBoxCrop_Click" Unchecked="CheckBoxCrop_Click"/>
-                        <TextBlock x:Name="textBlockOutputResolution" HorizontalAlignment="Left" Margin="391,62,0,0" TextWrapping="Wrap" Text="1920x1080" VerticalAlignment="Top" Height="17" Width="74" TextAlignment="Center" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}"/>
+                    <Grid x:Name="gridCrop" Margin="328,14,10,0" Height="137" VerticalAlignment="Top" >
+                        <controls:NumericUpDown x:Name="integerTextBoxCropTop" HorizontalAlignment="Left" Height="28" Margin="190,22,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsChecked, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
+                        <controls:NumericUpDown x:Name="integerTextBoxCropLeft" HorizontalAlignment="Left" Height="28" Margin="118,0,0,0" VerticalAlignment="Center" Width="70" Minimum="0" IsEnabled="{Binding IsChecked, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged"/>
+                        <controls:NumericUpDown x:Name="integerTextBoxCropBottom" HorizontalAlignment="Left" Height="28" Margin="190,86,0,0" VerticalAlignment="Top" Width="70" Minimum="0" IsEnabled="{Binding IsChecked, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged" />
+                        <controls:NumericUpDown x:Name="integerTextBoxCropRight" HorizontalAlignment="Left" Height="28" Margin="263,0,0,0" VerticalAlignment="Center" Width="70" Minimum="0" IsEnabled="{Binding IsChecked, ElementName=checkBoxCrop}" ValueChanged="IntegerTextBoxCrop_ValueChanged" />
+                        <TextBlock HorizontalAlignment="Left" Margin="91,60,0,0" TextWrapping="Wrap" Text="Left" VerticalAlignment="Top"/>
+                        <TextBlock HorizontalAlignment="Left" Margin="215,0,0,0" TextWrapping="Wrap" Text="Top" VerticalAlignment="Top"/>
+                        <TextBlock HorizontalAlignment="Left" Margin="339,0,0,0" TextWrapping="Wrap" Text="Right" VerticalAlignment="Center"/>
+                        <TextBlock HorizontalAlignment="Left" Margin="204,115,0,0" TextWrapping="Wrap" Text="Bottom" VerticalAlignment="Top"/>
+                        <TextBlock x:Name="textBlockOutputSize" HorizontalAlignment="Left" Margin="401,50,0,0" TextWrapping="Wrap" Text="Resolution:" VerticalAlignment="Top" Height="17" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}" Width="73"/>
+                        <CheckBox x:Name="checkBoxCrop"  Content="Crop" HorizontalAlignment="Left" VerticalAlignment="Center" Height="30" Width="64" Checked="CheckBoxCrop_Click" Unchecked="CheckBoxCrop_Click" Margin="1,0,0,0"/>
+                        <TextBlock x:Name="textBlockOutputResolution" HorizontalAlignment="Left" Margin="395,69,0,0" TextWrapping="Wrap" d:Text="1920x1080" VerticalAlignment="Top" Height="17" Width="74" TextAlignment="Center" Visibility="{Binding IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, ElementName=checkBoxCrop}"/>
                     </Grid>
                     <TextBlock x:Name="textBlockRotationCropWarning" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Since cropping is performed before rotating, select the crop area with no rotation selected, then select the desired rotation" VerticalAlignment="Top" Margin="10,125,0,0" Width="370" Height="35" Foreground="#FFB6B6B6" FontWeight="Normal" />
                 </Grid>
@@ -373,7 +395,7 @@
             </TabItem>
         </TabControl>
 
-        <Grid x:Name="gridProgress" Grid.Row="1" Height="89" VerticalAlignment="Top" Margin="0,575,0,0">
+        <Grid x:Name="gridProgress" Grid.Row="1" Height="89" VerticalAlignment="Top" Margin="0,570,0,0">
             <Grid x:Name="gridProgressBar" Margin="10,5,10,0" Height="25" VerticalAlignment="Top">
                 <ProgressBar x:Name="progressBarConvertProgress" />
                 <Border Margin="360,0,360,-20" Background="{StaticResource BackgroundColor}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1 0 1 1" CornerRadius="0,0,10,10" Height="19" VerticalAlignment="Bottom"/>
@@ -391,7 +413,7 @@
             <controls:LabelledTextBlock x:Name="labelledtextBlockProgress" Label="{x:Null}" VerticalAlignment="Top" Margin="13,35,476,-1" Height="23" />
             <controls:LabelledTextBlock x:Name="labelledtextBlockOutputSize" Label="{x:Null}" VerticalAlignment="Top" Margin="13,58,476,-24" Height="23" />
             <TextBlock x:Name="textBlockMemory" TextWrapping="Wrap" VerticalAlignment="Top" Margin="490,35,158,-25" Height="47" LineHeight="22"/>
-            <Button x:Name="buttonOpenOutput" Content="Show completed" Margin="0,100,13,-40" Height="28" VerticalAlignment="Top" Click="ButtonOpenOutput_Click" HorizontalAlignment="Right" Width="140" />
+            <Button x:Name="buttonOpenOutput" Content="Show completed" Margin="0,100,10,0" VerticalAlignment="Top" Click="ButtonOpenOutput_Click" HorizontalAlignment="Right" />
         </Grid>
 
     </Grid>

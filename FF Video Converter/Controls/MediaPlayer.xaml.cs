@@ -33,11 +33,14 @@ namespace FFVideoConverter.Controls
             get => playerMediaOptions.VideoFilter;
             set
             {
-                playerMediaOptions.VideoFilter = value;
-                //Make changes visible if the player is paused
-                if (mediaElement.IsPaused)
+                if (playerMediaOptions.VideoFilter != value)
                 {
-                    mediaElement.ChangeMedia();
+                    playerMediaOptions.VideoFilter = value;
+                    //Make changes visible if the player is paused
+                    if (mediaElement.IsPaused)
+                    {
+                        mediaElement.ChangeMedia();
+                    }
                 }
             }
         }
@@ -273,12 +276,12 @@ namespace FFVideoConverter.Controls
             mediaElement.StepBackward();
         }
 
-        private async void SliderSourcePosition_DragCompleted(object sender, DragCompletedEventArgs e)
+        private void SliderSourcePosition_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             isSeeking = false;
             if (wasPlaying)
             {
-                await mediaElement.Play();
+                mediaElement.Play();
             }
         }
 
@@ -293,8 +296,11 @@ namespace FFVideoConverter.Controls
         private void SliderSourcePosition_DragStarted(object sender, DragStartedEventArgs e)
         {
             isSeeking = true;
-            wasPlaying = mediaElement.IsPlaying;
-            mediaElement.Pause();
+            if (mediaElement.IsPlaying)
+            {
+                wasPlaying = true;
+                mediaElement.Pause();
+            }
         }
 
         private void ButtonExpand_Click(object sender, RoutedEventArgs e)
@@ -550,7 +556,9 @@ namespace FFVideoConverter.Controls
             rectangleCropVideo.Height = height;
 
             //Update the black border that hides the cropped part
-            borderCropVideo.BorderThickness = new Thickness(left, top, canvasCropVideo.ActualWidth - left - width, canvasCropVideo.ActualHeight - top - height);
+            double right = Math.Max(canvasCropVideo.ActualWidth - left - width, 0);
+            double bottom = Math.Max(canvasCropVideo.ActualHeight - top - height, 0);
+            borderCropVideo.BorderThickness = new Thickness(left, top, right, bottom);
         }
 
         private void SetMouseCursor()

@@ -12,6 +12,8 @@ namespace FFVideoConverter
         public MasteringDisplayMetadata DisplayMetadata { get; private set; }
         public (int maxContent, int maxAverage) LightLevelMetadata { get; private set; }
 
+        public int ColorDepth => PixelFormat.Contains("10") ? 10 : 8;
+
         /*
         {
             "pix_fmt": "yuv420p10le",
