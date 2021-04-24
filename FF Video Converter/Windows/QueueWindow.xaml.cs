@@ -212,17 +212,17 @@ namespace FFVideoConverter
                     Job job = (Job)draggedItem.Content;
                     draggedItemIndex = queuedJobs.IndexOf(job);
                     listViewQueuedJobs.SelectedIndex = -1;
-                    //Setup dragAdorner
+                    // Setup dragAdorner
                     VisualBrush brush = new VisualBrush(draggedItem);
                     dragAdorner = new DragAdorner(listViewQueuedJobs, draggedItem.RenderSize, brush);
                     dragAdorner.Opacity = 0.75;
                     AdornerLayer layer = AdornerLayer.GetAdornerLayer(listViewQueuedJobs);
                     layer.Add(dragAdorner);
                     insertionLine.Visibility = Visibility.Visible;
-                    //Do drag-drop
+                    // Do drag-drop
                     DataObject dragData = new DataObject("Job", job);
                     DragDrop.DoDragDrop(draggedItem, dragData, DragDropEffects.Copy | DragDropEffects.Move);
-                    //Drag ended
+                    // Drag ended
                     layer.Remove(dragAdorner);
                     dragAdorner = null;
                     insertionLine.Visibility = Visibility.Collapsed;
@@ -252,7 +252,7 @@ namespace FFVideoConverter
                 ListViewItem draggedOverItem = FindAnchestor<ListViewItem>((DependencyObject)e.OriginalSource);
                 e.Effects = DragDropEffects.Move;
                 int newIndex;
-                if (draggedOverItem == null) //Dropped in empty space -> becomes last item
+                if (draggedOverItem == null) // Dropped in empty space -> becomes last item
                 {
                     newIndex = queuedJobs.Count - 1;
                     if (draggedItemIndex >= 0)
@@ -285,13 +285,13 @@ namespace FFVideoConverter
         {
             e.Effects = DragDropEffects.Move;
 
-            //Move dragAdorner
+            // Move dragAdorner
             Point mousePosition = e.GetPosition(listViewQueuedJobs);
             ListViewItem itemBeingDragged = (ListViewItem)listViewQueuedJobs.ItemContainerGenerator.ContainerFromIndex(draggedItemIndex);
             double topOffset = mousePosition.Y - itemBeingDragged.RenderSize.Height / 2;
             dragAdorner.SetOffsets(mousePosition.X - draggingStartPoint.X, topOffset);
 
-            //Move insertionLine
+            // Move insertionLine
             ListViewItem draggedOverItem = FindAnchestor<ListViewItem>((DependencyObject)e.OriginalSource);
             if (draggedOverItem != null)
             {

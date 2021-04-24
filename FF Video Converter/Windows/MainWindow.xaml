@@ -53,7 +53,7 @@
                 </EasingThicknessKeyFrame>
             </ThicknessAnimationUsingKeyFrames>
             <ThicknessAnimationUsingKeyFrames Storyboard.TargetProperty="Margin" Storyboard.TargetName="gridCrop">
-                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="176,182,162,-137">
+                <EasingThicknessKeyFrame KeyTime="0:0:0.4" Value="176,182,162,-140">
                     <EasingThicknessKeyFrame.EasingFunction>
                         <CubicEase EasingMode="EaseInOut"/>
                     </EasingThicknessKeyFrame.EasingFunction>

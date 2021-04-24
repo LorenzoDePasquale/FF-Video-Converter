@@ -147,7 +147,7 @@ namespace FFVideoConverter
                 comboBoxAudioQuality.Visibility = Visibility.Hidden;
             }
             buttonOpen.Content = "Open";
-            if (comboBoxQuality.Items.Count == 1 && comboBoxAudioQuality.Items.Count == 1) //Only one option -> automatically select that option
+            if (comboBoxQuality.Items.Count == 1 && comboBoxAudioQuality.Items.Count == 1) // Only one option -> automatically select that option
             {
                 ButtonOpen_Click(null, null);
             }
@@ -169,6 +169,9 @@ namespace FFVideoConverter
                 {
                     StreamInfo selectedAudio = (StreamInfo)comboBoxAudioQuality.SelectedItem;
                     MediaStream = await MediaInfo.Open(video.Url, selectedAudio.Url);
+                    // FFProbe gets a wrong bitrate value, so it's necessary to overwrite it with correct value from Youtube parser
+                    MediaStream.AudioTracks[0].Size = selectedAudio.Size;
+                    MediaStream.AudioTracks[0].Bitrate = Convert.ToInt32(selectedAudio.Size * 8 / MediaStream.Duration.TotalSeconds);
                 }
                 else
                 {

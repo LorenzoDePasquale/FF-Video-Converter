@@ -19,7 +19,7 @@ namespace FFVideoConverter.Controls
                 AudioConversionOptions conversionOptions = new AudioConversionOptions();
                 float bitrate = Convert.ToSingle(comboBoxBitrate.SelectedItem.ToString().Replace(" Kbps", ""));
                 conversionOptions.Encoder = comboBoxEncoders.SelectedIndex == 1 ? new AACEncoder() : new OpusEncoder();
-                conversionOptions.Encoder.Bitrate = new Bitrate(bitrate);
+                conversionOptions.Encoder.Bitrate = bitrate;
                 conversionOptions.Title = textBoxTitle.Text;
                 conversionOptions.Channels = channels[comboBoxChannels.Text];
                 return conversionOptions;

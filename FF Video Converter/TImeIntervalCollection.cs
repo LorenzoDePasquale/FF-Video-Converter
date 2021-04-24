@@ -45,8 +45,8 @@ namespace FFVideoConverter
         /// </summary>
         public bool Intersect(TimeInterval other)
         {
-            //An intersection means that exist t so that Start <= t <= End && other.Start <= t <= other.End
-            //This means that Start <= other.End and other.Start <= End
+            // An intersection means that exist t so that Start <= t <= End && other.Start <= t <= other.End
+            // This means that Start <= other.End and other.Start <= End
             return Start <= other.End && other.Start <= End; 
         }
 
@@ -96,7 +96,7 @@ namespace FFVideoConverter
                 {
                     return new TimeInterval(Start, other.End);
                 }
-                return this; //this line will never run, but it's necessary for the compiler
+                return this; // this line will never run, but it's necessary for the compiler
             }
             else
             {
@@ -215,15 +215,15 @@ namespace FFVideoConverter
             TimeInterval collectionInterval = new TimeInterval(Start, End);
             if (collectionInterval.Intersect(timeInterval))
             {
-                //Discards the part of the interval that's outisde of the collection range
+                // Discards the part of the interval that's outisde of the collection range
                 if (timeInterval.Start < Start)
                     timeInterval.Start = Start;
                 if (timeInterval.End > End)
                     timeInterval.End = End;
 
-                for (int i = intervalList.Count - 1; i >= 0; i--) //Loop is reversed to allow removing items from the list
+                for (int i = intervalList.Count - 1; i >= 0; i--) // Loop is reversed to allow removing items from the list
                 {
-                    if (intervalList[i].Intersect(timeInterval)) //Absorbs existing intersecting intervals into the new intervals
+                    if (intervalList[i].Intersect(timeInterval)) // Absorbs existing intersecting intervals into the new intervals
                     {
                         timeInterval += intervalList[i];
                         intervalList.RemoveAt(i);
@@ -241,7 +241,7 @@ namespace FFVideoConverter
 
         public void Remove(TimeInterval timeInterval)
         {
-            for (int i = intervalList.Count - 1; i >= 0; i--) //Loop is reversed to allow removing items from the list
+            for (int i = intervalList.Count - 1; i >= 0; i--) // Loop is reversed to allow removing items from the list
             {
                 TimeInterval currentInterval = intervalList[i];
                 if (timeInterval.Contains(currentInterval))
@@ -302,13 +302,13 @@ namespace FFVideoConverter
         {
             if (Contains(timeSpan)) return timeSpan;
 
-            //Since intervaList is sorted, the first intervalList before timeSpan is the right one
+            // Since intervaList is sorted, the first intervalList before timeSpan is the right one
             for (int i = intervalList.Count; i >= 0 ; i--)
             {
                 if (timeSpan > intervalList[i].End) return intervalList[i].End;
             }
 
-            //timeSpan is not inside the collection
+            // timeSpan is not inside the collection
             if (timeSpan < Start) return ActualStart;
             return End;
         }
@@ -320,13 +320,13 @@ namespace FFVideoConverter
         {
             if (Contains(timeSpan)) return timeSpan;
 
-            //Since intervaList is sorted, the first intervalList after timeSpan is the right one
+            // Since intervaList is sorted, the first intervalList after timeSpan is the right one
             foreach (var timeInterval in intervalList)
             {
                 if (timeSpan < timeInterval.Start) return timeInterval.Start;
             }
 
-            //timeSpan is not inside the collection
+            // timeSpan is not inside the collection
             if (timeSpan < Start) return ActualStart;
             return End;
         }

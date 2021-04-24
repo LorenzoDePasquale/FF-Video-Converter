@@ -4,7 +4,7 @@
     {
         public override string Name => "H264 (QuickSync)";
         public override bool IsDoublePassSupported => false;
-        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv420p10le }; //No copy because qsv is more restrictive on the allowed pixel formats, so it's necessary to force a choice
+        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv420p10le }; // No copy because qsv is more restrictive on the allowed pixel formats, so it's necessary to force a choice
 
         private int GlobalQuality => 22 + (int)Quality * 4;
 
@@ -36,7 +36,7 @@
     {
         public override string Name => "H265 (QuickSync)";
         public override bool IsDoublePassSupported => false;
-        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv420p10le }; //No copy because qsv is more restrictive on the allowed pixel formats, so it's necessary to force a choice
+        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv420p10le }; // No copy because qsv is more restrictive on the allowed pixel formats, so it's necessary to force a choice
 
         private int GlobalQuality => 22 + (int)Quality * 4;
 

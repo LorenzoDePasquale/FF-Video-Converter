@@ -175,7 +175,8 @@
                 <Button x:Name="buttonNextFrame" Content="ᐅ" HorizontalAlignment="Left" VerticalAlignment="Top" Width="23" Height="23" Style="{StaticResource MediaPlayerButton}" Click="ButtonNextFrame_Click" FontSize="16" ToolTip="Next frame"/>
                 <Button x:Name="buttonMute" Content="🔊" VerticalAlignment="Top" Width="26" Height="22" Style="{StaticResource MediaPlayerButton}" Click="ButtonMute_Click" Margin="5,0,0,0" FontSize="24" MouseEnter="ButtonMute_MouseEnter" FontFamily="Segoe UI Symbol"/>
                 <Slider x:Name="sliderVolume" ValueChanged="SliderVolume_ValueChanged" Maximum="1" IsMoveToPointEnabled="True" Value="1" Style="{DynamicResource VolumeSlider}" Width="0" d:Width="80" Height="16" Margin="1,0,0,8" />
-                <TextBlock x:Name="textBlockPlayerPosition" Text="00:00:00 / 00:00:00"  HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,3,0,0" />
+                <TextBlock x:Name="textBlockPlayerPosition" Text="00:00:00 / 00:00:00" VerticalAlignment="Top" Margin="6,3,0,0" />
+                <TextBlock x:Name="textBlockFrameType" Margin="10,-2,0,0" d:Text="🄱" Visibility="Hidden" d:Visibility="Visible" FontSize="19" VerticalAlignment="Top" ToolTip="Current frame type&#xA;I: intra frame&#xA;P: predicted frame&#xA;B: bidirectionally predicted frame"/>
             </StackPanel>
             <Button x:Name="buttonAudioTrack" Content="🎧" HorizontalAlignment="Right" VerticalAlignment="Top" Width="31" Height="27" Style="{StaticResource MediaPlayerButton}" Click="ButtonAudioTrack_Click" Margin="0,0,43,0" FontSize="22" FontFamily="Segoe UI Symbol" Grid.Row="1"/>
             <Button x:Name="buttonExpand" Content="⛶" HorizontalAlignment="Right" VerticalAlignment="Top" Width="27" Height="27" Style="{StaticResource MediaPlayerButton}" Click="ButtonExpand_Click" Margin="0,1,8,0" FontSize="28" FontFamily="Segoe UI" Grid.Row="1"/>

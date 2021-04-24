@@ -34,23 +34,23 @@ namespace FFVideoConverter
                 while (process.StandardOutput.Peek() > -1)
                 {
                     string line = process.StandardOutput.ReadLine();
-                    if (line.Contains("probe_score")) //For some reason ffprobe sometimes hangs for 30-60 seconds before closing, so it's necessary to manually stop at the end of the output
+                    if (line.Contains("probe_score")) // For some reason ffprobe sometimes hangs for 30-60 seconds before closing, so it's necessary to manually stop at the end of the output
                         {
                         break;
                     }
                     stdoutBuilder.Append(line);
                 }
-                stdoutBuilder.Remove(stdoutBuilder.Length - 1, 1); //Removes last comma
+                stdoutBuilder.Remove(stdoutBuilder.Length - 1, 1); // Removes last comma
                 return stdoutBuilder.ToString();
             }).ConfigureAwait(false);
 
             if (jsonOutput.Length < 5)
             {
-                //Since it's not possible to create a Window from this thread, an Exception is thrown; whoever called this method will have to show the user the error
+                // Since it's not possible to create a Window from this thread, an Exception is thrown; whoever called this method will have to show the user the error
                 throw new Exception("Failed to parse media file:\n\n" + source); 
             }
 
-            //For some reason output brakets sometimes are unbalanced, so it's necessary to manually balance them
+            // For some reason output brakets sometimes are unbalanced, so it's necessary to manually balance them
             while (!BracketBalanced(jsonOutput)) jsonOutput += "}";
 
             return jsonOutput;
@@ -71,7 +71,7 @@ namespace FFVideoConverter
                 {
                     string line = process.StandardOutput.ReadLine();
                     stdoutBuilder.Append(line);
-                    if (line.Contains("probe_score")) //For some reason ffprobe sometimes hangs for 30-60 seconds before closing, so it's necessary to manually stop at the end of the output
+                    if (line.Contains("probe_score")) // For some reason ffprobe sometimes hangs for 30-60 seconds before closing, so it's necessary to manually stop at the end of the output
                     {
                         break;
                     }
@@ -110,7 +110,7 @@ namespace FFVideoConverter
                 {
                     while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        string[] values = line.Split(','); //for vp9 videos -skip_frame nokey doesn't work, so it's necessary to include and check the key_frame flag
+                        string[] values = line.Split(','); // for vp9 videos -skip_frame nokey doesn't work, so it's necessary to include and check the key_frame flag
                         if (values[0] == "1")
                         {
                             double currentPosition = Ceiling(Double.Parse(values[1]), 2);
@@ -155,10 +155,10 @@ namespace FFVideoConverter
 
         private static double Ceiling(double value, int digits)
         {
-            //With digits = 2:
-            //5.123456 -> 5.13
-            //5.001000 -> 5.01
-            //5.110999 -> 5.12
+            // With digits = 2:
+            // 5.123456 -> 5.13
+            // 5.001000 -> 5.01
+            // 5.110999 -> 5.12
             int x = (int)(value * Math.Pow(10, digits));
             x += 1;
             return x / Math.Pow(10, digits);

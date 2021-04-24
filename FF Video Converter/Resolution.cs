@@ -26,7 +26,7 @@ namespace FFVideoConverter
             }
         }
 
-        public static Resolution FromString(string resolution) //resolution must be a string in this form: 1920x1080
+        public static Resolution FromString(string resolution) // resolution must be a string in this form: 1920x1080
         {
             string[] numbers = resolution.Split('x');
             return new Resolution(Convert.ToInt16(numbers[0]), Convert.ToInt16(numbers[1]));

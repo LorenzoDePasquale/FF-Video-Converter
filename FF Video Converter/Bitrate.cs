@@ -23,6 +23,9 @@ namespace FFVideoConverter
             return Bps == other.Bps;
         }
 
+        public static implicit operator Bitrate(int bitsPerSecond) => new Bitrate(bitsPerSecond);
+        public static implicit operator Bitrate(float kilobitsPerSecond) => new Bitrate(kilobitsPerSecond);
+
         public static bool operator ==(Bitrate b1, Bitrate b2)
         {
             return b1.Bps == b2.Bps;

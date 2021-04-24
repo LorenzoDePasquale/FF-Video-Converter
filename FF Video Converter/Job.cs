@@ -2,15 +2,16 @@
 using System.IO;
 using FFVideoConverter.Encoders;
 
+
 namespace FFVideoConverter
 {
-    public enum JobState 
-    { 
+    public enum JobState
+    {
         Queued, Running, Paused, Canceled, Completed, Failed 
     }
 
-    public enum JobType 
-    { 
+    public enum JobType
+    {
         Conversion, FastCut, Download, Remux, AudioExport 
     }
 
@@ -49,6 +50,7 @@ namespace FFVideoConverter
             Destination = destination;
             ConversionOptions = conversionOptions;
             State = JobState.Queued;
+
             if (conversionOptions.Encoder is CopyEncoder && conversionOptions.AudioConversionOptions.Count == 0)
             {
                 if (conversionOptions.EncodeSections?.Count > 0)
@@ -68,6 +70,7 @@ namespace FFVideoConverter
             {
                 JobType = JobType.Conversion;
             }
+
             ConversionResults = new List<ConversioResult>();
         }
 

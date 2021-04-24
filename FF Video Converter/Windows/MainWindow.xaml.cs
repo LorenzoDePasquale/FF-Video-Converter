@@ -1,19 +1,19 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shell;
-using System.Diagnostics;
-using System.Windows.Data;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using FFVideoConverter.Encoders;
+using Microsoft.Win32;
 using PixelFormat = FFVideoConverter.Encoders.PixelFormat;
 
 
@@ -25,10 +25,10 @@ namespace FFVideoConverter
         FFmpegEngine ffmpegEngine;
         QueueWindow queueWindow;
         CompletedWindow completedWindow;
-        ObservableCollection<Job> queuedJobs = new();
-        ObservableCollection<Job> completedJobs = new();
-        PerformanceCounter avaiableMemoryCounter = new();
-        PerformanceCounter memoryCounter = new();
+        ObservableCollection<Job> queuedJobs = new ();
+        ObservableCollection<Job> completedJobs = new ();
+        PerformanceCounter avaiableMemoryCounter = new ();
+        PerformanceCounter memoryCounter = new ();
         long totalMemory;
         const int RECT_MIN_SIZE = 20;
         MediaInfo mediaInfo;
@@ -48,39 +48,38 @@ namespace FFVideoConverter
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            //Initialize counters (do not pass these arguments in the constructor because for some reason it is much slower)
+            // Initialize counters (do not pass these arguments in the constructor because for some reason it is much slower)
             avaiableMemoryCounter.CategoryName = "Memory";
             avaiableMemoryCounter.CounterName = "Available MBytes";
             memoryCounter.CategoryName = "Process";
             memoryCounter.CounterName = "Working Set - Private";
             memoryCounter.InstanceName = "FFVideoConverter";
 
-            //UI stuff
+            // UI stuff
             TaskbarItemInfo = new TaskbarItemInfo();
-            Height -= 30; //To compensate for hiding the window chrome
+            Height -= 30; // To compensate for hiding the window chrome
             Width -= 5;
-            System.Version v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            labelTitle.Text += $" v{v.Major}.{v.Minor}";
-            if (v.Build != 0) labelTitle.Text += $".{v.Build}";
-
-            //Setup internal player
+            Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            labelTitle.Text += $" v{version}";
+            
+            // Setup internal player
             mediaPlayer.Click += MediaPlayer_Click;
             mediaPlayer.CropChanged += MediaPlayer_CropChanged;
             mediaPlayer.ButtonExpandClick += ButtonExpand_Click;
 
-            //Create queue and completed windows
+            // Create queue and completed windows
             queueWindow = new QueueWindow(this, queuedJobs);
             queueWindow.QueueStarted += QueueWindow_QueueStarted;
             queueWindow.QueueStopped += () => buttonShowQueue.Content = "Queue";
             completedWindow = new CompletedWindow(this, completedJobs);
 
-            //Setup ffmpeg
+            // Setup ffmpeg
             ffmpegEngine = new FFmpegEngine();
             ffmpegEngine.ProgressChanged += UpdateProgress;
             ffmpegEngine.ConversionCompleted += ConversionCompleted;
             ffmpegEngine.ConversionAborted += ConversioAborted;
 
-            //Setup comboboxes
+            // Setup comboboxes
             comboBoxFormat.Items.Add("MP4");
             comboBoxFormat.Items.Add("MKV");
             comboBoxFormat.Items.Add("GIF");
@@ -109,20 +108,20 @@ namespace FFVideoConverter
             comboBoxResolution.Items.Add("Same as source");
             comboBoxResolution.SelectedIndex = 0;
 
-            //Get total memory
+            // Get total memory
             GetPhysicallyInstalledSystemMemory(out totalMemory);
             totalMemory *= 1024;
 
-            //Clear old versions and checks for new updates
+            // Clear old versions and checks for new updates
             ManageUpdates();
 
-            //Open command line video if present
+            // Open command line video if present
             CheckCommandLine();
         }
 
         private async void ManageUpdates()
         {
-            //Remove old version, if it exists
+            // Remove old version, if it exists
             if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "update"))
             {
                 Directory.Delete(AppDomain.CurrentDomain.BaseDirectory + "update", true);
@@ -144,7 +143,7 @@ namespace FFVideoConverter
 #endif
         }
 
-        private async void CheckCommandLine()
+        private void CheckCommandLine()
         {
             if (Environment.GetCommandLineArgs().Length > 1)
             {
@@ -152,16 +151,7 @@ namespace FFVideoConverter
                 string extension = Path.GetExtension(sourcePath);
                 if (Array.IndexOf(SUPPORTED_EXTENSIONS, extension) > -1)
                 {
-                    try
-                    {
-                        labelTitle.Text = "Opening media...";
-                        mediaInfo = await MediaInfo.Open(sourcePath);
-                        _ = OpenSource();
-                    }
-                    catch (Exception ex)
-                    {
-                        new MessageBoxWindow(ex.Message, "Error opening video").ShowDialog();
-                    }
+                    OpenNewMedia(sourcePath);
                 }
             }
         }
@@ -233,7 +223,7 @@ namespace FFVideoConverter
             SetComboBoxResolution();
             SetupAudioTracks();
 
-            //Since applying a filter to the player just after it opened a new video makes it crash the entire program, the only thing to do is to set all these controls to the default value so no filter needs to be applied
+            // Since applying a filter to the player just after it opened a new video makes it crash the entire program, the only thing to do is to set all these controls to the default value so no filter needs to be applied
             ResetColorSliders();
             comboBoxRotation.SelectedIndex = 0;
 
@@ -246,13 +236,11 @@ namespace FFVideoConverter
             buttonAddCutControl.IsEnabled = true;
 
             isMediaOpen = true;
-
-            UpdateVideoFilter();
         }
 
         public async void OpenJob(Job job)
         {
-            //Open media (if it's different from the one currently open)
+            // Open media (if it's different from the one currently open)
             if (mediaInfo != job.SourceInfo)
             {
                 mediaInfo = job.SourceInfo;
@@ -260,13 +248,13 @@ namespace FFVideoConverter
             }
             ConversionOptions conversionOptions = job.ConversionOptions;
 
-            //Load encoding settings
+            // Load encoding settings
             LoadEncoder(conversionOptions);
 
-            //Load filters
+            // Load filters
             LoadFilters(conversionOptions.Filters);
 
-            //Load encoding segments
+            // Load encoding segments
             cutInsideControlsList.Items.Clear();
             if (conversionOptions.EncodeSections?.Count > 0)
             {
@@ -278,7 +266,7 @@ namespace FFVideoConverter
             OnDurationChanged();
             checkBoxFade.IsChecked = conversionOptions.FadeEffect;
 
-            //Load audio tracks
+            // Load audio tracks
             foreach (var aco in conversionOptions.AudioConversionOptions)
             {
                 foreach (Controls.AudioTrackControl atc in listViewAudioTracks.Items)
@@ -341,13 +329,13 @@ namespace FFVideoConverter
                 switch (filter)
                 {
                     case Filters.CropFilter f:
-                        //Setting the flag isDragging stops the controls from checking for errors on the single values and refusing them
+                        // Setting the flag isDragging stops the controls from checking for errors on the single values and refusing them
                         isDragging = true;
                         integerTextBoxCropBottom.Value = f.Bottom;
                         integerTextBoxCropLeft.Value = f.Left;
                         integerTextBoxCropRight.Value = f.Right;
                         isDragging = false;
-                        //The flag is removed before editing the last control to allow the ValueChanged event to set the rectangle size
+                        // The flag is removed before editing the last control to allow the ValueChanged event to set the rectangle size
                         integerTextBoxCropTop.Value = f.Top;
                         checkBoxCrop.IsChecked = true;
                         break;
@@ -496,12 +484,6 @@ namespace FFVideoConverter
                 Controls.AudioTrackControl audioTrackControl = new Controls.AudioTrackControl(audioTrack);
                 audioTrackControl.ExportButtonClicked += AudioTrackControl_ExportButtonClicked;
                 listViewAudioTracks.Items.Add(audioTrackControl);
-
-                string trackLabel = audioTrack.Title != "" ? audioTrack.Title : audioTrack.Codec;
-                if (audioTrack.Channels > 2)
-                    trackLabel += $" {audioTrack.ChannelLayout}";
-                if (audioTrack.Language != "")
-                    trackLabel += $" [{audioTrack.Language}]";
             }
         }
 
@@ -527,7 +509,7 @@ namespace FFVideoConverter
             }
         }
 
-        private async void ButtonOpen_Click(object sender, RoutedEventArgs e)
+        private void ButtonOpen_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Title = "Select the source file";
@@ -540,20 +522,11 @@ namespace FFVideoConverter
             bool? result = ofd.ShowDialog();
             if (result == true)
             {
-                try
-                {
-                    labelTitle.Text = "Opening media...";
-                    mediaInfo = await MediaInfo.Open(ofd.FileName);
-                    await OpenSource();
-                }
-                catch (Exception ex)
-                {
-                    new MessageBoxWindow(ex.Message, "Error opening video").ShowDialog();
-                }
+                OpenNewMedia(ofd.FileName);
             }
         }
 
-        private async void MediaElement_Drop(object sender, DragEventArgs e)
+        private void MediaElement_Drop(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
@@ -561,15 +534,7 @@ namespace FFVideoConverter
                 string extension = Path.GetExtension(paths[0]);
                 if (Array.IndexOf(SUPPORTED_EXTENSIONS, extension) > -1)
                 {
-                    try
-                    {
-                        mediaInfo = await MediaInfo.Open(paths[0]);
-                        _ = OpenSource();
-                    }
-                    catch (Exception ex)
-                    {
-                        new MessageBoxWindow(ex.Message, "Error opening file").ShowDialog();
-                    }
+                    OpenNewMedia(paths[0]);
                 }
                 else
                 {
@@ -577,6 +542,22 @@ namespace FFVideoConverter
                 }
             }
             this.StopStoryboard("DragOverAnimation");
+        }
+
+        private async void OpenNewMedia(string source)
+        {
+            try
+            {
+                labelTitle.Text = "Opening media...";
+                mediaInfo = await MediaInfo.Open(source);
+                _ = OpenSource();
+            }
+            catch (Exception ex)
+            {
+                Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                labelTitle.Text = $"FF Video Converter v{version}";
+                new MessageBoxWindow(ex.Message, "Error opening file").ShowDialog();
+            }
         }
 
         #endregion
@@ -605,10 +586,10 @@ namespace FFVideoConverter
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            //Make sure the ffmpeg process is not running
+            // Make sure the ffmpeg process is not running
             ffmpegEngine.StopConversion();
 
-            //Terminates the application (this call is necessary because other opened windows would keep the application running)
+            // Terminates the application (this call is necessary because other opened windows would keep the application running)
             Application.Current.Shutdown();
         }
 
@@ -626,7 +607,7 @@ namespace FFVideoConverter
                 textBoxDestination.Text = Path.ChangeExtension(textBoxDestination.Text, extension);
             }
 
-            if (comboBoxFormat.SelectedIndex == 2) //switched to gif
+            if (comboBoxFormat.SelectedIndex == 2) // switched to gif
             {
                 comboBoxEncoder.Items.Clear();
                 comboBoxEncoder.Items.Add("GIF encoder");
@@ -644,7 +625,7 @@ namespace FFVideoConverter
                 radioButtonQuality.IsChecked = true;
                 radioButtonBitrate.IsEnabled = false;
             }
-            else if (radioButtonBitrate.IsEnabled == false) //switched to mp4 or mkv, from gif
+            else if (radioButtonBitrate.IsEnabled == false) // switched to mp4 or mkv, from gif
             {
                 SetComboBoxEncoders();
                 comboBoxEncoder.ToolTip = "Copy means the video is not re-encoded, thus conversion options are not used\nH264 provides maximum compatibility and is faster to encode\nH265 is from 25% to 50% more efficient than H264, but requires more time to encode\nAV1 is a modern codec that's more efficient than H265 but much slower to enccode, ideal for very high resolution content\nHardware encoders like QuickSync or Nvenc can encode much faster than software encoders, but at a lower quality per bitrate";
@@ -698,7 +679,7 @@ namespace FFVideoConverter
                         item.ShowKeyframesSuggestions = false;
                     }
 
-                    //Setting the IsEnabled property to false removes the binding, so when IsEnabled can be true, the binding is recreated
+                    // Setting the IsEnabled property to false removes the binding, so when IsEnabled can be true, the binding is recreated
                     if (selectedEncoder.IsDoublePassSupported)
                     {
                         Binding binding = new Binding();
@@ -720,7 +701,7 @@ namespace FFVideoConverter
 
         private void ComboBoxProfile_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (comboBoxFormat.SelectedIndex == 2) //gif
+            if (comboBoxFormat.SelectedIndex == 2) // gif
             {
                 comboBoxQuality.IsEnabled = comboBoxPreset.SelectedIndex != 0;
             }
@@ -769,7 +750,7 @@ namespace FFVideoConverter
                     if (comboBoxRotation.SelectedIndex != 0)
                         textBlockRotationCropWarning.Visibility = Visibility.Visible;
 
-                    //If it's the first time crop is enabled, sets initial values corresponding to initial rectangle size
+                    // If it's the first time crop is enabled, sets initial values corresponding to initial rectangle size
                     if (integerTextBoxCropBottom.Value == 0 && integerTextBoxCropLeft.Value == 0 && integerTextBoxCropRight.Value == 0 && integerTextBoxCropTop.Value == 0)
                     {
                         isDragging = true;
@@ -879,14 +860,14 @@ namespace FFVideoConverter
             if (CheckForErrors()) return;
 
             ConversionOptions conversionOptions;
-            if (comboBoxFormat.SelectedIndex == 2) //gif
+            if (comboBoxFormat.SelectedIndex == 2) // gif
             {
                 conversionOptions = GenerateConversionOptionsForGif();
             }
-            else //mp4,mkv
+            else // mp4,mkv
             {
                 VideoEncoder encoder = GenerateVideoEncoder();
-                if (encoder == null) return; //it's null when user declined to encode
+                if (encoder == null) return; // it's null when user declined to encode
                 conversionOptions = GenerateConversionOptions(encoder);
             }
 
@@ -909,9 +890,8 @@ namespace FFVideoConverter
                     labelledtextBlockProgress.Text = "Starting audio export...";
                     break;
             }
-            //if (conversionOptions.EncodingMode != EncodingMode.ConstantQuality) job.TargetBitrate = new Bitrate(numericUpDownBitrate.Value * 1000);
 
-            if (((Button)sender).Name == "buttonStart" || (queueWindow.QueueActive && runningJob == null)) //If the queue is started but there are no conversion running, run this one directly instead of adding it to the queue
+            if (((Button)sender).Name == "buttonStart" || (queueWindow.QueueActive && runningJob == null)) // If the queue is started but there are no conversion running, run this one directly instead of adding it to the queue
             {
                 RunJob(job);
             }
@@ -986,7 +966,7 @@ namespace FFVideoConverter
                 }
             }
             if (radioButtonBitrate.IsChecked == true)
-                encoder.Bitrate = new Bitrate(numericUpDownBitrate.Value * 1000);
+                encoder.Bitrate = numericUpDownBitrate.Value * 1000;
             else
                 encoder.Quality = (Quality)comboBoxQuality.SelectedIndex;
             foreach (PixelFormat pixelFormat in Enum.GetValues<PixelFormat>())
@@ -1074,7 +1054,7 @@ namespace FFVideoConverter
             ConversionOptions conversionOptions = GenerateConversionOptions(null);
             conversionOptions.NoAudio = true;
 
-            //Fps filter must be present, or it defaults to a very high frame delay; thus is necessary to manually add it when the "Don't change" option is selected
+            // Fps filter must be present, or it defaults to a very high frame delay; thus is necessary to manually add it when the "Don't change" option is selected
             if (comboBoxFramerate.SelectedItem.ToString() == "Don't change")
                 conversionOptions.Filters.Add(new Filters.FpsFilter(mediaInfo.Framerate));
 
@@ -1082,7 +1062,7 @@ namespace FFVideoConverter
             {
                 Filters.GifFilter gifFilter = new Filters.GifFilter();
                 gifFilter.UseMultiplePalette = comboBoxPreset.SelectedIndex == 2;
-                byte[] colorCounts = new byte[] { 255, 200, 150, 100, 60, 30 }; //Best, VeryGood, Good, Medium, Low, VeryLow 
+                byte[] colorCounts = new byte[] { 255, 200, 150, 100, 60, 30 }; // Best, VeryGood, Good, Medium, Low, VeryLow 
                 gifFilter.MaxColors = colorCounts[comboBoxQuality.SelectedIndex];
                 conversionOptions.Filters.Add(gifFilter);
             }
@@ -1163,7 +1143,7 @@ namespace FFVideoConverter
                     labelledtextBlockOutputSize.Label = null;
                     labelledtextBlockOutputSize.Text = "";
                     break;
-                case EncodingMode.NoEncoding: //Gif encoding
+                case EncodingMode.NoEncoding: // Gif encoding
                     if (progressData.CurrentFrames == 0)
                     {
                         labelledtextBlockProgress.Label = null;
@@ -1178,7 +1158,7 @@ namespace FFVideoConverter
             DoubleAnimation progressAnimation = new DoubleAnimation(percentage, TimeSpan.FromSeconds(0.5));
             progressBarConvertProgress.BeginAnimation(ProgressBar.ValueProperty, progressAnimation);
             TaskbarItemInfo.ProgressValue = percentage / 100;
-            Title = Math.Floor(percentage) + "%   " + TimeSpan.FromSeconds(remainingTime).ToFormattedString();
+            Title = $"{Math.Floor(percentage)}%   {TimeSpan.FromSeconds(remainingTime).ToFormattedString()}";
             labelProgress.Text = $"Progress: {Math.Round(percentage)}%   Remaining time: {TimeSpan.FromSeconds(remainingTime).ToFormattedString()}";
 
             if (percentage > 99)
@@ -1190,7 +1170,7 @@ namespace FFVideoConverter
             long usedMemory = (long)memoryCounter.NextValue() + ffmpegEngine.PrivateWorkingSet;
             long avaiableMemory = (long)avaiableMemoryCounter.NextValue() * 1024 * 1024;
             textBlockMemory.Text = $"Memory used: {usedMemory.ToBytesString()} \nAvaiable: {avaiableMemory.ToBytesString()} / {totalMemory.ToBytesString()}";
-            if (avaiableMemory < 300_000_000) //300MB
+            if (avaiableMemory < 300_000_000) // 300MB
             {
                 ButtonPauseResume_Click(null, null);
                 new MessageBoxWindow($"Current avaiable memory is very low: {avaiableMemory.ToBytesString()}\nEither reduce memory used by other applications or stop this conversion process", "WARNING: low memory").ShowDialog();
@@ -1241,7 +1221,7 @@ namespace FFVideoConverter
                     runningJob.ConversionResults.Add(new ConversioResult("Bitrate", $"{outputFile.Bitrate.Kbps:F0} Kbps"));
                     runningJob.ConversionResults.Add(new ConversioResult("Resolution", outputFile.Resolution.ToString()));
                     runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", outputFile.Resolution.AspectRatio.ToString()));
-                    runningJob.ConversionResults.Add(new ConversioResult("Color depth", outputFile.ColorInfo.ColorDepth + " bit"));
+                    runningJob.ConversionResults.Add(new ConversioResult("Color depth", $"{outputFile.ColorInfo.ColorDepth} bit"));
                     runningJob.ConversionResults.Add(new ConversioResult("Dynamic range", outputFile.DynamicRange));
                     runningJob.ConversionResults.Add(new ConversioResult("Pixel format", outputFile.ColorInfo.PixelFormat));
                     runningJob.ConversionResults.Add(new ConversioResult("Bits per pixel", outputFile.BitsPerPixel.ToString("0.00")));
@@ -1260,8 +1240,7 @@ namespace FFVideoConverter
                     runningJob.ConversionResults.Add(new ConversioResult("Pixel format", $"{runningJob.SourceInfo.ColorInfo.PixelFormat}   ⟶   {outputFile.ColorInfo.PixelFormat}"));
                     runningJob.ConversionResults.Add(new ConversioResult("Bits per pixel", $"{runningJob.SourceInfo.BitsPerPixel:0.00}   ⟶   {outputFile.BitsPerPixel:0.00}"));
 
-
-                    //Show conversion results compared to original values, only if the conversion was not a download and the loaded media is the same as the converted one
+                    // Show conversion results compared to original values, only if the conversion was not a download and the loaded media is the same as the converted one
                     if (mediaInfo.Source == runningJob.SourceInfo.Source)
                     {
                         labelledTextBlockFileSize.Text = $"{runningJob.SourceInfo.Size.ToBytesString()}   ⟶   {outputSize.ToBytesString()}  ({Math.Abs(percentageDifference)}% {biggerSmaller})";
@@ -1287,27 +1266,28 @@ namespace FFVideoConverter
 
             runningJob.State = JobState.Completed;
 
-            //Complete this job and run the next one, if present
+            // Complete this job and run the next one, if present
             completedJobs.Add(runningJob);
             OnConversionEnded();
         }
 
         private void ConversioAborted(string errorMessage)
         {
-            if (progressBarConvertProgress.Value == 0) //Error while starting encoding process
+            if (progressBarConvertProgress.Value == 0) // Error while starting encoding process
             {
                 new MessageBoxWindow($"Error while starting the conversion process:\n\n\"{errorMessage}\"", "FF Video Converter").ShowDialog();
             }
-            else //Error during encoding process
+            else // Error during encoding process
             {
                 new MessageBoxWindow($"The encoder reported the following error during the encoding process:\n\n\"{errorMessage}\"", "FF Video Converter").ShowDialog();
             }
+
             progressBarConvertProgress.Value = 0;
             labelledtextBlockProgress.Text = "Conversion failed!";
             runningJob.State = JobState.Failed;
             runningJob.ConversionResults.Add(new ConversioResult("Error", errorMessage));
 
-            //Complete this job and run the next one, if present
+            // Complete this job and run the next one, if present
             completedJobs.Add(runningJob);
             OnConversionEnded();
         }
@@ -1347,7 +1327,7 @@ namespace FFVideoConverter
                 labelledtextBlockProgress.Text = "Conversion canceled";
                 labelledtextBlockOutputSize.Text = "";
                 buttonPauseResume.Content = "❚❚";
-                
+
                 runningJob.State = JobState.Canceled;
                 runningJob.ConversionResults.Add(new ConversioResult("Duration", runningJob.SourceInfo.Duration.ToFormattedString(true)));
                 runningJob.ConversionResults.Add(new ConversioResult("Codec", $"{runningJob.SourceInfo.Codec}"));
@@ -1356,7 +1336,7 @@ namespace FFVideoConverter
                 runningJob.ConversionResults.Add(new ConversioResult("Resolution", runningJob.SourceInfo.Resolution.ToString()));
                 runningJob.ConversionResults.Add(new ConversioResult("Aspect ratio", runningJob.SourceInfo.Resolution.AspectRatio.ToString()));
                 runningJob.ConversionResults.Add(new ConversioResult("Size", runningJob.SourceInfo.Size.ToBytesString()));
-                
+
                 completedJobs.Add(runningJob);
                 OnConversionEnded();
             }
@@ -1395,7 +1375,7 @@ namespace FFVideoConverter
 
             if (queueWindow.QueueActive)
             {
-                //Run next job, if present
+                // Run next job, if present
                 if (queuedJobs.Count > 0)
                 {
                     RunJob(queuedJobs[0]);
@@ -1481,7 +1461,7 @@ namespace FFVideoConverter
                 if (tabItemCut.IsSelected || tabItemResize.IsSelected)
                 {
                     this.PlayStoryboard("ShowBottomUI");
-                    if (comboBoxEncoder.SelectedIndex > 0) //If encoder is not native, animate preview button too
+                    if (comboBoxEncoder.SelectedIndex > 0) // If encoder is not native, animate preview button too
                     {
                         this.PlayStoryboard("PreviewButtonAnimationIn");
                     }
@@ -1494,7 +1474,7 @@ namespace FFVideoConverter
                 if (tabItemCut.IsSelected || tabItemResize.IsSelected)
                 {
                     this.PlayStoryboard("HideBottomUI");
-                    if (comboBoxEncoder.SelectedIndex > 0) //If encoder is not native, animate preview button too
+                    if (comboBoxEncoder.SelectedIndex > 0) // If encoder is not native, animate preview button too
                     {
                         this.PlayStoryboard("PreviewButtonAnimationOut");
                     }
@@ -1514,7 +1494,8 @@ namespace FFVideoConverter
         private void QueueWindow_QueueStarted()
         {
             buttonShowQueue.Content = "Queue (running)";
-            //If there are no jobs running, start the next one
+
+            // If there are no jobs running, start the next one
             if ((runningJob == null || (runningJob.State != JobState.Running && runningJob.State != JobState.Paused)) && queuedJobs.Count > 0)
             {
                 RunJob(queuedJobs[0]);
@@ -1535,7 +1516,7 @@ namespace FFVideoConverter
         {
             if (mediaInfo == null) return false;
             TimeSpan duration = timeIntervalCollection.TotalDuration;
-            return duration > TimeSpan.Zero && Math.Abs(duration.TotalSeconds - mediaInfo.Duration.TotalSeconds) >= 0.01; //duration will be accurate up to 0.01 seconds, so the two timespan can't be compared directly
+            return duration > TimeSpan.Zero && Math.Abs(duration.TotalSeconds - mediaInfo.Duration.TotalSeconds) >= 0.01; // duration will be accurate up to 0.01 seconds, so the two timespan can't be compared directly
         }
 
         private void BlockSleepMode()
@@ -1575,26 +1556,32 @@ namespace FFVideoConverter
 
             cutInsideControlsList.Items.Add(encodeSegmentControl);
 
-            if (cutInsideControlsList.Items.Count > 1 && !((VideoEncoder)comboBoxEncoder.SelectedItem is CopyEncoder))
+            if (cutInsideControlsList.Items.Count > 1 && comboBoxEncoder.SelectedItem is not CopyEncoder && checkBoxFade.Width == 0)
             {
-                if (checkBoxFade.Width == 0) this.PlayStoryboard("CheckBoxFadeAnimationIn");
+                this.PlayStoryboard("CheckBoxFadeAnimationIn");
             }
         }
 
         private void OnDurationChanged()
         {
             timeIntervalCollection = new TimeIntervalCollection(mediaInfo.Duration);
+
             foreach (Controls.EncodeSegmentControl encodeSegmentControl in cutInsideControlsList.Items)
             {
                 timeIntervalCollection.Add(encodeSegmentControl.Start, encodeSegmentControl.End);
             }
+
             cutPreviewControl.UpdateIntervalCollection(timeIntervalCollection, mediaInfo.Duration);
             mediaPlayer.TimeIntervalCollection = timeIntervalCollection;
 
             if (IsCutEnabled())
+            {
                 textBlockOutputDuration.Text = timeIntervalCollection.TotalDuration.ToFormattedString(true);
+            }
             else
+            {
                 textBlockOutputDuration.Text = mediaInfo.Duration.ToFormattedString(true);
+            }
 
             long size = (long)(numericUpDownBitrate.Value * 1000 / 8 * timeIntervalCollection.TotalDuration.TotalSeconds);
             textBlockTargetSize.Text = $"Video encoded size: {size.ToBytesString()}";
@@ -1645,10 +1632,10 @@ namespace FFVideoConverter
         [Flags]
         public enum EXECUTION_STATE : uint
         {
-            ES_AWAYMODE_REQUIRED = 0x00000040, //Should only be used by applications that must perform critical background processing while the computer appears to be sleeping. This value must be specified with ES_CONTINUOUS
-            ES_CONTINUOUS = 0x80000000,        //Informs the system that the state being set should remain in effect until the next call that uses ES_CONTINUOUS and one of the other state flags is cleared
-            ES_DISPLAY_REQUIRED = 0x00000002,  //Forces the display to be on by resetting the display idle timer
-            ES_SYSTEM_REQUIRED = 0x00000001    //Forces the system to be in the working state by resetting the system idle timer.
+            ES_AWAYMODE_REQUIRED = 0x00000040, // Should only be used by applications that must perform critical background processing while the computer appears to be sleeping. This value must be specified with ES_CONTINUOUS
+            ES_CONTINUOUS = 0x80000000,        // Informs the system that the state being set should remain in effect until the next call that uses ES_CONTINUOUS and one of the other state flags is cleared
+            ES_DISPLAY_REQUIRED = 0x00000002,  // Forces the display to be on by resetting the display idle timer
+            ES_SYSTEM_REQUIRED = 0x00000001    // Forces the system to be in the working state by resetting the system idle timer.
         }
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -1658,11 +1645,11 @@ namespace FFVideoConverter
         static extern bool SetSuspendState(bool hiberate, bool forceCritical, bool disableWakeEvent);
 
         [DllImport("kernel32.dll")]
-        static extern bool GetPhysicallyInstalledSystemMemory(out long TotalMemoryInKilobytes);
+        static extern bool GetPhysicallyInstalledSystemMemory(out long totalMemoryInKilobytes);
 
         #endregion
 
-        //CURRENTLY NOT USED
+        // CURRENTLY NOT USED
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             /*if (tabItemAdvanced.IsSelected && mediaInfo != null)

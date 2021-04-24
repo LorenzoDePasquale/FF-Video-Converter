@@ -17,14 +17,14 @@ namespace FFVideoConverter.Controls
 {
     public partial class TriangleColorPicker : UserControl
     {
-        //public (double red, double green, double blue) RGBValues
-        //{
+        // public (double red, double green, double blue) RGBValues
+        // {
         //    get
         //    {
         //        Point2 p = (Canvas.GetLeft(thumb), Canvas.GetTop(thumb));
 
-        //    }
-        //}
+        // }
+        // }
 
         public TriangleColorPicker()
         {
@@ -43,9 +43,9 @@ namespace FFVideoConverter.Controls
             }
         }
 
-        //To test if a point p is inside the triangle p0p1p2 it solves this equation: p = p0 + (p1 - p0) * s + (p2 - p0) * t
-        //The point p is inside the triangle if 0 <= s <= 1 and 0 <= t <= 1 and s + t <= 1, where s, t and 1-s-t are the barycentric coordinates of the point p
-        //Code adapted to C# from this js snippet http://jsfiddle.net/PerroAZUL/zdaY8/1/
+        // To test if a point p is inside the triangle p0p1p2 it solves this equation: p = p0 + (p1 - p0) * s + (p2 - p0) * t
+        // The point p is inside the triangle if 0 <= s <= 1 and 0 <= t <= 1 and s + t <= 1, where s, t and 1-s-t are the barycentric coordinates of the point p
+        // Code adapted to C# from this js snippet http://jsfiddle.net/PerroAZUL/zdaY8/1/
         private bool PointInTriangle(Point2 p, Point2 p0, Point2 p1, Point2 p2)
         {
             double area = 0.5 * (-p1.y * p2.x + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);

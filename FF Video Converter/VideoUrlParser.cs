@@ -186,7 +186,7 @@ namespace FFVideoConverter
 
             using (HttpClient client = new HttpClient())
             {
-                //Get javascript player url
+                // Get javascript player url
                 string pageSource = await client.GetStringAsync("https://twitter.com/i/videos/tweet/" + videoId).ConfigureAwait(false);
                 string jsPlayerUrl = "";
                 foreach (var line in pageSource.Split('\n'))
@@ -198,22 +198,22 @@ namespace FFVideoConverter
                         break;
                     }
                 }
-                //Get bearer token
+                // Get bearer token
                 pageSource = await client.GetStringAsync(jsPlayerUrl).ConfigureAwait(false);
                 string token = pageSource.Substring(pageSource.IndexOf("Bearer") + 7);
                 token = token.Remove(token.IndexOf('"'));
-                //Get guest_token
+                // Get guest_token
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 HttpResponseMessage response = await client.PostAsync("https://api.twitter.com/1.1/guest/activate.json", null).ConfigureAwait(false);
                 JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
                 string guestToken = document.RootElement.GetProperty("guest_token").GetString();
-                //Get m3u8 file
+                // Get m3u8 file
                 client.DefaultRequestHeaders.Add("x-guest-token", guestToken);
                 string jsResponse = await client.GetStringAsync($"https://api.twitter.com/1.1/videos/tweet/config/{videoId}.json").ConfigureAwait(false);
                 document = JsonDocument.Parse(jsResponse);
                 string playbackUrl = document.RootElement.GetProperty("track").GetProperty("playbackUrl").GetString();
                 string m3u8Content = await client.GetStringAsync(playbackUrl).ConfigureAwait(false);
-                //Get m3u8 playlists
+                // Get m3u8 playlists
                 foreach (var (relativeUrl, label) in GetPlaylists(m3u8Content))
                 {
                     videoList.Add(new StreamInfo($"https://video.twimg.com{relativeUrl}", false, title, label, 0));
@@ -253,15 +253,15 @@ namespace FFVideoConverter
 
             using (HttpClient client = new HttpClient())
             {
-                //Get page source
-                client.DefaultRequestHeaders.Add("User-Agent", "facebook_bad"); //Facebook won't return page without a user agent, but will return with a random one...
+                // Get page source
+                client.DefaultRequestHeaders.Add("User-Agent", "facebook_bad"); // Facebook won't return page without a user agent, but will return with a random one...
                 byte[] response = await client.GetByteArrayAsync(url).ConfigureAwait(false);
                 string pageSource = Encoding.UTF8.GetString(response, 0, response.Length);
-                //Get video title
+                // Get video title
                 int startIndex = pageSource.IndexOf("og:title\"") + 19;
                 int endIndex = pageSource.IndexOf('"', startIndex);
                 string title = pageSource.Substring(startIndex, endIndex - startIndex);
-                //Get HD source
+                // Get HD source
                 string videoUrl = "";
                 startIndex = pageSource.IndexOf("hd_src") + 8;
                 if (startIndex > -1) // HD could be missing
@@ -270,7 +270,7 @@ namespace FFVideoConverter
                     videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
                     videoList.Add(new StreamInfo(videoUrl, false, title, "HD Source", 0));
                 }
-                //Get SD source
+                // Get SD source
                 startIndex = pageSource.IndexOf("sd_src", endIndex) + 8;
                 endIndex = pageSource.IndexOf('"', startIndex);
                 videoUrl = pageSource.Substring(startIndex, endIndex - startIndex).Replace("amp;", "").Replace("\\", "");
@@ -291,18 +291,18 @@ namespace FFVideoConverter
 
             using (HttpClient client = new HttpClient())
             {
-                //Get page source
+                // Get page source
                 string pageSource = await client.GetStringAsync(url);
-                //Get video url
+                // Get video url
                 int startIndex = pageSource.IndexOf("og:video") + 19;
                 int endIndex = pageSource.IndexOf('"', startIndex);
                 string videoUrl = pageSource.Substring(startIndex, endIndex - startIndex);
-                //Get owner id
+                // Get owner id
                 startIndex = pageSource.IndexOf("instapp:owner_user_id") + 32;
                 endIndex = pageSource.IndexOf('"', startIndex);
                 string ownerId = pageSource.Substring(startIndex, endIndex - startIndex);
-                //Get owner name
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)"); //User agent of Instagram app
+                // Get owner name
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_3 like Mac OS X) AppleWebKit/603.3.8 (KHTML, like Gecko) Mobile/14G60 Instagram 12.0.0.16.90 (iPhone9,4; iOS 10_3_3; en_US; en-US; scale=2.61; gamut=wide; 1080x1920)"); // User agent of Instagram app
                 string response = await client.GetStringAsync($"https://i.instagram.com/api/v1/users/{ownerId}/info/").ConfigureAwait(false);
                 startIndex = response.IndexOf("name") + 8;
                 endIndex = response.IndexOf('"', startIndex);

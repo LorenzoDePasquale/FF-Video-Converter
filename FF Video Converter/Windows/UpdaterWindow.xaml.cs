@@ -35,7 +35,7 @@ namespace FFVideoConverter
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "LorenzoDePasquale");
                 using Stream stream = await httpClient.GetStreamAsync("https://api.github.com/repos/lorenzodepasquale/FF-Video-Converter/releases").ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
-                latestVersion = Version.Parse(document.RootElement[0].GetProperty("tag_name").GetString()); //Releases are sorted by most recent
+                latestVersion = Version.Parse(document.RootElement[0].GetProperty("tag_name").GetString()); // Releases are sorted by most recent
             }
             catch (Exception)
             {
@@ -57,7 +57,7 @@ namespace FFVideoConverter
             {
                 using Stream stream = await httpClient.GetStreamAsync("https://api.github.com/repos/lorenzodepasquale/FF-Video-Converter/releases");
                 using JsonDocument document = await JsonDocument.ParseAsync(stream);
-                Version newVersion = Version.Parse(document.RootElement[0].GetProperty("tag_name").GetString()); //Releases are sorted by most recent
+                Version newVersion = Version.Parse(document.RootElement[0].GetProperty("tag_name").GetString()); // Releases are sorted by most recent
                 DateTime date = DateTime.Parse(document.RootElement[0].GetProperty("published_at").GetString());
                 labelledTextBlockNewVersion.Text = $"v{newVersion.Major}.{newVersion.Minor}";
                 if (newVersion.Build > 0) labelledTextBlockNewVersion.Text += $".{newVersion.Build}";
@@ -114,7 +114,7 @@ namespace FFVideoConverter
             }
             else
             {
-                progressBarUpdateProgress.Value = 99.4f; //To avoid progress bar turning green
+                progressBarUpdateProgress.Value = 99.4f; // To avoid progress bar turning green
                 textBlockUpdateProgress.Text = "Extracting update...";
                 InstallUpdate();
             }
@@ -133,7 +133,7 @@ namespace FFVideoConverter
                         File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
                     }
                 });
-                //Restart the application
+                // Restart the application
                 Application.Current.Shutdown();
                 Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
             }
@@ -142,7 +142,7 @@ namespace FFVideoConverter
                 new MessageBoxWindow("Couldn't install downloaded update; try updating manually.\n\nError message:\n" + ex.Message, "Error").ShowDialog();
                 if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe"))
                 {
-                    //Restores old file name in case of error
+                    // Restores old file name in case of error
                     File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
                 }
                 Close();

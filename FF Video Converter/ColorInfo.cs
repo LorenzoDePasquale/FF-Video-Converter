@@ -56,8 +56,18 @@ namespace FFVideoConverter
                 colorInfo.ColorTransfer = e.GetString();
             if (element.TryGetProperty("side_data_list", out e))
             {
-                colorInfo.DisplayMetadata = MasteringDisplayMetadata.FromJson(e[0]);
-                colorInfo.LightLevelMetadata = (e[1].GetProperty("max_content").GetInt32(), e[1].GetProperty("max_average").GetInt32());
+                foreach (var item in e.EnumerateArray())
+                {
+                    string sideDataType = item.GetProperty("side_data_type").GetString();
+                    if (sideDataType == "Mastering display metadata")
+                    {
+                        colorInfo.DisplayMetadata = MasteringDisplayMetadata.FromJson(item);
+                    }
+                    else if (sideDataType == "Content light level metadata")
+                    {
+                        colorInfo.LightLevelMetadata = (item.GetProperty("max_content").GetInt32(), item.GetProperty("max_average").GetInt32());
+                    }
+                }
             }
 
             return colorInfo;
@@ -112,7 +122,7 @@ namespace FFVideoConverter
 
             public override string ToString()
             {
-                //G(green_x,green_y)B(blue_x,blue_y)R(red_x,red_y)WP(white_x,white_y)L(max,min)
+                // G(green_x,green_y)B(blue_x,blue_y)R(red_x,red_y)WP(white_x,white_y)L(max,min)
                 return $"G({Green.x},{Green.y})B({Blue.x},{Blue.y})R({Red.x},{Red.y})WP({WhitePoint.x},{WhitePoint.y})L({Luminance.max},{Luminance.min})";
             }
         }

@@ -30,13 +30,13 @@ namespace FFVideoConverter.Controls
         public TimeIntervalCollection TimeIntervalCollection { get; set; }
         public string VideoFilter 
         { 
-            get => playerMediaOptions.VideoFilter;
+            get => playerMediaOptions?.VideoFilter;
             set
             {
                 if (playerMediaOptions.VideoFilter != value)
                 {
                     playerMediaOptions.VideoFilter = value;
-                    //Make changes visible if the player is paused
+                    // Make changes visible if the player is paused
                     if (mediaElement.IsPaused)
                     {
                         mediaElement.ChangeMedia();
@@ -44,7 +44,6 @@ namespace FFVideoConverter.Controls
                 }
             }
         }
-        public bool IsPlaying => mediaElement.IsPlaying;
         public bool CropActive
         {
             get => canvasCropVideo.Visibility == Visibility.Visible;
@@ -89,6 +88,7 @@ namespace FFVideoConverter.Controls
                 playerSlider.Value = value.TotalSeconds;
             }
         }
+        public bool IsPlaying => mediaElement.IsPlaying;
 
         public event Action<CropData> CropChanged;
         public event RoutedEventHandler Click, ButtonExpandClick;
@@ -114,11 +114,14 @@ namespace FFVideoConverter.Controls
 
         public MediaPlayer()
         {
+#if DEBUG
             if (System.ComponentModel.DesignerProperties.GetIsInDesignMode(this)) return; //This constructor doesn't work with VS designer
+#endif
 
             InitializeComponent();
 
             mediaElement.ScrubbingEnabled = false;
+            mediaElement.RendererOptions.UseLegacyAudioOut = true; // IMPORTANT! DO NOT SET THIS TO FALSE OR EVERYTHING CRASHES!!
             mediaElement.PositionChanged += MediaElementInput_PositionChanged;
             mediaElement.MediaOpening += (sender, e) =>
             {
@@ -126,6 +129,16 @@ namespace FFVideoConverter.Controls
                 e.Options.DecoderParams.EnableFastDecoding = true;
                 playerMediaOptions = e.Options;
                 playerMediaInfo = e.Info;
+            };
+            mediaElement.RenderingVideo += (s, e) => 
+            {
+                textBlockFrameType.Text = e.PictureType switch
+                {
+                    FFmpeg.AutoGen.AVPictureType.AV_PICTURE_TYPE_I => "🄸",
+                    FFmpeg.AutoGen.AVPictureType.AV_PICTURE_TYPE_P => "🄿",
+                    FFmpeg.AutoGen.AVPictureType.AV_PICTURE_TYPE_B => "🄱",
+                    _ => ""
+                };
             };
         }
 
@@ -147,12 +160,14 @@ namespace FFVideoConverter.Controls
         public async Task Play()
         {
             buttonPlayPause.Content = " ❚❚";
+            textBlockFrameType.Visibility = Visibility.Hidden;
             _ = await mediaElement.Play();
         }
 
         public async Task Pause()
         {
             buttonPlayPause.Content = " ▶️";
+            textBlockFrameType.Visibility = Visibility.Visible;
             _ = await mediaElement.Pause();
         }
 
@@ -198,11 +213,7 @@ namespace FFVideoConverter.Controls
                 {
 
                     await mediaElement.Pause();
-                    if (e.Position > TimeIntervalCollection.ActualEnd)
-                    {
-                        await mediaElement.Seek(TimeIntervalCollection.ActualStart);
-                    }
-                    else if (e.Position < TimeIntervalCollection.ActualStart)
+                    if (e.Position > TimeIntervalCollection.ActualEnd || e.Position < TimeIntervalCollection.ActualStart)
                     {
                         await mediaElement.Seek(TimeIntervalCollection.ActualStart);
                     }
@@ -470,17 +481,17 @@ namespace FFVideoConverter.Controls
                     else new_height = RECT_MIN_SIZE;
                 }
 
-                //Update the rectangle and the black border that hides the cropped part
+                // Update the rectangle and the black border that hides the cropped part
                 UpdateRectangleVisuals(new_x, new_y, new_width, new_height);
 
-                //Update crop data
+                // Update crop data
                 double cropTop = new_y * mediaInfo.Height / canvasCropVideo.ActualHeight;
                 double cropLeft = new_x * mediaInfo.Width / canvasCropVideo.ActualWidth;
                 double cropBottom = (canvasCropVideo.ActualHeight - new_height - new_y) * mediaInfo.Height / canvasCropVideo.ActualHeight;
                 double cropRight = (canvasCropVideo.ActualWidth - new_width - new_x) * mediaInfo.Width / canvasCropVideo.ActualWidth;
                 CropChanged?.Invoke(new CropData((int)cropLeft, (int)cropTop, (int)cropRight, (int)cropBottom));
 
-                //Save the mouse new location.
+                // Save the mouse new location.
                 LastPoint = point;
             }
             else
@@ -555,7 +566,7 @@ namespace FFVideoConverter.Controls
             rectangleCropVideo.Width = width;
             rectangleCropVideo.Height = height;
 
-            //Update the black border that hides the cropped part
+            // Update the black border that hides the cropped part
             double right = Math.Max(canvasCropVideo.ActualWidth - left - width, 0);
             double bottom = Math.Max(canvasCropVideo.ActualHeight - top - height, 0);
             borderCropVideo.BorderThickness = new Thickness(left, top, right, bottom);

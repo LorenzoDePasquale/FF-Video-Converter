@@ -18,7 +18,7 @@
 
         public string GetFilter()
         {
-            return HasValue() ? $"crop=in_w-{Left + Right}:in_h-{Top + Bottom}:{Left}:{Top}" : ""; //in_w is input width, in_h is input height
+            return HasValue() ? $"crop=in_w-{Left + Right}:in_h-{Top + Bottom}:{Left}:{Top}" : ""; // in_w is input width, in_h is input height
         }
 
         public bool HasValue()

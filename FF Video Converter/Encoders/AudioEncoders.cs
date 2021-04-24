@@ -29,7 +29,7 @@
 
         public override string GetFFMpegCommand(int streamIndex)
         {
-            return $"libopus -b:{streamIndex} {Bitrate.Kbps}k -mapping_family 1"; //TODO: test differences between opus and libopus when opus is not experimental anymore
+            return $"libopus -b:{streamIndex} {Bitrate.Kbps}k -mapping_family 1"; // TODO: test differences between opus and libopus when opus is not experimental anymore
         }
     }
 }

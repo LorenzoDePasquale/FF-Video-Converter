@@ -61,10 +61,10 @@ namespace FFVideoConverter
             previousProgressData = new ProgressData();
             errorLine = "";
 
-            //Capture the Synchronization Context of the caller, in order to invoke the events in its original thread
+            // Capture the Synchronization Context of the caller, in order to invoke the events in its original thread
             synchronizationContext = SynchronizationContext.Current;
 
-            //Duration
+            // Duration
             if (conversionOptions.EncodeSections.Count > 0)
             {
                 progressData.TotalTime = conversionOptions.EncodeSections.TotalDuration;
@@ -74,12 +74,12 @@ namespace FFVideoConverter
                 progressData.TotalTime = sourceInfo.Duration;
             }
 
-            //Gets the total number of output frames
+            // Gets the total number of output frames
             Filters.FpsFilter fpsFilter = conversionOptions.Filters.FirstOrDefault(f => f is Filters.FpsFilter) as Filters.FpsFilter;
             double outputFps = fpsFilter?.Framerate ?? sourceInfo.Framerate;
             progressData.TotalFrames = System.Convert.ToInt32(progressData.TotalTime.TotalSeconds * outputFps);
 
-            //Get the total output file size (if using constant bitrate)
+            // Get the total output file size (if using constant bitrate)
             if (conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_SinglePass)
             {
                 progressData.TotalByteSize = conversionOptions.Encoder.Bitrate.Bps / 8 * System.Convert.ToInt64(progressData.TotalTime.TotalSeconds);
@@ -100,7 +100,7 @@ namespace FFVideoConverter
             progressData.EncodingMode = conversionOptions.EncodingMode;
             stopped = false;
 
-            //Starts the conversion task
+            // Starts the conversion task
             Task<bool> conversionTask;
             if (conversionOptions.EncodeSections.Count == 0)
             {
@@ -115,7 +115,7 @@ namespace FFVideoConverter
                 conversionTask = Convert_MultipleSegments(sourceInfo, outputPath, conversionOptions);
             }
 
-            //Reports the conversion result to the original caller
+            // Reports the conversion result to the original caller
             conversionTask.ContinueWith(result => ReportCompletition(result.Result));
         }
 
@@ -123,10 +123,10 @@ namespace FFVideoConverter
         {
             progressData = new ProgressData() { EncodingMode = EncodingMode.Copy };
 
-            //Captures the Synchronization Context of the caller, in order to invoke the events in its original thread
+            // Captures the Synchronization Context of the caller, in order to invoke the events in its original thread
             synchronizationContext = SynchronizationContext.Current;
 
-            //Duration
+            // Duration
             if (end != TimeSpan.Zero)
             {
                 progressData.TotalTime = end - start;
@@ -136,7 +136,7 @@ namespace FFVideoConverter
                 progressData.TotalTime = sourceInfo.Duration - start;
             }
 
-            //FFMpeg command string
+            // FFMpeg command string
             StringBuilder sb = new StringBuilder("-y -progress -");
             sb.Append($" -ss {start}");
             sb.Append($" -i \"{(sourceInfo.HasExternalAudio ? sourceInfo.ExternalAudioSource : sourceInfo.Source)}\"");
@@ -220,7 +220,7 @@ namespace FFVideoConverter
 
             success = await RunConversionProcess(BuildArgumentsString(sourceInfo, outputPath, conversionOptions, start, end)).ConfigureAwait(false);
 
-            //Removes 2pass log files, if they exist
+            // Removes 2pass log files, if they exist
             foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
             {
                 File.Delete(file);
@@ -262,21 +262,21 @@ namespace FFVideoConverter
                 File.AppendAllText("concat.txt", $"file '{destination}'\n");
             }
 
-            //Joins all segments toghether
+            // Joins all segments toghether
             if (!stopped && success)
             {
                 success = await RunConversionProcess($"-y -f concat -safe 0 -i concat.txt -c copy \"{outputPath}\"").ConfigureAwait(false);
                 File.Delete("concat.txt");
             }
 
-            //Removes segments
+            // Removes segments
             for (int i = 0; i < conversionOptions.EncodeSections.Count; i++)
             {
                 string partName = $"{outputDirectory}\\{outputFileName}_part_{i}.mp4";
                 if (File.Exists(partName)) File.Delete(partName);
             }
 
-            //Removes 2pass log files, if they exist
+            // Removes 2pass log files, if they exist
             foreach (var file in Directory.GetFiles(Environment.CurrentDirectory).Where(x => x.Contains("log")))
             {
                 File.Delete(file);
@@ -289,16 +289,16 @@ namespace FFVideoConverter
         {
             StringBuilder sb = new StringBuilder("-y -progress -");
 
-            //Start time
+            // Start time
             if (start != TimeSpan.Zero) sb.Append($" -ss {start}");
 
-            //Input path
+            // Input path
             sb.Append($" -i \"{sourceInfo.Source}\"");
 
-            //Duration
+            // Duration
             if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
 
-            //External audio source
+            // External audio source
             if (sourceInfo.HasExternalAudio && !conversionOptions.NoAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
                 if (start != TimeSpan.Zero) sb.Append($" -ss {start}");
@@ -306,10 +306,10 @@ namespace FFVideoConverter
                 if (end != TimeSpan.Zero) sb.Append($" -t {end - start}");
             }
 
-            //Main video track
+            // Main video track
             sb.Append($" -map 0:v:0");
 
-            //Add or skip audio tracks
+            // Add or skip audio tracks
             var audioTracks = sourceInfo.AudioTracks.Where(at => at.Enabled == true).ToList();
             if (!conversionOptions.NoAudio && conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
@@ -325,18 +325,18 @@ namespace FFVideoConverter
                 }
             }
 
-            //Subtitles
+            // Subtitles
             if (conversionOptions.EncodingMode != EncodingMode.NoEncoding)
             {
                 sb.Append(" -map 0:s?");
             }
 
-            //Filters
+            // Filters
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
                 Filtergraph filtergraph = new Filtergraph();
 
-                //Video filters
+                // Video filters
                 if (conversionOptions.Filters.Count > 0)
                 {
                     filtergraph.AddFilters(conversionOptions.Filters, 0, 0);
@@ -351,7 +351,7 @@ namespace FFVideoConverter
                     filtergraph.AddFilter(new Filters.FadeFilter(Filters.FadeMode.Out, 0.2, actualEnd.TotalSeconds - start.TotalSeconds - 0.2), 0, 0); 
                 }
 
-                //Audio filters
+                // Audio filters
                 /* Currently disabled as it requires dedicated mapping which is not supported
                 foreach (var item in conversionOptions.AudioConversionOptions)
                 {
@@ -367,7 +367,7 @@ namespace FFVideoConverter
                 }
             }
 
-            //Video encoder
+            // Video encoder
             if (conversionOptions.EncodingMode != EncodingMode.NoEncoding)
             {
                 sb.Append("  -c:v " + conversionOptions.Encoder.GetFFMpegCommand(conversionOptions.EncodingMode));
@@ -375,12 +375,12 @@ namespace FFVideoConverter
                 {
                     sb.Append(" -passlogfile " + twopasslogfile);
                 }
-                //When cutting without encoding, "-avoid_negative_ts make_zero" allows to cut at the nearest keyframe before the start position
-                //Without this flag audio would be cut at the start position, but video would start playing only after the next keyframe 
+                // When cutting without encoding, "-avoid_negative_ts make_zero" allows to cut at the nearest keyframe before the start position
+                // Without this flag audio would be cut at the start position, but video would start playing only after the next keyframe 
                 sb.Append(" -avoid_negative_ts make_zero");
             }
 
-            //Audio encoders
+            // Audio encoders
             if (conversionOptions.NoAudio || conversionOptions.EncodingMode == EncodingMode.AverageBitrate_FirstPass)
             {
                 sb.Append(" -an");
@@ -402,20 +402,20 @@ namespace FFVideoConverter
                 }
             }
 
-            //MP4 specific stuff
+            // MP4 specific stuff
             if (Path.GetExtension(destination) == "mp4")
             {
-                //Subtitle encoder (necessary to convert mkv subtitles to mp4 format)
+                // Subtitle encoder (necessary to convert mkv subtitles to mp4 format)
                 sb.Append(" -c:s mov_text");
-                //Moves moov atom to the beginning of the file; ignored by the mkv muxer (does it do the same thing automatically? No answer on the web...)
+                // Moves moov atom to the beginning of the file; ignored by the mkv muxer (does it do the same thing automatically? No answer on the web...)
                 sb.Append(" -movflags +faststart");
             }
 
 
-            //Output path
+            // Output path
             if (conversionOptions.EncodingMode != EncodingMode.AverageBitrate_FirstPass)
             {
-                //max_muxing_queue_size is necessary to allow ffmpeg to allocate more memory to muxing, so that it's enough for very big streams
+                // max_muxing_queue_size is necessary to allow ffmpeg to allocate more memory to muxing, so that it's enough for very big streams
                 sb.Append($" -max_muxing_queue_size 2048 \"{destination}\" -loglevel error -stats");
             }
             else
@@ -448,7 +448,7 @@ namespace FFVideoConverter
             convertProcess.CancelErrorRead();
             previousProgressData = progressData;
 
-            int exitCode = convertProcess.ExitCode; //-1: killed; 1: crashed; everything else: success
+            int exitCode = convertProcess.ExitCode; // -1: killed; 1: crashed; everything else: success
             if (exitCode == -1) stopped = true;
             return exitCode != 1; 
         }
@@ -486,7 +486,7 @@ namespace FFVideoConverter
                     switch (key)
                     {
                         case "frame":
-                            progressData.CurrentFrames = System.Convert.ToInt32(value);
+                            progressData.CurrentFrames = Int32.Parse(value);
                             if (partialProgress) 
                                 progressData.CurrentFrames += previousProgressData.CurrentFrames;
                             progressData.Percentage = progressData.TotalFrames != 0 ? progressData.CurrentFrames * 100 / progressData.TotalFrames : (float)(progressData.CurrentTime.TotalSeconds * 100 / progressData.TotalTime.TotalSeconds);
@@ -496,17 +496,17 @@ namespace FFVideoConverter
                                 progressData.Percentage = progressData.Percentage / 2 + 50;
                             break;
                         case "fps":
-                            progressData.EncodingSpeedFps = System.Convert.ToInt16(System.Convert.ToSingle(value));
+                            progressData.EncodingSpeedFps = System.Convert.ToInt16(Single.Parse(value));
                             break;
                         case "bitrate":
-                            Bitrate currentBitrate = new Bitrate(System.Convert.ToSingle(value.Replace("kbits/s", "")));
-                            if (progressData.Percentage > 5) //Skips first seconds to give the encoder time to adjust it's bitrate
+                            Bitrate currentBitrate = Single.Parse(value.Replace("kbits/s", ""));
+                            if (progressData.Percentage > 5) // Skips first seconds to give the encoder time to adjust it's bitrate
                             {
-                                progressData.AverageBitrate = new Bitrate(progressData.AverageBitrate.Kbps + ((currentBitrate.Kbps - progressData.AverageBitrate.Kbps) / ++i));
+                                progressData.AverageBitrate = progressData.AverageBitrate.Kbps + ((currentBitrate.Kbps - progressData.AverageBitrate.Kbps) / ++i);
                             }
                             break;
                         case "total_size":
-                            progressData.CurrentByteSize = System.Convert.ToInt64(value);
+                            progressData.CurrentByteSize = Int64.Parse(value);
                             if (partialProgress) 
                                 progressData.CurrentByteSize += previousProgressData.CurrentByteSize;
                             break;
@@ -516,7 +516,7 @@ namespace FFVideoConverter
                                 progressData.CurrentTime += previousProgressData.CurrentTime;
                             break;
                         case "speed":
-                            progressData.EncodingSpeed = System.Convert.ToSingle(value[0..^1]);
+                            progressData.EncodingSpeed = Single.Parse(value[0..^1]);
                             break;
                         case "progress":
                             synchronizationContext.Post(new SendOrPostCallback((o) =>

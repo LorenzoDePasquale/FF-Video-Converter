@@ -14,7 +14,7 @@ namespace FFVideoConverter
     {
         #region Process
 
-        //Suspends all threads of the current process
+        // Suspends all threads of the current process
         public static void Suspend(this Process process)
         {
             IntPtr pOpenThread;
@@ -33,7 +33,7 @@ namespace FFVideoConverter
             }
         }
 
-        //Resumes all threads of the current process
+        // Resumes all threads of the current process
         public static void Resume(this Process process)
         {
             IntPtr pOpenThread;
@@ -88,7 +88,7 @@ namespace FFVideoConverter
 
         #region HttpClient
 
-        //Asynchroniously downloads a remote file into a stream, with progress reporting
+        // Asynchroniously downloads a remote file into a stream, with progress reporting
         public static async Task DownloadAsync(this HttpClient client, string requestUri, Stream destinationStream, IProgress<(float, long, long)> progress)
         {
             using (HttpResponseMessage response = await client.GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
@@ -103,13 +103,13 @@ namespace FFVideoConverter
                 {
                     var relativeProgress = new Progress<long>(currentBytes => progress.Report(((float)currentBytes / totalBytes, currentBytes, totalBytes)));
                     await downloadStream.CopyToAsync(destinationStream, relativeProgress).ConfigureAwait(false);
-                    destinationStream.Close(); //Necessary to allow the updater to extract the archive 
+                    destinationStream.Close(); // Necessary to allow the updater to extract the archive 
                     progress.Report((1f, totalBytes, totalBytes));
                 }
             }
         }
 
-        //Asynchroniously copies a stream into another, with progress reporting
+        // Asynchroniously copies a stream into another, with progress reporting
         public static async Task CopyToAsync(this Stream source, Stream destination, IProgress<long> progress)
         {
             byte[] buffer = new byte[8192];
@@ -122,7 +122,7 @@ namespace FFVideoConverter
             {
                 await destination.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
                 totalBytesRead += bytesRead;
-                if (sw.ElapsedMilliseconds > 500) //Reports progress only every 500 milliseconds
+                if (sw.ElapsedMilliseconds > 500) // Reports progress only every 500 milliseconds
                 {
                     sw.Restart();
                     progress.Report(totalBytesRead);
@@ -168,12 +168,15 @@ namespace FFVideoConverter
             return readable.ToString("0.## ") + suffix;
         }
 
+        // Formats a timespan to string, with rounding
         public static string ToFormattedString(this TimeSpan t, bool showMilliseconds = false)
         {
-            if (showMilliseconds)
-                return t.ToString(@"hh\:mm\:ss\.ff");
-
             double seconds = t.Seconds + (double)t.Milliseconds / 1000;
+            if (showMilliseconds)
+            {
+                seconds = Math.Round(seconds, 2);
+                return $"{t.Hours:00}:{t.Minutes:00}:{seconds:00.00}";
+            }
             seconds = Math.Round(seconds, 0);
             return $"{t.Hours:00}:{t.Minutes:00}:{seconds:00}";
         }

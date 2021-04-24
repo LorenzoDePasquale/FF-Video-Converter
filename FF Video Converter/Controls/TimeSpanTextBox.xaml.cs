@@ -45,7 +45,7 @@ namespace FFVideoConverter.Controls
 			textBox.SelectionChanged += OnSelectionChanged;
 
 			DataObject.AddPastingHandler(textBox, OnPaste);
-			//Disables the possibility to drag text inside the textBox
+			// Disables the possibility to drag text inside the textBox
 			DataObject.AddCopyingHandler(this, (sender, e) => { if (e.IsDragDrop) e.CancelCommand(); });
 		}
 

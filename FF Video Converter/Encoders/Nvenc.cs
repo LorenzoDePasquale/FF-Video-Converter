@@ -4,7 +4,7 @@
     {
         public override string Name => "H264 (Nvenc)";
         public override bool IsDoublePassSupported => false;
-        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv444p, PixelFormat.yuv420p10le }; //No copy because nvenc is more restrictive on the allowed pixel formats, so it's necessary to force a choice 
+        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv444p, PixelFormat.yuv420p10le }; // No copy because nvenc is more restrictive on the allowed pixel formats, so it's necessary to force a choice 
 
         private int Cq => 20 + (int)Quality * 3;
 
@@ -38,7 +38,7 @@
 
         public override string Name => "H265 (Nvenc)";
         public override bool IsDoublePassSupported => false;
-        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv444p, PixelFormat.yuv420p10le }; //No copy because nvenc is more restrictive on the allowed pixel formats, so it's necessary to force a choice 
+        public override PixelFormat[] SupportedPixelFormats => new[] { PixelFormat.yuv420p, PixelFormat.yuv444p, PixelFormat.yuv420p10le }; // No copy because nvenc is more restrictive on the allowed pixel formats, so it's necessary to force a choice 
 
         private int Cq => 21 + (int)Quality * 3;
 

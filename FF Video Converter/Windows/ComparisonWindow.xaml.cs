@@ -35,7 +35,7 @@ namespace FFVideoConverter
             mediaElementOriginal.Open(new Uri(mediaFile.Source));
             labelTitle.Content += $" ({encoder})";
             sliderPreview.Maximum = mediaFile.Duration.TotalSeconds;
-            Height -= 30; //compensate for setting window chrome height to 0;
+            Height -= 30; // compensate for setting window chrome height to 0;
 
             foreach (Quality quality in Enum.GetValues(typeof(Quality)))
             {
@@ -238,7 +238,7 @@ namespace FFVideoConverter
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //If there is no space to show the window at its native size, make the window fullscreen
+            // If there is no space to show the window at its native size, make the window fullscreen
             if (Width > SystemParameters.WorkArea.Width || Height > SystemParameters.WorkArea.Height)
             {
                 Width = SystemParameters.WorkArea.Width;

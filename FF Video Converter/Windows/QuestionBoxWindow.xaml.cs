@@ -28,7 +28,7 @@ namespace FFVideoConverter
 
         private void Window_ContentRendered(object sender, EventArgs e)
         {
-            //Since the actual size of the window is unknow before creating it, it's necessary to recalculate the layout after the window is rendered, so that SizeToContent works properly 
+            // Since the actual size of the window is unknow before creating it, it's necessary to recalculate the layout after the window is rendered, so that SizeToContent works properly 
             InvalidateVisual();
         }
     }

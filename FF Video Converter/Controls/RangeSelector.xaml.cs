@@ -45,7 +45,7 @@ namespace FFVideoConverter.Controls
             InitializeComponent();
         }
 
-        //Forces LowerValue to be under UpperValue
+        // Forces LowerValue to be under UpperValue
         private static object LowerValueCoerceValueCallback(DependencyObject target, object valueObject)
         {
             RangeSelector targetSlider = (RangeSelector)target;
@@ -53,7 +53,7 @@ namespace FFVideoConverter.Controls
             return Math.Min(value, targetSlider.UpperValue);
         }
 
-        //Forces UpperValue to be above LowerValue
+        // Forces UpperValue to be above LowerValue
         private static object UpperValueCoerceValueCallback(DependencyObject target, object valueObject)
         {
             RangeSelector targetSlider = (RangeSelector)target;
