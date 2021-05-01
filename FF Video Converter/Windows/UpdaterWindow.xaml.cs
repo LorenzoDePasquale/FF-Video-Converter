@@ -32,7 +32,7 @@ namespace FFVideoConverter
             Version latestVersion, currentVersion;
             try
             {
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "LorenzoDePasquale");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "Updater");
                 using Stream stream = await httpClient.GetStreamAsync("https://api.github.com/repos/lorenzodepasquale/FF-Video-Converter/releases").ConfigureAwait(false);
                 using JsonDocument document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
                 latestVersion = Version.Parse(document.RootElement[0].GetProperty("tag_name").GetString()); // Releases are sorted by most recent
@@ -41,14 +41,13 @@ namespace FFVideoConverter
             {
                 return false;
             }
-            System.Version v = Assembly.GetExecutingAssembly().GetName().Version;
-            currentVersion = new Version(v.Major, v.Minor, v.Build);
+            currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
             return currentVersion < latestVersion;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            System.Version v = Assembly.GetExecutingAssembly().GetName().Version;
+            Version v = Assembly.GetExecutingAssembly().GetName().Version;
             labelledTextBlockCurrentVersion.Text = $"v{v.Major}.{v.Minor}";
             if (v.Build > 0) labelledTextBlockCurrentVersion.Text += $".{v.Build}";
             labelledTextBlockNewVersion.Text = $"Searching for new versions...";
@@ -67,7 +66,7 @@ namespace FFVideoConverter
                 for (int i = 0; i < Math.Min(document.RootElement.GetArrayLength(), 10); i++)
                 {
                     date = DateTime.Parse(document.RootElement[i].GetProperty("published_at").GetString());
-                    textBlockPatchNotes.Inlines.Add(new Run($"{document.RootElement[i].GetProperty("tag_name").GetString()} ({date.ToString("dd/MM/yyyy")}):\n") { Foreground = new BrushConverter().ConvertFromString("#FF2669DE") as SolidColorBrush });
+                    textBlockPatchNotes.Inlines.Add(new Run($"{document.RootElement[i].GetProperty("tag_name").GetString()} ({date:dd/MM/yyyy}):\n") { Foreground = new BrushConverter().ConvertFromString("#FF2669DE") as SolidColorBrush });
                     textBlockPatchNotes.Inlines.Add(new Run(document.RootElement[i].GetProperty("body").GetString() + "\n\n"));
                 }
             }
@@ -122,30 +121,37 @@ namespace FFVideoConverter
 
         private async void InstallUpdate()
         {
-            try
+            if (IsActive) //If window has been closed, don't install update
             {
-                await Task.Run(() =>
+                try
                 {
-                    File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe");
-                    ZipFile.ExtractToDirectory(AppDomain.CurrentDomain.BaseDirectory + "update.zip", AppDomain.CurrentDomain.BaseDirectory + "update");
-                    foreach (string file in Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory + "update"))
+                    await Task.Run(() =>
                     {
-                        File.Copy(file, AppDomain.CurrentDomain.BaseDirectory + Path.GetFileName(file), true);
-                    }
-                });
-                // Restart the application
-                Application.Current.Shutdown();
-                Process.Start(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
-            }
-            catch (Exception ex)
-            {
-                new MessageBoxWindow("Couldn't install downloaded update; try updating manually.\n\nError message:\n" + ex.Message, "Error").ShowDialog();
-                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe"))
-                {
-                    // Restores old file name in case of error
-                    File.Move(AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverterOld.exe", AppDomain.CurrentDomain.BaseDirectory + "FFVideoConverter.exe");
+                        Directory.CreateDirectory("old version");
+                        foreach (string file in Directory.EnumerateFiles(AppDomain.CurrentDomain.BaseDirectory))
+                        {
+                            if (Path.GetFileName(file) != "update.zip") //Don't move update file
+                            {
+                                File.Move(file, Path.Combine("old version", Path.GetFileName(file)), true);
+                            }
+                        }
+                        ZipFile.ExtractToDirectory("update.zip", AppDomain.CurrentDomain.BaseDirectory, true);
+                        File.Delete("update.zip");
+                    });
+                    // Restart the application
+                    Application.Current.Shutdown();
+                    Process.Start("FFVideoConverter.exe");
                 }
-                Close();
+                catch (Exception ex)
+                {
+                    new MessageBoxWindow("Couldn't install downloaded update; try updating manually.\n\nError message:\n" + ex.Message, "Error").ShowDialog();
+                    //Restore old version
+                    foreach (string file in Directory.EnumerateFiles("old version"))
+                    {
+                        File.Move(file, Path.GetFileName(file), true);
+                    }
+                    Close();
+                }
             }
         }
     }

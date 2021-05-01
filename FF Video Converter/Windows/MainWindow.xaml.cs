@@ -42,6 +42,9 @@ namespace FFVideoConverter
         public MainWindow()
         {
             InitializeComponent();
+
+            TaskbarItemInfo = new TaskbarItemInfo();
+            Height -= 30; // To compensate for hiding the window chrome
         }
 
         #region Load
@@ -55,10 +58,6 @@ namespace FFVideoConverter
             memoryCounter.CounterName = "Working Set - Private";
             memoryCounter.InstanceName = "FFVideoConverter";
 
-            // UI stuff
-            TaskbarItemInfo = new TaskbarItemInfo();
-            Height -= 30; // To compensate for hiding the window chrome
-            Width -= 5;
             Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             labelTitle.Text += $" v{version}";
             
@@ -93,7 +92,7 @@ namespace FFVideoConverter
             comboBoxRotation.Items.Add("270° clockwise");
             comboBoxRotation.Items.Add("270° clockwise and flip");
             comboBoxRotation.SelectedIndex = 0;
-            comboBoxFramerate.Items.Add("Same as source");
+            comboBoxFramerate.Items.Add("Don't change");
             comboBoxFramerate.SelectedIndex = 0;
             foreach (Preset preset in Enum.GetValues(typeof(Preset)))
             {
@@ -121,26 +120,16 @@ namespace FFVideoConverter
 
         private async void ManageUpdates()
         {
-            // Remove old version, if it exists
-            if (Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "update"))
+            // Remove old files, if they exists
+            if (Directory.Exists("old version"))
             {
-                Directory.Delete(AppDomain.CurrentDomain.BaseDirectory + "update", true);
-            }
-            if (File.Exists("FFVideoConverterOld.exe"))
-            {
-                File.Delete("FFVideoConverterOld.exe");
-            }
-            if (File.Exists("Update.zip"))
-            {
-                File.Delete("Update.zip");
+                Directory.Delete("old version", true);
             }
 
-#if !DEBUG
             if (await UpdaterWindow.UpdateAvaiable())
             {
                 buttonUpdate.Visibility = Visibility.Visible;
             }
-#endif
         }
 
         private void CheckCommandLine()
@@ -761,19 +750,11 @@ namespace FFVideoConverter
                         integerTextBoxCropRight.Value = cropData.Right;
                         isDragging = false;
                     }
-
-                    radioButtonBitrate.IsEnabled = false;
-                    radioButtonQuality.IsChecked = true;
                 }
                 else
                 {
                     mediaPlayer.CropActive = false;
                     textBlockRotationCropWarning.Visibility = Visibility.Hidden;
-
-                    if (!IsCutEnabled() && comboBoxResolution.SelectedIndex == 0)
-                    {
-                        radioButtonBitrate.IsEnabled = true;
-                    }
                 }
             }
         }
