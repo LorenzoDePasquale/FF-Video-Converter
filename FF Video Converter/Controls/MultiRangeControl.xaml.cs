@@ -10,24 +10,27 @@ namespace FFVideoConverter.Controls
     {
         TimeIntervalCollection intervalCollection;
         TimeSpan duration;
+        static Style borderStyle;
         
         public MultiRangeControl()
         {
             InitializeComponent();
+
+            borderStyle = Resources["cutSectionBorder"] as Style;
         }
 
         public void UpdateIntervalCollection(TimeIntervalCollection intervalCollection, TimeSpan duration)
         {
             this.intervalCollection = intervalCollection;
             this.duration = duration;
-
+            
             gridCutSections.Children.Clear();
             if (intervalCollection?.Count > 0)
             {
                 foreach (var timeInterval in intervalCollection)
                 {
                     Border b = new Border();
-                    b.Style = Resources["cutSectionBorder"] as Style;
+                    b.Style = borderStyle;
                     double max = duration.TotalSeconds;
                     double leftMargin = timeInterval.Start.TotalSeconds * ActualWidth / max;
                     double rightMargin = (max - timeInterval.End.TotalSeconds) * ActualWidth / max;
@@ -39,7 +42,7 @@ namespace FFVideoConverter.Controls
             else
             {
                 Border b = new Border();
-                b.Style = Resources["cutSectionBorder"] as Style;
+                b.Style = borderStyle;
                 b.Margin = new Thickness(0, 0, 0, 0);
                 gridCutSections.Children.Add(b);
             }

@@ -19,17 +19,7 @@
 
     <Grid x:Name="gridRoot" Height="13">
         <Grid x:Name="gridBackground" VerticalAlignment="Center">
-            <Grid.OpacityMask>
-                <VisualBrush Visual="{Binding ElementName=Border2}" />
-            </Grid.OpacityMask>
-            <Border x:Name="Border2" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="12" VerticalAlignment="Center" />
-            <Border ClipToBounds="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="13" VerticalAlignment="Center">
-                <Border Background="Transparent" BorderBrush="Black" BorderThickness="0 2 3 1" Margin="-6">
-                    <Border.Effect>
-                        <DropShadowEffect ShadowDepth="7" BlurRadius="10"/>
-                    </Border.Effect>
-                </Border>
-            </Border>
+            <Border ClipToBounds="True" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="{StaticResource CornerRadius}" Background="{StaticResource BackgroundColor}" Height="13" VerticalAlignment="Center" />
             <Border CornerRadius="4" Height="11" VerticalAlignment="Center">
                 <Border.Background>
                     <DrawingBrush TileMode="Tile" Stretch="None" Viewbox="0,0,1,1" Viewport="0,0,25,25" ViewportUnits="Absolute">

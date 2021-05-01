@@ -15,7 +15,7 @@
                             <ColumnDefinition Width="2"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Grid Grid.Column="0" Width="24" Height="24" Margin="1,1,1,1">
+                        <Grid Grid.Column="0" Width="22" Height="22" Margin="1,1,1,1">
                             <Grid.OpacityMask>
                                 <VisualBrush Visual="{Binding ElementName=Border5}" />
                             </Grid.OpacityMask>
@@ -28,7 +28,7 @@
                                 </Border>
                             </Border>
                             <Grid x:Name="markGrid">
-                                <Path x:Name="optionMark" Data="F1 M0,5.19331 L1.27664,3.52165 z" Width="24" Height="24" Fill="{StaticResource ButtonBackgroundColor}" Margin="2" >
+                                <Path x:Name="optionMark" Data="F1 M0,5.19331 L1.27664,3.52165 z" Fill="{StaticResource ButtonBackgroundColor}" Margin="1,2,2,2" >
                                     <Path.RenderTransform>
                                         <TransformGroup>
                                             <ScaleTransform ScaleX="2" ScaleY="2"/>
@@ -48,11 +48,9 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground.Color" >
-                                            <EasingColorKeyFrame KeyTime="0" Value="#FFC9C9C9" />
                                             <EasingColorKeyFrame KeyTime="0:0:0.170" Value="White" />
                                         </ColorAnimationUsingKeyFrames>
                                         <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Background.Color" >
-                                            <EasingColorKeyFrame KeyTime="0" Value="#FF232323" />
                                             <EasingColorKeyFrame KeyTime="0:0:0.170" Value="#FF1D1D1D" />
                                         </ColorAnimationUsingKeyFrames>
                                     </Storyboard>
@@ -62,11 +60,9 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground.Color" >
-                                            <EasingColorKeyFrame KeyTime="0" Value="White" />
                                             <EasingColorKeyFrame KeyTime="0:0:0.2" Value="#FFC9C9C9" />
                                         </ColorAnimationUsingKeyFrames>
                                         <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Background.Color" >
-                                            <EasingColorKeyFrame KeyTime="0" Value="#FF1D1D1D" />
                                             <EasingColorKeyFrame KeyTime="0:0:0.2" Value="#FF232323" />
                                         </ColorAnimationUsingKeyFrames>
                                     </Storyboard>

@@ -4,12 +4,12 @@
     <Style TargetType="{x:Type Slider}">
         <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource SliderForegroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ButtonBackgroundColor}" />
         <Setter Property="Height" Value="22" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Slider}">
-                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                    <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                         <Grid>
                             <Grid >
                                 <Grid.OpacityMask>
@@ -71,8 +71,8 @@
                                     <Thumb x:Name="Thumb" Focusable="False" Height="22" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="22">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                                    <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
+                                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" Stroke="{StaticResource BorderColor}" StrokeThickness="1" VerticalAlignment="Center">
                                                         <Path.Data>
                                                             <RectangleGeometry Rect="11 11 11 11" RadiusX="8" RadiusY="8" />
                                                         </Path.Data>

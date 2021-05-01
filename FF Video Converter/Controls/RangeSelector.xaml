@@ -8,15 +8,15 @@
 
     <UserControl.Resources>
         <ControlTemplate x:Key="RangeSliderTemplate" TargetType="{x:Type Slider}">
-            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                 <Grid>
                     <Rectangle x:Name="PART_SelectionRange"/>
                     <Track x:Name="PART_Track">
                         <Track.Thumb>
-                            <Thumb x:Name="Thumb" Focusable="False" Height="22" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="22">
+                            <Thumb x:Name="Thumb" Focusable="False" Height="22" VerticalAlignment="Center" Width="22">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="{x:Type Thumb}">
-                                        <Path x:Name="grip" Fill="{StaticResource ButtonBackgroundColor}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
+                                        <Path x:Name="grip" Fill="{StaticResource ButtonBackgroundColor}" Stretch="Fill" Stroke="{StaticResource BorderColor}" StrokeThickness="1" VerticalAlignment="Center">
                                             <Path.Data>
                                                 <RectangleGeometry Rect="11 11 11 11" RadiusX="8" RadiusY="8" />
                                             </Path.Data>
@@ -44,7 +44,7 @@
     </UserControl.Resources>
 
     <Grid VerticalAlignment="Center">
-        <Grid SnapsToDevicePixels="True">
+        <Grid>
             <Grid.OpacityMask>
                 <VisualBrush Visual="{Binding ElementName=Border2}" />
             </Grid.OpacityMask>

@@ -12,7 +12,7 @@
             <Border x:Name="normal"  CornerRadius="4 0 0 4" BorderThickness="1" BorderBrush="{StaticResource BorderColor}">
                 <Border.Background>
                     <LinearGradientBrush EndPoint="0.5,1" MappingMode="RelativeToBoundingBox" StartPoint="0.5,0">
-                        <GradientStop Color="#FF232323" Offset="1"/>
+                        <GradientStop Color="#FF252525" Offset="1"/>
                         <GradientStop Color="#FF343434" Offset="0"/>
                     </LinearGradientBrush>
                 </Border.Background>
@@ -26,11 +26,7 @@
                 </Border.Background>
             </Border>
             <Border x:Name="checked" Opacity="0" CornerRadius="4 0 0 0" BorderThickness="2 2 2 0" BorderBrush="{StaticResource BorderColor}" Background="{StaticResource BackgroundColor}"/>
-            <Path x:Name="Arrow" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M 0 0 L 4 4 L 8 0 Z" >
-                <Path.Fill>
-                    <SolidColorBrush Color="#FFD8D8D8"/>
-                </Path.Fill>
-            </Path>
+            <Path x:Name="Arrow" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M 0 0 L 4 4 L 8 0 Z" Fill="{StaticResource TextColor}" />
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
@@ -92,11 +88,11 @@
                 <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Grid >
                         <ToggleButton x:Name="ToggleButton" Template="{StaticResource ComboBoxToggleButton}" Grid.Column="2" Focusable="false" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,0,23,0" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,0,23,1" VerticalAlignment="Center" HorizontalAlignment="Left" />
                         <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
-                            <Grid x:Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                            <Grid x:Name="DropDown" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
                                 <Border x:Name="DropDownBorder" BorderThickness="2 0 2 2" CornerRadius="0 0 4 4" Margin="0,-1,20,0" Background="{StaticResource BackgroundColor}" BorderBrush="{StaticResource BorderColor}"/>
-                                <ScrollViewer Margin="1" SnapsToDevicePixels="True">
+                                <ScrollViewer Margin="1" >
                                     <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
                                 </ScrollViewer>
                             </Grid>

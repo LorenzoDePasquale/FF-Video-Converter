@@ -6,7 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:controls="clr-namespace:FFVideoConverter.Controls"
              mc:Ignorable="d" 
-             d:DesignHeight="25.378" d:DesignWidth="341.333" Foreground="{DynamicResource SliderForegroundBrush}">
+             d:DesignHeight="25.378" d:DesignWidth="341.333" Foreground="{DynamicResource ButtonBackgroundColor}">
 
     <DockPanel LastChildFill="True">
         <TextBlock x:Name="textBlockPercentage" DockPanel.Dock="Right" Width="42" Height="20"/>

@@ -232,23 +232,6 @@ namespace FFVideoConverter.Controls
             }
         }
 
-        private void MediaElementInput_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (mediaElement.Source != null)
-            {
-                this.PlayStoryboard("mediaControlsAnimationIn");
-            }
-        }
-
-        private void MediaElementInput_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (mediaElement.Source != null)
-            {
-                this.PlayStoryboard("mediaControlsAnimationOut");
-                this.PlayStoryboard("AudioTrackPickerAnimationOut");
-            }
-        }
-
         private void MediaElement_MouseDown(object sender, MouseButtonEventArgs e)
         {
             mouseDown = true;
@@ -344,12 +327,22 @@ namespace FFVideoConverter.Controls
 
         private void ButtonMute_MouseEnter(object sender, MouseEventArgs e)
         {
-            this.PlayStoryboard("VolumeSliderAnimationIn");
+            this.PlayStoryboard("VolumeSliderAnimationIn");canvasCropVideo.RaiseEvent(e);
         }
 
         private void StackPanel_MouseLeave(object sender, MouseEventArgs e)
         {
             this.PlayStoryboard("VolumeSliderAnimationOut");
+        }
+
+        private void StackPanel_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            canvasCropVideo.RaiseEvent(e);
+        }
+
+        private void StackPanel_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            canvasCropVideo.RaiseEvent(e);
         }
 
         private void ButtonAudioTrack_Click(object sender, RoutedEventArgs e)

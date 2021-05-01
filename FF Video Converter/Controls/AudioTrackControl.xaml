@@ -12,7 +12,7 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="29" />
-            <ColumnDefinition Width="729" />
+            <ColumnDefinition Width="718" />
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Border Grid.RowSpan="2" Grid.ColumnSpan="3" BorderThickness="0,2,0,0" BorderBrush="{StaticResource BorderColor}" />
@@ -20,7 +20,7 @@
         <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2">
             <TextBlock Text="Title:" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockTitle" d:Text="Title" Margin="4,0,0,0" VerticalAlignment="Center" MaxWidth="140" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, ElementName=textBlockTitle}"/>
-            <TextBox x:Name="textBoxTitle" Height="22" Margin="4,0,0,0" Visibility="Collapsed" MaxLength="20" />
+            <TextBox x:Name="textBoxTitle" Height="22" Margin="4,0,0,0" Visibility="Collapsed" MaxWidth="140" />
             <TextBlock Text="Language:" Margin="17,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextColorBlue}"/>
             <TextBlock x:Name="textBlockLanguage" d:Text="eng" Margin="4,0,0,0" VerticalAlignment="Center"/>
             <TextBlock Text="Codec:" Margin="17,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource TextColorBlue}"/>

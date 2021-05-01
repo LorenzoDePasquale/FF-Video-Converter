@@ -2,17 +2,15 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <Style TargetType="{x:Type RadioButton}">
-        <Setter Property="SnapsToDevicePixels" Value="true" />
-        <Setter Property="OverridesDefaultStyle" Value="true" />
         <Setter Property="Background" Value="{StaticResource BackgroundColor}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-        <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+        <Setter Property="Foreground" Value="{StaticResource ButtonBackgroundColor}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RadioButton}">
-                    <BulletDecorator Background="Transparent" VerticalAlignment="Center">
+                    <BulletDecorator VerticalAlignment="Center">
                         <BulletDecorator.Bullet>
-                            <Grid Width="20" Height="20" >
+                            <Grid Width="21" Height="21" >
                                 <Grid.OpacityMask>
                                     <VisualBrush Visual="{Binding ElementName=Border5}" />
                                 </Grid.OpacityMask>
@@ -24,17 +22,17 @@
                                         </Border.Effect>
                                     </Border>
                                 </Border>
-                                <Ellipse x:Name="CheckMark" Margin="10" Fill="{StaticResource ButtonBackgroundColor}"/>
+                                <Ellipse x:Name="CheckMark" Margin="11" Fill="{TemplateBinding Foreground}" UseLayoutRounding="False"/>
                             </Grid>
                         </BulletDecorator.Bullet>
-                        <TextBlock Text="{TemplateBinding Content}" Margin="6,0,0,3" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{TemplateBinding Foreground}" FontSize="{StaticResource FontSize}" FontWeight="{StaticResource FontWeight}"/>
+                        <TextBlock x:Name="textBlock" Text="{TemplateBinding Content}" Margin="6,0,0,3" VerticalAlignment="Center" HorizontalAlignment="Left" Foreground="{StaticResource TextColor}" FontSize="{StaticResource FontSize}" FontWeight="{StaticResource FontWeight}"/>
                     </BulletDecorator>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
-                                    <Storyboard>
-                                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground.Color" >
+                                    <Storyboard >
+                                        <ColorAnimationUsingKeyFrames Storyboard.TargetName="textBlock" Storyboard.TargetProperty="(TextBox.Foreground).(SolidColorBrush.Color)" >
                                             <EasingColorKeyFrame KeyTime="0" Value="#FFC9C9C9" />
                                             <EasingColorKeyFrame KeyTime="0:0:0.170" Value="White" />
                                         </ColorAnimationUsingKeyFrames>
@@ -48,7 +46,7 @@
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Foreground.Color" >
+                                        <ColorAnimationUsingKeyFrames Storyboard.TargetName="textBlock" Storyboard.TargetProperty="(TextBox.Foreground).(SolidColorBrush.Color)" >
                                             <EasingColorKeyFrame KeyTime="0" Value="White" />
                                             <EasingColorKeyFrame KeyTime="0:0:0.2" Value="#FFC9C9C9" />
                                         </ColorAnimationUsingKeyFrames>
@@ -70,7 +68,7 @@
                                 <BeginStoryboard>
                                     <Storyboard TargetName="CheckMark" TargetProperty="Margin">
                                         <ThicknessAnimationUsingKeyFrames>
-                                            <EasingThicknessKeyFrame KeyTime="0:0:0.2" Value="5" />
+                                            <EasingThicknessKeyFrame KeyTime="0:0:0.25" Value="5" />
                                         </ThicknessAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </BeginStoryboard>
@@ -79,7 +77,7 @@
                                 <BeginStoryboard>
                                     <Storyboard TargetName="CheckMark" TargetProperty="Margin">
                                         <ThicknessAnimationUsingKeyFrames>
-                                            <EasingThicknessKeyFrame KeyTime="0:0:0.2" Value="10" />
+                                            <EasingThicknessKeyFrame KeyTime="0:0:0.25" Value="11" />
                                         </ThicknessAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </BeginStoryboard>

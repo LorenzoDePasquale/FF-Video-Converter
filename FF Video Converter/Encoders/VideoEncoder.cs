@@ -74,7 +74,7 @@
         {
             return pixelFormat switch
             {
-                PixelFormat.copy => "Same as source",
+                PixelFormat.copy => "Don't change",
                 PixelFormat.yuv420p => "YUV 4:2:0 at 8 bit",
                 PixelFormat.yuv422p => "YUV 4:2:2 at 8 bit",
                 PixelFormat.yuv444p => "YUV 4:4:4 at 8 bit",

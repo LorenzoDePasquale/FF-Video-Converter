@@ -24,21 +24,11 @@
         <GradientStop Color="#FF686868"/>
     </LinearGradientBrush>
     <SolidColorBrush x:Key="DisabledTextColor">#FF818181</SolidColorBrush>
-    <SolidColorBrush x:Key="SliderBackgroundBrush" Color="#55ffffff" />
-    <SolidColorBrush x:Key="SliderForegroundBrush" Color="#FF2669DE"/>
+    <SolidColorBrush x:Key="PlayerSliderForegroundBrush" Color="#FF2669DE"/>
     <SolidColorBrush x:Key="BorderColor">#FF292929</SolidColorBrush>
     <system:Double x:Key="FontSize">13</system:Double>
     <FontWeight x:Key="FontWeight">Normal</FontWeight>
     <CornerRadius x:Key="CornerRadius">5</CornerRadius>
-    <LinearGradientBrush x:Key="ShadedBackgroundBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStopCollection>
-            <GradientStop Offset="0.0" Color="#00000000" />
-            <GradientStop Offset="0.1" Color="#44000000" />
-            <GradientStop Offset="0.2" Color="#66000000" />
-            <GradientStop Offset="0.4" Color="#D6000000" />
-            <GradientStop Offset="0.4" Color="#D6000000" />
-        </GradientStopCollection>
-    </LinearGradientBrush>
 
 
     <Style x:Key="BlurWindowStyle" TargetType="{x:Type Window}">

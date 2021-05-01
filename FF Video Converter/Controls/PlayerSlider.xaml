@@ -7,14 +7,14 @@
 
     <UserControl.Resources>
         <ControlTemplate x:Key="PositionSliderTemplate" TargetType="{x:Type Slider}">
-            <Border x:Name="border" Background="Transparent" SnapsToDevicePixels="True">
+            <Border x:Name="border" Background="Transparent" >
                 <Grid>
                     <DockPanel LastChildFill="True" >
                         <Border ClipToBounds="True" Height="4" >
-                            <Rectangle x:Name="PART_SelectionRange" RadiusX="1" RadiusY="1" Margin="7,0,-7,0" Fill="{StaticResource SliderForegroundBrush}" />
+                            <Rectangle x:Name="PART_SelectionRange" RadiusX="1" RadiusY="1" Margin="7,0,-7,0" Fill="{StaticResource PlayerSliderForegroundBrush}" />
                         </Border>
                         <Border ClipToBounds="True" Height="4" >
-                            <Rectangle x:Name="PART_Background" RadiusX="1" RadiusY="1" Margin="15,0,9,0" Fill="{StaticResource SliderBackgroundBrush}" />
+                            <Rectangle x:Name="PART_Background" RadiusX="1" RadiusY="1" Margin="15,0,9,0" Fill="#55ffffff" />
                         </Border>
                     </DockPanel>
                     <Track x:Name="PART_Track">
@@ -22,12 +22,12 @@
                             <Thumb x:Name="Thumb" Focusable="False" Width="15" Height="15" OverridesDefaultStyle="True" VerticalAlignment="Center">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="{x:Type Thumb}">
-                                        <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                            <Path x:Name="grip" Data="M 0,0 A 180,180 180 1 1 1,1 Z" Fill="Transparent" Stretch="Fill" Stroke="{StaticResource SliderForegroundBrush}" StrokeThickness="2.5" UseLayoutRounding="True" VerticalAlignment="Center" Margin="-1,-1" />
+                                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Path x:Name="grip" Data="M 0,0 A 180,180 180 1 1 1,1 Z" Fill="Transparent" Stretch="Fill" Stroke="{StaticResource PlayerSliderForegroundBrush}" StrokeThickness="2.5" VerticalAlignment="Center" Margin="-1,-1" />
                                         </Grid>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="true">
-                                                <Setter Property="Fill" TargetName="grip" Value="{StaticResource SliderForegroundBrush}"/>
+                                                <Setter Property="Fill" TargetName="grip" Value="{StaticResource PlayerSliderForegroundBrush}"/>
                                             </Trigger>
                                             <Trigger Property="IsDragging" Value="true">
                                                 <Setter Property="Stroke" TargetName="grip" Value="{StaticResource MouseOverColor}"/>
@@ -41,22 +41,11 @@
                     </Track>
                 </Grid>
             </Border>
-            <ControlTemplate.Triggers>
-                <Trigger Property="IsSelectionRangeEnabled" Value="False">
-                    <Setter TargetName="PART_SelectionRange" Property="Fill" Value="{StaticResource SliderBackgroundBrush}" />
-                </Trigger>
-            </ControlTemplate.Triggers>
         </ControlTemplate>
     </UserControl.Resources>
 
     <Grid VerticalAlignment="Center">
         <Slider x:Name="MiddleSlider" Template="{StaticResource PositionSliderTemplate}" IsMoveToPointEnabled="True" IsSelectionRangeEnabled="True" SelectionStart="0" SelectionEnd="{Binding Path=Value, RelativeSource={RelativeSource Self}}" ValueChanged="MiddleSlider_ValueChanged" Thumb.DragStarted="MiddleSlider_DragStarted" Thumb.DragCompleted="MiddleSlider_DragCompleted"/>
-        <Border ClipToBounds="True" Height="0" IsHitTestVisible="False">
-            <Rectangle x:Name="SelectionRangeLeft" RadiusX="1" RadiusY="1" Margin="10,0,-10,0" Fill="{StaticResource SliderForegroundBrush}" />
-        </Border>
-        <Border ClipToBounds="True" Height="0" IsHitTestVisible="False">
-            <Rectangle x:Name="SelectionRangeRight" RadiusX="1" RadiusY="1" Margin="20,0,10,0" Fill="{StaticResource SliderForegroundBrush}" />
-        </Border>
     </Grid>
 
 </UserControl>

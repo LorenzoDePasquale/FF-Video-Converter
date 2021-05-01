@@ -5,20 +5,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollBar}">
-                    <Grid x:Name="Bg" SnapsToDevicePixels="True">
+                    <Grid x:Name="Bg">
                         <Border CornerRadius="1" Grid.Row="1" Background="Transparent"/>
                         <Track x:Name="PART_Track" IsDirectionReversed="True" IsEnabled="{TemplateBinding IsMouseOver}" Grid.Row="0">
                             <Track.Thumb>
                                 <Thumb>
                                     <Thumb.Style>
                                         <Style TargetType="{x:Type Thumb}">
-                                            <Setter Property="OverridesDefaultStyle" Value="True"/>
                                             <Setter Property="IsTabStop" Value="False"/>
                                             <Setter Property="Width" Value="13" />
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="{x:Type Thumb}">
-                                                        <Border CornerRadius="4" x:Name="rectangle" BorderThickness="1" Background="{DynamicResource ButtonBackgroundColor}" BorderBrush="{x:Null}" Height="{TemplateBinding Height}" SnapsToDevicePixels="True" Width="{TemplateBinding Width}"/>
+                                                        <Border CornerRadius="4" x:Name="rectangle" BorderThickness="1" Background="{DynamicResource ButtonBackgroundColor}" BorderBrush="{x:Null}" Height="{TemplateBinding Height}" Width="{TemplateBinding Width}"/>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter Property="Background" TargetName="rectangle" Value="{StaticResource MouseOverColor}"/>

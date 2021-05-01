@@ -1,9 +1,9 @@
 ﻿<Slider xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:av="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="av" 
         x:Class="FFVideoConverter.Controls.CenteredSlider" x:Name="slider" 
-        IsSelectionRangeEnabled="True" ValueChanged="Slider_ValueChanged" IsMoveToPointEnabled="True" Background="{StaticResource BackgroundColor}" Foreground="{StaticResource SliderForegroundBrush}" >
+        IsSelectionRangeEnabled="True" ValueChanged="Slider_ValueChanged" IsMoveToPointEnabled="True" Background="{StaticResource BackgroundColor}" Foreground="{StaticResource ButtonBackgroundColor}" SmallChange="0.01" >
     <Slider.Template>
         <ControlTemplate TargetType="{x:Type Slider}">
-            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+            <Border x:Name="border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
                 <Grid>
                     <Grid >
                         <Grid.OpacityMask>
@@ -26,7 +26,7 @@
                             <RepeatButton Command="Slider.DecreaseLarge">
                                 <RepeatButton.Style>
                                     <Style TargetType="{x:Type RepeatButton}">
-                                        <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                        <Setter Property="Background" Value="Transparent"/>
                                         <Setter Property="Focusable" Value="False"/>
                                         <Setter Property="IsTabStop" Value="False"/>
                                         <Setter Property="Template">
@@ -44,7 +44,6 @@
                             <RepeatButton Command="Slider.IncreaseLarge">
                                 <RepeatButton.Style>
                                     <Style TargetType="{x:Type RepeatButton}">
-                                        <Setter Property="OverridesDefaultStyle" Value="True"/>
                                         <Setter Property="Background" Value="Transparent"/>
                                         <Setter Property="Focusable" Value="False"/>
                                         <Setter Property="IsTabStop" Value="False"/>
@@ -60,11 +59,11 @@
                             </RepeatButton>
                         </Track.IncreaseRepeatButton>
                         <Track.Thumb>
-                            <Thumb x:Name="Thumb" Focusable="False" Height="22" OverridesDefaultStyle="True" VerticalAlignment="Center" Width="22">
+                            <Thumb x:Name="Thumb" Focusable="False" Height="22" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Width="22">
                                 <Thumb.Template>
                                     <ControlTemplate TargetType="{x:Type Thumb}">
-                                        <Grid HorizontalAlignment="Center" UseLayoutRounding="True" VerticalAlignment="Center">
-                                            <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" SnapsToDevicePixels="True" Stroke="{StaticResource BorderColor}" StrokeThickness="1" UseLayoutRounding="True" VerticalAlignment="Center">
+                                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Path x:Name="grip" Fill="{TemplateBinding Foreground}" Stretch="Fill" Stroke="{StaticResource BorderColor}" StrokeThickness="1" VerticalAlignment="Center">
                                                 <Path.Data>
                                                     <RectangleGeometry Rect="11 11 11 11" RadiusX="8" RadiusY="8" />
                                                 </Path.Data>
