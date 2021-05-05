@@ -34,14 +34,14 @@
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Width)" Storyboard.TargetName="borderSource">
                 <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="831">
                     <EasingDoubleKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseOut"/>
+                        <CubicEase EasingMode="EaseInOut"/>
                     </EasingDoubleKeyFrame.EasingFunction>
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(FrameworkElement.Height)" Storyboard.TargetName="borderSource">
                 <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="474">
                     <EasingDoubleKeyFrame.EasingFunction>
-                        <CubicEase EasingMode="EaseOut"/>
+                        <CubicEase EasingMode="EaseInOut"/>
                     </EasingDoubleKeyFrame.EasingFunction>
                 </EasingDoubleKeyFrame>
             </DoubleAnimationUsingKeyFrames>
@@ -195,8 +195,8 @@
         </Grid.RowDefinitions>
 
         <Grid x:Name="gridTitleBar" Grid.Row="0" Background="#7F060606" MouseDown="Grid_MouseDown" ClipToBounds="True">
-            <Button x:Name="buttonClose" Content="❌" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222" FontWeight="Bold" FontSize="14" />
-            <Button x:Name="buttonMinimize" Content="___" Height="30" Margin="0,0,29,0" VerticalAlignment="Top" Click="ButtonMinimize_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFEEEEEE" FontWeight="Bold" FontSize="8" FontFamily="Calibri"/>
+            <Button x:Name="buttonClose" Content="❌" Height="30" VerticalAlignment="Top" Click="ButtonClose_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFC12222"  FontSize="14" />
+            <Button x:Name="buttonMinimize" Content="—" Height="30" Margin="0,0,29,0" VerticalAlignment="Top" Click="ButtonMinimize_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FFEEEEEE" FontWeight="Bold" FontSize="14"/>
             <Button x:Name="buttonUpdate" Content="↓" Visibility="Hidden" Height="30" Margin="0,0,59,0" VerticalAlignment="Top" Click="ButtonUpdate_Click" Style="{StaticResource TitleBarButton}" HorizontalAlignment="Right" Width="30" Foreground="#FF299910" FontWeight="Bold" FontSize="15" FontFamily="Calibri" ToolTip="Update avaiable!"/>
             <TextBlock x:Name="labelTitle" Text="FF Video Converter" Height="30" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="14"  Margin="79,0,94,0" Width="675" Padding="0,5,0,0" TextAlignment="Center" FontWeight="DemiBold" />
             <TextBlock x:Name="labelProgress" Text="Progress: 0%   Remaining time: 00:00:00" Height="30" Margin="0,25,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" FontSize="14" Padding="0,5,0,0" TextAlignment="Center" Width="675" FontWeight="DemiBold"/>
@@ -224,7 +224,11 @@
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard >
-                                            <ThicknessAnimation Storyboard.TargetProperty="Margin" To="0,0,0,0" Duration="0:0:0.1" />
+                                            <ThicknessAnimation Storyboard.TargetProperty="Margin" To="0,0,0,0" Duration="0:0:0.2" >
+                                                <ThicknessAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </ThicknessAnimation.EasingFunction>
+                                            </ThicknessAnimation>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.EnterActions>

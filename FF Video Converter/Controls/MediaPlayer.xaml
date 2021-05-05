@@ -124,10 +124,18 @@
         </Storyboard>
 
         <Storyboard x:Key="VolumeSliderAnimationIn">
-            <DoubleAnimation To="80" Duration="0:0:0.2" Storyboard.TargetName="sliderVolume" Storyboard.TargetProperty="Width"/>
+            <DoubleAnimation To="80" Duration="0:0:0.3" Storyboard.TargetName="sliderVolume" Storyboard.TargetProperty="Width">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
         <Storyboard x:Key="VolumeSliderAnimationOut">
-            <DoubleAnimation To="0" Duration="0:0:0.2" Storyboard.TargetName="sliderVolume" Storyboard.TargetProperty="Width"/>
+            <DoubleAnimation To="0" Duration="0:0:0.3" Storyboard.TargetName="sliderVolume" Storyboard.TargetProperty="Width">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
 
         <Storyboard x:Key="AudioTrackPickerAnimationIn" Storyboard.TargetName="listViewPlayerTrackPicker">
